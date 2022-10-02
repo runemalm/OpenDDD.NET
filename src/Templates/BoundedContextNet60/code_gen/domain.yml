@@ -1,0 +1,46 @@
+---
+Actions:
+  - Name: PredictWeather
+    Command:
+      Params: {}
+    Returns: Forecast
+  - Name: NotifyWeatherPredicted
+    Command:
+      Params:
+        ForecastId: ForecastId
+        Date: DateTime
+        TemperatureC: int
+        Summary: string
+    Returns: null
+DomainEvents:
+  - Name: WeatherPredicted
+    Aggregate: Forecast
+    Properties:
+      ForecastId: ForecastId
+      Date: DateTime
+      TemperatureC: int
+      Summary: string
+Adapters:
+  Http:
+    1.0.0:
+      Endpoints:
+        - Name: PredictWeather
+          Command:
+            Params: {}
+          SwaggerDocDefs:
+            - Public
+            - Protected
+          DocDesc: Predicts the weather.
+          DocReturns: Returns the forecast.
+          Method: Get
+          Returns: Forecast_v1_0_0
+      CommandTranslators:
+        - Name: PredictWeather
+Aggregates:
+  - Name: Forecast
+    Properties:
+      ForecastId: ForecastId
+      Date: DateTime
+      TemperatureC: int
+      TemperatureF: int
+      Summary: string
