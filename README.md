@@ -61,7 +61,7 @@ TODO
   
 ### Documentation:
   
-Read the latest [readthedocs documentation](https://ddd-for-python.readthedocs.io/en/latest/).
+Documentation is coming..
 
 ### Contribution:
   
