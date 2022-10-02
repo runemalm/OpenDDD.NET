@@ -6,7 +6,7 @@ using DDD.Logging;
 
 namespace DDD.Infrastructure.Ports.Adapters.ServiceBus
 {
-	public class ServiceBusEventAdapter : EventAdapter
+	public class ServiceBusEventAdapter : EventAdapter<Subscription>
 	{
 		private string _connString;
 		private string _subName;
@@ -14,8 +14,7 @@ namespace DDD.Infrastructure.Ports.Adapters.ServiceBus
 		public ServiceBusEventAdapter(
 			string context,
 			string client,
-			bool listenerAcksRequired,
-			bool publisherAcksRequired,
+			int maxDeliveryRetries,
 			string connString,
 			string subName,
 			ILogger logger,
@@ -23,8 +22,7 @@ namespace DDD.Infrastructure.Ports.Adapters.ServiceBus
 			base(
 				context,
 				client,
-				listenerAcksRequired,
-				publisherAcksRequired,
+				maxDeliveryRetries,
 				logger,
 				monitoringAdapter)
 		{
@@ -44,13 +42,20 @@ namespace DDD.Infrastructure.Ports.Adapters.ServiceBus
 
 		public override async Task<Subscription> SubscribeAsync(IEventListener listener)
 		{
-			var subscription = await base.SubscribeAsync(listener);
+			var subscription = new Subscription(listener);
+			AddSubscription(subscription);
 
 			// TODO: Start listening for event..
 
 			throw new NotImplementedException();
 
-			return subscription;
+			// return Task.FromResult(subscription);
+		}
+		
+		public override async Task UnsubscribeAsync(IEventListener listener)
+		{
+			var subscription = GetSubscription(listener);
+			RemoveSubscription(subscription);
 		}
 
 		public override Task AckAsync(IPubSubMessage message)

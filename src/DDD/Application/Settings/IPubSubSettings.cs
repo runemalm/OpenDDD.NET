@@ -3,7 +3,7 @@
 	public interface IPubSubSettings
 	{
 		PubSubProvider Provider { get; }
-		bool ListenerAcksRequired { get; }
-		bool PublisherAcksRequired { get; }
+		int MaxDeliveryRetries { get; }
+		bool PublisherEnabled { get; }
 	}
 }

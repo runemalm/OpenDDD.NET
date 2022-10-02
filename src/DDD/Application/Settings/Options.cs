@@ -33,8 +33,9 @@
 		public string PUBSUB_CLIENT { get; set; }
 		public string PUBSUB_INTERCHANGE_TOPIC { get; set; }
 		public string PUBSUB_DOMAIN_TOPIC { get; set; }
-		public string PUBSUB_LISTENER_ACKS_REQUIRED { get; set; }
-		public string PUBSUB_PUBLISHER_ACKS_REQUIRED { get; set; }
+		public string PUBSUB_MAX_DELIVERY_RETRIES { get; set; }
+		public string PUBSUB_MAX_PUBLISHING_RETRIES { get; set; }
+		public string PUBSUB_PUBLISHER_ENABLED { get; set; }
 
 		public string RABBIT_HOST { get; set; }
 		public string RABBIT_PORT { get; set; }

@@ -17,7 +17,7 @@ class AggregateTemplate(Template):
 			f"aggregate.cs", 
 			{
 				'class_name': f"{definition.name}",
-				'obj_var_name': _first_char_lower(definition.name),
+				'obj_var_name': self._first_char_lower(definition.name),
 				'property_expressions': self._property_expressions(definition),
 				'property_method_args': self._property_method_args(definition),
 				'property_init_args': self._property_init_args(definition)
@@ -37,14 +37,14 @@ class AggregateTemplate(Template):
 	def _property_method_args(self, definition):
 		method_args = []
 		for prop in definition.properties:
-			arg = f"{prop.type_} {_first_char_lower(prop.name)}"
+			arg = f"{prop.type_} {self._first_char_lower(prop.name)}"
 			method_args.append(arg)
 		return ",\n            ".join(method_args)
 
 	def _property_init_args(self, definition):
 		init_args = []
 		for prop in definition.properties:
-			arg = f"{prop.name} = {_first_char_lower(prop.name)}"
+			arg = f"{prop.name} = {self._first_char_lower(prop.name)}"
 			init_args.append(arg)
 		return ",\n                    ".join(init_args)
 

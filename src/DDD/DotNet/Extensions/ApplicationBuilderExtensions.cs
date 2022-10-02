@@ -2,14 +2,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using DDD.Application;
-using DDD.Infrastructure.Converters;
-using DDD.Domain.Exceptions;
-using DDD.Application.Exceptions;
-using DDD.Infrastructure.Ports;
-using DDD.DotNet.Middleware;
-using DDD.Application.Settings;
-using DDD.Infrastructure.Converters.NewtonSoft;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -17,9 +9,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 using JsonConverter = Newtonsoft.Json.JsonConverter;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using DDD.Application;
+using DDD.Infrastructure.Converters;
+using DDD.Domain.Exceptions;
+using DDD.Application.Exceptions;
+using DDD.Infrastructure.Ports;
+using DDD.DotNet.Middleware;
+using DDD.Application.Settings;
+using DDD.Domain.Auth.Exceptions;
+using DDD.Infrastructure.Converters.NewtonSoft;
+using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
 namespace DDD.DotNet.Extensions
 {
@@ -27,28 +28,23 @@ namespace DDD.DotNet.Extensions
 	{
 		// Public API
 
-		public static IApplicationBuilder AddDdd(this IApplicationBuilder app, ISettings settings, IApplicationLifetime applicationLifetime)
+		public static IApplicationBuilder AddAccessControl(this IApplicationBuilder app, ISettings settings)
 		{
-			app.AddAccessControl(settings);
-			app.AddHttpAdapter(settings);
-			app.AddTranslation(settings);
-			app.StartContext();
-			
-			// applicationLifetime.ApplicationStopping.Register(OnShutdown, app);
-			
+			app.UseMiddleware<AuthMiddleware>(settings);
 			return app;
 		}
 
-		// private static void OnShutdown()
-		// {
-		// 	StopContext();
-		// }
-
 		public static IApplicationBuilder AddHttpAdapter(this IApplicationBuilder app, ISettings settings)
 		{
-			app.AddHttpAdapterErrorFormatting(settings);
-			app.AddHttpAdapterDocs(settings);
-			app.AddCorsPolicy(settings);
+			app
+				.AddHttpAdapterErrorFormatting(settings)	// must be before UseRouting()..
+				.UseRouting()
+				.AddCorsPolicy(settings)
+				.UseEndpoints(endpoints =>
+				{
+					endpoints.MapControllers();
+				})
+				.AddHttpAdapterDocs(settings);
 			return app;
 		}
 		
@@ -57,14 +53,28 @@ namespace DDD.DotNet.Extensions
 			app.AddJsonConverterPolicy(settings);
 			return app;
 		}
-
-		public static IApplicationBuilder StartContext(this IApplicationBuilder app)
+		
+		public static IApplicationBuilder AddControl(this IApplicationBuilder app, IApplicationLifetime lifetime)
 		{
-			app.StartSecondaryAdapters();
-			app.StartPrimaryAdapters();
+			lifetime.ApplicationStarted.Register(app.OnAppStarted);
+			lifetime.ApplicationStopping.Register(app.OnAppStopping);
+			lifetime.ApplicationStopped.Register(app.OnAppStopped);
 			return app;
 		}
 		
+		// Events
+
+		public static void OnAppStarted(this IApplicationBuilder app)
+			=> app.StartContext();
+
+		public static void OnAppStopping(this IApplicationBuilder app)
+			=> app.StopContext();
+
+		public static void OnAppStopped(this IApplicationBuilder app)
+		{
+			
+		}
+
 		// Private API
 
 		private static IApplicationBuilder AddCorsPolicy(this IApplicationBuilder app, ISettings settings)
@@ -128,12 +138,6 @@ namespace DDD.DotNet.Extensions
 			return app;
 		}
 
-		private static IApplicationBuilder AddAccessControl(this IApplicationBuilder app, ISettings settings)
-		{
-			app.UseMiddleware<AuthMiddleware>(settings);
-			return app;
-		}
-
 		private static IApplicationBuilder AddHttpAdapterDocs(this IApplicationBuilder app, ISettings settings)
 		{
 			if (settings.Http.Docs.Enabled)
@@ -144,7 +148,6 @@ namespace DDD.DotNet.Extensions
 
 		private static IApplicationBuilder AddHttpAdapterErrorFormatting(this IApplicationBuilder app, ISettings settings)
 		{
-			// TODO: Refactor this..
 			// TODO: Add error codes..
 
 			app.UseExceptionHandler(
@@ -154,41 +157,15 @@ namespace DDD.DotNet.Extensions
                         .Get<IExceptionHandlerPathFeature>()
                         .Error;
 
-					// Check if not found
-					var isNotFoundException = false;
+                    var isNotFoundException = exception.IsOrIsSubType(typeof(EntityNotFoundException<>));
+                    var isInvalidCommandException = exception.IsOrIsSubType(typeof(InvalidCommandException));
+                    var isUnauthorizedException = 
+	                    exception.IsOrIsSubType(typeof(InvalidCredentialsException)) || 
+						exception.IsOrIsSubType(typeof(MissingCredentialsException));
+                    var isForbiddenException = exception.IsOrIsSubType(typeof(ForbiddenException));
+                    var isOtherAuthException = exception.IsOrIsSubType(typeof(AuthException));
 
-					var toCheck = exception.GetType();
-					var baseType = typeof(EntityNotFoundException<>);
-
-					while (toCheck != typeof(object))
-					{
-						Type cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
-						if (baseType == cur)
-						{
-							isNotFoundException = true;
-						}
-
-						toCheck = toCheck.BaseType;
-					}
-					
-					// Check if invalid command exception
-					var isInvalidCommandException = false;
-
-					toCheck = exception.GetType();
-					baseType = typeof(InvalidCommandException);
-
-					while (toCheck != typeof(object))
-					{
-						Type cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
-						if (baseType == cur)
-						{
-							isInvalidCommandException = true;
-						}
-
-						toCheck = toCheck.BaseType;
-					}
-
-					// Prepare response
+                    // Prepare response
 					if (!context.Response.HasStarted)
 						context.Response.Clear();
 
@@ -206,6 +183,12 @@ namespace DDD.DotNet.Extensions
 						context.Response.StatusCode = StatusCodes.Status404NotFound;
 					else if (isInvalidCommandException)
 						context.Response.StatusCode = StatusCodes.Status400BadRequest;
+					else if (isUnauthorizedException)
+						context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+					else if (isForbiddenException)
+						context.Response.StatusCode = StatusCodes.Status403Forbidden;
+					else if (isOtherAuthException)
+						context.Response.StatusCode = StatusCodes.Status403Forbidden;
 					else
 						context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
@@ -217,19 +200,10 @@ namespace DDD.DotNet.Extensions
             return app;
 		}
 
-		// private static void StopContext(IServiceCollection services)
-		// {
-		// 	// TODO: Stop adapters..
-		// 	app.StopPrimaryAdapters();
-		// 	app.StopSecondaryAdapters();
-		// 	return app;
-		// }
-
 		private static IApplicationBuilder AddNswagMiddleware(this IApplicationBuilder app, ISettings settings)
 		{
 
-			app
-				.UseOpenApi(configure =>
+			app.UseOpenApi(configure =>
 				{
 					configure.PostProcess = (document, request) =>
 					{
@@ -247,8 +221,22 @@ namespace DDD.DotNet.Extensions
 				})
 				.UseSwaggerUi3(c =>
 				{
-					c.DocExpansion = "list";
+					c.DocExpansion = "none";
 				});
+			return app;
+		}
+		
+		private static void StartContext(this IApplicationBuilder app)
+		{
+			app.StartCommonAdapters();
+			app.StartSecondaryAdapters();
+			app.StartPrimaryAdapters();
+		}
+		
+		private static IApplicationBuilder StartCommonAdapters(this IApplicationBuilder app)
+		{
+			app.StartInterchangeEventAdapter();
+			app.StartDomainEventAdapter();
 			return app;
 		}
 
@@ -260,17 +248,13 @@ namespace DDD.DotNet.Extensions
 
 		private static IApplicationBuilder StartSecondaryAdapters(this IApplicationBuilder app)
 		{
-			app.StartInterchangeEventAdapter();
-			app.StartDomainEventAdapter();
-			// app.StartRepositories();
 			return app;
 		}
 
 		private static IApplicationBuilder StartListeners(this IApplicationBuilder app)
 		{
 			foreach (var listener in app.ApplicationServices.GetServices<IEventListener>())
-				listener.Start().Wait();
-
+				listener.StartAsync().Wait();
 			return app;
 		}
 
@@ -278,10 +262,10 @@ namespace DDD.DotNet.Extensions
 		{
 			var interchangeEventAdapter =
 				app.ApplicationServices.GetService<IInterchangeEventAdapter>();
-
+		
 			if (interchangeEventAdapter != null)
 				interchangeEventAdapter.StartAsync().Wait();
-
+		
 			return app;
 		}
 
@@ -296,35 +280,58 @@ namespace DDD.DotNet.Extensions
 			return app;
 		}
 		
-		// private static IApplicationBuilder StartRepositories(this IApplicationBuilder app)
-		// {
-			// var services = app.ApplicationServices.GetServices();
-			//
-			// var result = new Dictionary<Type, ServiceDescriptor>();
-			//
-			// var engine = app.ApplicationServices.G("_engine");
-			// var callSiteFactory = engine.GetPropertyValue("CallSiteFactory");
-			// var descriptorLookup = callSiteFactory.GetFieldValue("_descriptorLookup");
-			// if (descriptorLookup is IDictionary dictionary)
-			// {
-			// 	foreach (DictionaryEntry entry in dictionary)
-			// 	{
-			// 		result.Add((Type)entry.Key, (ServiceDescriptor)entry.Value.GetPropertyValue("Last"));
-			// 	}
-			// }
-			//
-			// return result;
-			
-			// var repositories = app.ApplicationServices.GetALlS
-			
-			
-			// var repositories = app.ApplicationServices.GetServices<RabbitSettings>();
-			// // app.ApplicationServices.GetServices<IStartupTask>()
-			//
-			// foreach (var repository in repositories)
-			// 	Console.WriteLine(repository);
-			//
-			// return app;
-		// }
+		private static void StopContext(this IApplicationBuilder app)
+		{
+			app.StopPrimaryAdapters();
+			app.StopSecondaryAdapters();
+			app.StopCommonAdapters();
+		}
+		
+		private static IApplicationBuilder StopPrimaryAdapters(this IApplicationBuilder app)
+		{
+			app.StopListeners();
+			return app;
+		}
+
+		private static IApplicationBuilder StopSecondaryAdapters(this IApplicationBuilder app)
+		{
+			return app;
+		}
+		
+		private static IApplicationBuilder StopCommonAdapters(this IApplicationBuilder app)
+		{
+			app.StopInterchangeEventAdapter();
+			app.StopDomainEventAdapter();
+			return app;
+		}
+		
+		private static IApplicationBuilder StopListeners(this IApplicationBuilder app)
+		{
+			foreach (var listener in app.ApplicationServices.GetServices<IEventListener>())
+				listener.StopAsync().Wait();
+			return app;
+		}
+
+		private static IApplicationBuilder StopInterchangeEventAdapter(this IApplicationBuilder app)
+		{
+			var interchangeEventAdapter =
+				app.ApplicationServices.GetService<IInterchangeEventAdapter>();
+		
+			if (interchangeEventAdapter != null)
+				interchangeEventAdapter.StopAsync().Wait();
+		
+			return app;
+		}
+
+		private static IApplicationBuilder StopDomainEventAdapter(this IApplicationBuilder app)
+		{
+			var domainEventAdapter =
+				app.ApplicationServices.GetService<IDomainEventAdapter>();
+
+			if (domainEventAdapter != null)
+				domainEventAdapter.StopAsync().Wait();
+
+			return app;
+		}
 	}
 }

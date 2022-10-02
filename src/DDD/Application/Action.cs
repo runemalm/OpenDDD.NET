@@ -15,20 +15,20 @@ namespace DDD.Application
 		protected readonly IAuthDomainService _authDomainService;
 		protected readonly IDomainPublisher _domainPublisher;
 		protected readonly IInterchangePublisher _interchangePublisher;
-		private readonly IEventRepository _eventRepository;
+		private readonly IOutbox _outbox;
 		private readonly IPersistenceService _persistenceService;
 
 		public Action(
 			IAuthDomainService authDomainService,
 			IDomainPublisher domainPublisher,
 			IInterchangePublisher interchangePublisher,
-			IEventRepository eventRepository,
+			IOutbox outbox,
 			IPersistenceService persistenceService)
 		{
 			_authDomainService = authDomainService;
 			_domainPublisher = domainPublisher;
 			_interchangePublisher = interchangePublisher;
-			_eventRepository = eventRepository;
+			_outbox = outbox;
 			_persistenceService = persistenceService;
 		}
 
@@ -46,7 +46,6 @@ namespace DDD.Application
 				var result = await ExecuteAsync(command, actionId, ct);
 				await SaveOutboxAsync(actionId, ct);
 				await _persistenceService.CommitTransactionAsync(actionId);
-				await FlushOutboxAsync(actionId, ct);
 				return result;
 			}
 			finally
@@ -64,23 +63,10 @@ namespace DDD.Application
 		{
 			var domainEvents = await _domainPublisher.GetPublishedAsync(actionId);
 			var integrationEvents = await _interchangePublisher.GetPublishedAsync(actionId);
-			await _eventRepository.SaveAllAsync(actionId, domainEvents, ct);
-			await _eventRepository.SaveAllAsync(actionId, integrationEvents, ct);
+			await _outbox.AddAllAsync(actionId, domainEvents, ct);
+			await _outbox.AddAllAsync(actionId, integrationEvents, ct);
 		}
 
-		private async Task FlushOutboxAsync(ActionId actionId, CancellationToken ct)
-		{
-			var outboxEvents = await _eventRepository.GetAllAsync(actionId, ct);
-			foreach (var outboxEvent in outboxEvents)
-			{
-				if (outboxEvent.IsDomainEvent)
-					await _domainPublisher.FlushAsync(outboxEvent);
-				else
-					await _interchangePublisher.FlushAsync(outboxEvent);
-				await _eventRepository.DeleteAsync(outboxEvent.EventId, actionId, ct);
-			}
-		}
-		
 		// Authorization
 		
 		public void AuthorizeRoles(

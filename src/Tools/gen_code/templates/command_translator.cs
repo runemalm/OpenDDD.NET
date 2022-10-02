@@ -1,8 +1,7 @@
 using DDD.Infrastructure.Ports.Adapters.Http.Translation;
 using Application.Actions.Commands;
-using Infrastructure.Ports.Adapters.Http.{{api_version}}.Model.Commands;
 
-namespace Infrastructure.Ports.Adapters.Http.{{api_version}}.Translation.Commands
+namespace Infrastructure.Ports.Adapters.Http.Common.Translation.Commands
 {
     public class {{action_name}}CommandTranslator : CommandTranslator
     {
@@ -11,7 +10,7 @@ namespace Infrastructure.Ports.Adapters.Http.{{api_version}}.Translation.Command
             
         }
 
-        public {{action_name}}Command From_{{api_version}}({{action_name}}Command_{{api_version}} command_{{api_version}})
+        public {{action_name}}Command From_vX_X_X({{action_name}}Command_vX_X_X command_vX_X_X)
         {
             throw new NotImplementedException();
             

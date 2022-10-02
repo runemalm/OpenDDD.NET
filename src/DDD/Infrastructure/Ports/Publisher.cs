@@ -19,7 +19,7 @@ namespace DDD.Infrastructure.Ports
 		public async Task PublishAsync(IEvent theEvent)
 		{
 			_logger.Log(
-				$"Publishing {theEvent.EventName} ({theEvent.DomainModelVersion}) to " +
+				$"Publishing {theEvent.Header.Name} ({theEvent.Header.DomainModelVersion}) to " +
                 $"{_eventAdapter.GetContext()}.",
 				LogLevel.Information);
 			await _eventAdapter.PublishAsync(theEvent);
@@ -27,10 +27,14 @@ namespace DDD.Infrastructure.Ports
 
 		public async Task FlushAsync(OutboxEvent outboxEvent)
 		{
+			var prefix = outboxEvent.NumDeliveryFailures > 0 ? "Re-f" : "F";
+			var message = 
+				$"{prefix}lushing {outboxEvent.EventName} ({outboxEvent.DomainModelVersion}) " +
+				$"to {_eventAdapter.GetContext()}.";
 			_logger.Log(
-				$"Flushing {outboxEvent.EventName} ({outboxEvent.DomainModelVersion}) to " +
-				$"{_eventAdapter.GetContext()}.",
+				message,
 				LogLevel.Debug);
+			
 			await _eventAdapter.FlushAsync(outboxEvent);
 		}
 

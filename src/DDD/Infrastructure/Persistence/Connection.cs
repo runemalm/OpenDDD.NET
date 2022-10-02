@@ -23,6 +23,7 @@ namespace DDD.Infrastructure.Persistence
 		public abstract Task<IEnumerable<T>> ExecuteQueryAsync<T>(string stmt, IDictionary<string, object> parameters);
 		public Task<IEnumerable<T>> ExecuteQueryAsync<T>(string stmt)
 			=> ExecuteQueryAsync<T>(stmt, null);
+		public abstract Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object> parameters);
 
 		public void Dispose()
 		{

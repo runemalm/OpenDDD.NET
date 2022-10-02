@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DDD.Application.Exceptions;
 
@@ -57,6 +58,11 @@ namespace DDD.Infrastructure.Persistence.Memory
         public override async Task<IEnumerable<T>> ExecuteQueryAsync<T>(string stmt, IDictionary<string, object> parameters)
         {
             return await Task.FromResult(new List<T>());
+        }
+        
+        public override async Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object> parameters)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -12,8 +12,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Memory
 			base(
 				"Interchange",
 				settings.General.Context,
-				settings.PubSub.ListenerAcksRequired,
-				settings.PubSub.PublisherAcksRequired,
+				settings.PubSub.MaxDeliveryRetries,
 				logger,
 				monitoringAdapter)
 		{

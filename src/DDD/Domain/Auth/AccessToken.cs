@@ -1,7 +1,7 @@
 using System;
-using DDD.Application.Settings;
-using Domain.Model.AuthFlow;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Domain.Model.AuthFlow;
 
 namespace DDD.Domain.Auth
 {
@@ -12,13 +12,10 @@ namespace DDD.Domain.Auth
 		public string RawString { get; set; }
 		public DateTime ValidFrom { get; set; }
 		public DateTime ValidTo { get; set; }
+		public IEnumerable<string> Roles { get; set; }
 		public ILogger _logger { get; set; }
 
-		public AccessToken() {}
-		public AccessToken(DomainModelVersion domainModelVersion) : base(domainModelVersion) {}
-
 		// Equality
-
 
 		public bool Equals(AccessToken other)
 		{

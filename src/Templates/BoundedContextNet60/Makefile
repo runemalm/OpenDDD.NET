@@ -1,0 +1,165 @@
+##########################################################################
+# This is the project's makefile.
+#
+# Simply run 'make' on the command line to list all available tasks.
+##########################################################################
+
+##########################################################################
+# CONFIGURATION
+##########################################################################
+
+# Load env file
+include env.make
+export $(shell sed 's/=.*//' env.make)
+
+##########################################################################
+# VARIABLES
+##########################################################################
+HOME := $(shell echo ~)
+PWD := $(shell pwd)
+NETWORK := dddnetcoresample60
+
+PROJECT_DIR := $(PWD)
+SCRIPTS_DIR := $(PROJECT_DIR)/scripts
+SRC_DIR := $(PROJECT_DIR)/src
+MAIN_DIR := $(SRC_DIR)/Main
+TESTS_DIR := $(SRC_DIR)/Tests
+
+BLUE      := $(shell tput -Txterm setaf 4)
+GREEN     := $(shell tput -Txterm setaf 2)
+TURQUOISE := $(shell tput -Txterm setaf 6)
+WHITE     := $(shell tput -Txterm setaf 7)
+YELLOW    := $(shell tput -Txterm setaf 3)
+GREY      := $(shell tput -Txterm setaf 1)
+RESET     := $(shell tput -Txterm sgr0)
+
+SMUL      := $(shell tput smul)
+RMUL      := $(shell tput rmul)
+
+# Add the following 'help' target to your Makefile
+# And add help text after each target name starting with '\#\#'
+# A category can be added with @category
+HELP_FUN = \
+	%help; \
+	use Data::Dumper; \
+	while(<>) { \
+		if (/^([a-zA-Z\-_0-9]+)\s*:.*\#\#(?:@([a-zA-Z\-0-9\.\s]+))?\t(.*)$$/) { \
+			$$c = $$2; $$t = $$1; $$d = $$3; \
+			push @{$$help{$$c}}, [$$t, $$d, $$ARGV] unless grep { grep { grep /^$$t$$/, $$_->[0] } @{$$help{$$_}} } keys %help; \
+		} \
+	}; \
+	for (sort keys %help) { \
+		printf("${WHITE}%24s:${RESET}\n\n", $$_); \
+		for (@{$$help{$$_}}) { \
+			printf("%s%25s${RESET}%s  %s${RESET}\n", \
+				( $$_->[2] eq "Makefile" || $$_->[0] eq "help" ? "${YELLOW}" : "${GREY}"), \
+				$$_->[0], \
+				( $$_->[2] eq "Makefile" || $$_->[0] eq "help" ? "${GREEN}" : "${GREY}"), \
+				$$_->[1] \
+			); \
+		} \
+		print "\n"; \
+	}
+
+# make
+.DEFAULT_GOAL := help
+
+# Variables
+PWD = $(shell pwd)
+
+# Variable wrapper
+define defw
+	custom_vars += $(1)
+	$(1) ?= $(2)
+	export $(1)
+	shell_env += $(1)="$$($(1))"
+endef
+
+.PHONY: help
+help:: ##@Other Show this help.
+	@echo ""
+	@printf "%30s " "${YELLOW}TARGETS"
+	@echo "${RESET}"
+	@echo ""
+	@perl -e '$(HELP_FUN)' $(MAKEFILE_LIST)
+
+##########################################################################
+# TEST
+##########################################################################
+.PHONY: test
+test: ##@Test	 run all unit tests
+	ENV_FILE=env.test dotnet test $(TESTS_DIR)
+
+##########################################################################
+# BUILD
+##########################################################################
+.PHONY: clean
+clean: ##@Build	 clean the solution
+	find . $(SRC_DIR) -iname "bin" | xargs rm -rf
+	find . $(SRC_DIR) -iname "obj" | xargs rm -rf
+
+##########################################################################
+# CODE GENERATION
+##########################################################################
+
+.PHONY: gen-code
+gen-code: ##@Code Generation	Generate code (uses COMMAND)
+	docker run \
+		--rm \
+		-it \
+		--name gen-code \
+		-v "$(PROJECT_DIR)/code_gen/domain.yml:/tools/gen_code/domain.yml" \
+		-v "$(SRC_DIR):/context/src" \
+		-v "/Users/david/Projects/DDD.NETCore/src/Tools/gen_code:/tools/gen_code" \
+		runemalm/dddnetcore-tools \
+		gen_code $(COMMAND)
+
+.PHONY: gen-action
+gen-action: ##@Code Generation	Generate an action class (uses NAME)
+	make gen-code COMMAND="gen action $(NAME)"
+
+.PHONY: gen-aggregate
+gen-aggregate: ##@Code Generation	Generate an aggregate class (uses NAME)
+	make gen-code COMMAND="gen aggregate $(NAME)"
+	make gen-code COMMAND="gen entity_id $(NAME)Id"
+
+.PHONY: gen-command
+gen-command: ##@Code Generation	Generate a command class (uses NAME)
+	make gen-code COMMAND="gen command $(NAME)"
+
+.PHONY: gen-entity-id
+gen-entity-id: ##@Code Generation	Generate an entity ID class (uses NAME)
+	make gen-code COMMAND="gen entity_id $(NAME)"
+
+.PHONY: gen-http-command
+gen-http-command: ##@Code Generation	Generate a http adapter command class (uses NAME, VERSION)
+	make gen-code COMMAND="gen http_command $(NAME) $(VERSION)"
+
+.PHONY: gen-http-command-translator
+gen-http-command-translator: ##@Code Generation	Generate a command translator class (uses NAME, VERSION)
+	make gen-code COMMAND="gen http_command_translator $(NAME) $(VERSION)"
+
+.PHONY: gen-http-endpoint
+gen-http-endpoint: ##@Code Generation	Generate an endpoint class (uses NAME)
+	make gen-code COMMAND="gen http_endpoint $(NAME)"
+
+.PHONY: gen-all-code-for-action
+gen-all-code-for-action: ##@Code Generation	Generate all code for an action (uses NAME, HTTP_VERSION)
+	make gen-action NAME=$(NAME)
+	make gen-command NAME=$(NAME)
+	make gen-http-command NAME=$(NAME) VERSION=$(HTTP_VERSION)
+	make gen-http-command-translator NAME=$(NAME) VERSION=$(HTTP_VERSION)
+	make gen-http-endpoint NAME=$(NAME)
+
+##########################################################################
+# TEMP (remove before creating project template)
+##########################################################################
+.PHONY: use-ddd-project
+use-ddd-project: ##@Build	 Switch to using local ddd project reference
+	cd src && \
+	dnt switch-to-projects
+
+.PHONY: use-ddd-nuget
+use-ddd-nuget: ##@Build	 Switch to using ddd nuget
+	cd src && \
+	dnt switch-to-packages

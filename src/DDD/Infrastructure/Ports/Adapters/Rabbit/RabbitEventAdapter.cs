@@ -5,69 +5,76 @@ using System.Threading.Tasks;
 using DDD.Domain;
 using DDD.Infrastructure.Ports.Adapters.Rabbit.Exceptions;
 using DDD.Logging;
-using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 {
-	public class RabbitEventAdapter : EventAdapter
+	public class RabbitEventAdapter : EventAdapter<RabbitSubscription>
 	{
 		private IConnection _conn;
-		private IDictionary<string, IModel> _publisherChannels = new Dictionary<string, IModel>();
-		private IDictionary<string, IModel> _listenerChannels = new Dictionary<string, IModel>();
+		private IDictionary<string, IModel> _publisherChannels;
 
-		private string _host;
-		private int _port;
-		private string _username;
-		private string _password;
+		private readonly string _host;
+		private readonly int _port;
+		private readonly string _username;
+		private readonly string _password;
 
-		private bool _isConnected = false;
-		private bool _isReconnecting = false;
+		private bool _isConnected;
+		private bool _isReconnecting;
 
-		private const int _publishConfirmTimeoutSecs = 5;
+		private const int PublishConfirmTimeoutSecs = 5;
 
 		public RabbitEventAdapter(
 			string topic,
 			string client,
-			bool listenerAcksRequired,
-			bool publisherAcksRequired,
+			int maxDeliveryRetries,
 			string host,
 			int port,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter,
 			string username = "guest",
-			string password = "guest") :
-			base(topic, client, listenerAcksRequired, publisherAcksRequired, logger, monitoringAdapter)
+			string password = "guest") 
+			: base(
+				topic, 
+				client, 
+				maxDeliveryRetries,
+				logger, 
+				monitoringAdapter)
 		{
 			_host = host;
 			_port = port;
 			_username = username;
 			_password = password;
+
+			_publisherChannels = new Dictionary<string, IModel>();
+			_isConnected = false;
+			_isReconnecting = false;
 		}
 
 		public override async Task StartAsync()
 		{
 			Connect();
+			ConsumeAll();
 
 			IsStarted = true;
 
-			await Task.Yield();
+			await Task.CompletedTask;
 		}
 
 		public override async Task StopAsync()
 		{
 			IsStopping = true;
 
-			CloseListenerChannels();
-			ClosePublisherChannels();
+			StopConsumingAll();
+			StopPublishingAll();
 
 			Disconnect();
 
 			IsStarted = false;
 			IsStopping = false;
 
-			await Task.Yield();
+			await Task.CompletedTask;
 		}
 
 		protected void Connect()
@@ -99,7 +106,11 @@ namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 
 		protected void Disconnect()
 		{
-			_conn.Close();
+			if (_conn != null)
+			{
+				_conn.Close();
+				_conn = null;
+			}
 			_isConnected = false;
 		}
 
@@ -119,8 +130,8 @@ namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 
 				_logger.Log($"Rabbit disconnected, reconnecting..", LogLevel.Error);
 
-				ClosePublisherChannels();
-				CloseListenerChannels();
+				StopConsumingAll();
+				StopPublishingAll();
 
 				var backoffSecs = 5;
 				var totalSecs = 0;
@@ -130,7 +141,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 					try
 					{
 						Connect();
-						OpenListenerChannels();
+						ConsumeAll();
 
 						_isReconnecting = false;
 						_logger.Log($"Rabbit reconnected after {totalSecs} seconds.", LogLevel.Information);
@@ -155,188 +166,110 @@ namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 			 * There's one exchange per event and the context has it's own 
 			 * queue on that exchange.
 			 * 
-			 * We open a channel from which the listener will start consuming 
-			 * from the context's queue of the event's exchange.
+			 * We open a channel and use it for the listener to consume 
+			 * from the exchange queue.
 			 */
-			var subscription = await base.SubscribeAsync(listener);
+			var subscription = GetSubscription(listener);
+		
+			if (subscription != null)
+				throw new RabbitException(
+					"Can't subscribe, we have already subscribed for that " +
+					"event in this event adapter. Only one subscription " +
+					"per event and adapter is allowed.");
 
-			var channel = OpenListenerChannel(listener);
-
-			ConsumeChannel(channel, subscription);
+			subscription = CreateSubscription(listener);
+			
+			if (IsStarted && _isConnected)
+				Consume(subscription);
+			
+			AddSubscription(subscription);
 
 			return subscription;
 		}
-
-		private AsyncEventHandler<BasicDeliverEventArgs> CreateHandler(IModel channel, IEventListener listener)
+		
+		public override async Task UnsubscribeAsync(IEventListener listener)
 		{
-			AsyncEventHandler<BasicDeliverEventArgs> handler =
-				async (ch, ea) =>
-				{
-					try
-					{
-						var body = ea.Body.ToArray();
+			var subscription = GetSubscription(listener);
 
-						var message = new RabbitMessage(channel, ea);
+			if (subscription.Channel != null)
+				StopConsuming(subscription);
 
-						if (ea.Redelivered)
-							_logger.Log($"Received re-delivered {listener.ListensTo} " +
-								$"({listener.ListensToVersion}) from " +
-								$"{_context}.",
-								LogLevel.Warning);
-						else
-							_logger.Log(
-								$"Received {listener.ListensTo} " +
-								$"({listener.ListensToVersion}) from " +
-								$"{_context}.",
-								LogLevel.Debug);
-
-						await Handle(message, listener);
-					}
-					catch (Exception e)
-					{
-						_logger.Log(
-							$"Handling of {listener.ListensTo} " +
-							$"({listener.ListensToVersion}) from " +
-							$"{_context} failed.",
-							LogLevel.Error,
-							e);
-					}
-				};
-
-			return handler;
+			RemoveSubscription(subscription);
 		}
-
-		public void ConsumeChannel(IModel channel, Subscription subscription)
+		
+		private RabbitSubscription CreateSubscription(IEventListener listener)
 		{
+			var subscription = new RabbitSubscription(listener);
+			return subscription;
+		}
+		
+		private void Consume(RabbitSubscription subscription)
+		{
+			var channel = OpenListenerChannel(subscription);
+
 			var consumer = new AsyncEventingBasicConsumer(channel);
 
-			consumer.Received += CreateHandler(channel, subscription.Listener);
+			consumer.Received += CreateHandler(channel, subscription);
 
-			channel.BasicConsume(
-				queue: QueueName(subscription.EventName, subscription.DomainModelVersion),
-				autoAck: false,
-				consumer: consumer);
+			subscription.ConsumerTag = 
+				channel.BasicConsume(
+					queue: QueueName(subscription.EventName, subscription.DomainModelVersion),
+					autoAck: false,
+					consumer: consumer);
+		}
+		
+		private void ConsumeAll()
+		{
+			foreach (var sub in GetSubscriptions())
+				Consume(sub);
 		}
 
-		public IModel OpenListenerChannel(IEventListener listener)
-			=> OpenListenerChannel(listener.ListensTo, listener.ListensToVersion);
-
-		public IModel OpenListenerChannel(string eventName, IDomainModelVersion domainModelVersion)
+		private void StopConsuming(RabbitSubscription subscription)
 		{
-			var channel = OpenChannel(eventName, domainModelVersion);
+			if (subscription.ConsumerTag == null || subscription.Channel == null)
+				throw new RabbitException(
+					"Couldn't stop consuming. Seems like subscription wasn't consuming.");
 
-			channel.QueueDeclare(
-				QueueName(eventName, domainModelVersion),
-				durable: false, // survive broker restart?
-				exclusive: false, // used by one connection and deleted when that closes?
-				autoDelete: true); // delete when last subscriber unsubscribes?
-
-			channel.QueueBind(
-				queue: QueueName(eventName, domainModelVersion),
-				exchange: TopicForEvent(eventName, domainModelVersion),
-				routingKey: "");
-
-			_listenerChannels.Add($"{eventName}-{domainModelVersion}", channel);
-
-			return channel;
+			try
+			{
+				subscription.Channel.BasicCancel(subscription.ConsumerTag);
+			}
+			catch (Exception e)
+			{
+				
+			}
+			finally
+			{
+				subscription.ConsumerTag = null;
+				subscription.Channel.Close();
+				subscription.Channel = null;
+			}
 		}
 
-		private IModel OpenPublisherChannel(OutboxEvent outboxEvent)
-			=> OpenPublisherChannel(outboxEvent.EventName, outboxEvent.DomainModelVersion);
-
-		private IModel OpenPublisherChannel(string eventName, DomainModelVersion domainModelVersion)
+		private void StopConsumingAll()
 		{
-			var channel = OpenChannel(eventName, domainModelVersion);
-			channel.ConfirmSelect();
-			_publisherChannels.Add($"{eventName}-{domainModelVersion}", channel);
-			return channel;
+			foreach (var sub in GetSubscriptions())
+				StopConsuming(sub);
 		}
 
-		private IModel GetPublisherChannel(OutboxEvent outboxEvent)
+		public override async Task FlushAsync(OutboxEvent outboxEvent)
 		{
-			foreach (var kvp in _publisherChannels)
-				if (kvp.Key == $"{outboxEvent.EventName}-{outboxEvent.DomainModelVersion}")
-					return kvp.Value;
+			while (IsStarted && _isReconnecting && !_isConnected)
+			{
+				_logger.Log(
+					$"Can't flush event, waiting for a reconnect before proceeding..", 
+					LogLevel.Warning);
+				await Task.Delay(2000);
+			}
 
-			var channel = OpenPublisherChannel(outboxEvent);
+			if (!IsStarted)
+				throw new RabbitException("Can't flush event, rabbit event adapter is not started.");
 
-			return channel;
-		}
-
-		public IModel OpenChannel(IEvent theEvent)
-			=> OpenChannel(theEvent.EventName, theEvent.DomainModelVersion);
-
-		public IModel OpenChannel(string eventName, IDomainModelVersion domainModelVersion)
-		{
 			if (!_isConnected)
-				throw new RabbitException(
-					"Must be connected before opening a channel.");
+				throw new RabbitException("Can't flush event, rabbit event adapter is not connected.");
 
-			var channel = _conn.CreateModel();
-
-			channel.ConfirmSelect();
-
-			channel.ExchangeDeclare(
-				exchange: TopicForEvent(eventName, domainModelVersion),
-				type: "fanout");
-
-			return channel;
-		}
-
-		private void OpenListenerChannels()
-		{
-			foreach (var subscription in GetSubscriptions())
-			{
-				var channel =
-					OpenListenerChannel(
-						subscription.EventName,
-						subscription.DomainModelVersion);
-
-				ConsumeChannel(channel, subscription);
-			}
-		}
-
-		private void CloseListenerChannels()
-		{
-			foreach (var pair in _listenerChannels)
-				pair.Value.Close();
-
-			_listenerChannels = new Dictionary<string, IModel>();
-		}
-
-		private void ClosePublisherChannels()
-		{
-			foreach (var pair in _publisherChannels)
-				pair.Value.Close();
-
-			_publisherChannels = new Dictionary<string, IModel>();
-		}
-
-		private string QueueName(Subscription subscription)
-			=> TopicSubscriptionForEvent(subscription.EventName, subscription.DomainModelVersion);
-
-		private string QueueName(IEvent theEvent)
-			=> TopicSubscriptionForEvent(theEvent.EventName, theEvent.DomainModelVersion);
-
-		private string QueueName(string eventName, IDomainModelVersion domainModelVersion)
-			=> TopicSubscriptionForEvent(eventName, domainModelVersion);
-
-		public async override Task AckAsync(IPubSubMessage message)
-		{
-			if (!(message is RabbitMessage))
-				throw new RabbitException(
-					"Expected IPubSubMessage to be a RabbitMessage. " +
-					"Something must be wrong with the implementation.");
-			else
-			{
-				var rabbitMessage = (RabbitMessage)message;
-				rabbitMessage.Channel.BasicAck(rabbitMessage.EventArgs.DeliveryTag, false);
-				await Task.Yield();
-			}
-		}
-
-		public override Task FlushAsync(OutboxEvent outboxEvent)
-		{
+			// AssertPublishedBeforeFlushAsync(outboxEvent);
+			
 			var message = outboxEvent.JsonPayload;
 
 			var body = Encoding.UTF8.GetBytes(message);
@@ -354,14 +287,14 @@ namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 
 					try
 					{
-						channel.WaitForConfirmsOrDie(new TimeSpan(0, 0, _publishConfirmTimeoutSecs));
+						channel.WaitForConfirmsOrDie(new TimeSpan(0, 0, PublishConfirmTimeoutSecs));
 					}
 					catch (Exception e)
 					{
 						_logger.Log(
 							$"RabbitMQ might have problems. " +
 							$"The message we tried to publish wasn't confirmed by " +
-							$"the broker within {_publishConfirmTimeoutSecs} seconds. " +
+							$"the broker within {PublishConfirmTimeoutSecs} seconds. " +
 							$"Tried to publish on the " +
 							$"'{TopicForEvent(outboxEvent.EventName, outboxEvent.DomainModelVersion)}' " +
 							$"exchange. Ignoring the error now but you need to " +
@@ -377,8 +310,141 @@ namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 				message);
 
 			base.FlushAsync(outboxEvent);
+		}
+		
+		// Helpers
+		
+		private AsyncEventHandler<BasicDeliverEventArgs> CreateHandler(IModel channel, Subscription subscription)
+		{
+			var listener = subscription.Listener;
+			
+			AsyncEventHandler<BasicDeliverEventArgs> handler =
+				async (ch, ea) =>
+				{
+					try
+					{
+						var message = new RabbitMessage(channel, ea);
 
-			return Task.CompletedTask;
+						if (ea.Redelivered)
+							_logger.Log($"Received re-delivered {listener.ListensTo} " +
+								$"({listener.ListensToVersion}) from " +
+								$"{_context}.",
+								LogLevel.Warning);
+						else
+							_logger.Log(
+								$"Received {listener.ListensTo} " +
+								$"({listener.ListensToVersion}) from " +
+								$"{_context}.",
+								LogLevel.Debug);
+
+						await listener.Handle(message);
+					}
+					catch (Exception e)
+					{
+						_logger.Log(
+							$"Handling of {listener.ListensTo} " +
+							$"({listener.ListensToVersion}) from " +
+							$"{_context} failed.",
+							LogLevel.Error,
+							e);
+					}
+				};
+
+			return handler;
+		}
+		
+		public IModel OpenChannel(IEvent theEvent)
+			=> OpenChannel(theEvent.Header.Name, theEvent.Header.DomainModelVersion);
+
+		public IModel OpenChannel(string eventName, DomainModelVersion domainModelVersion)
+		{
+			if (!_isConnected)
+				throw new RabbitException(
+					"Must be connected before opening a channel.");
+
+			var channel = _conn.CreateModel();
+
+			channel.ExchangeDeclare(
+				exchange: TopicForEvent(eventName, domainModelVersion),
+				durable: true,
+				type: "fanout");
+
+			return channel;
+		}
+		
+		private IModel GetPublisherChannel(OutboxEvent outboxEvent)
+		{
+			foreach (var kvp in _publisherChannels)
+				if (kvp.Key == TopicForEvent(outboxEvent.EventName, outboxEvent.DomainModelVersion))
+					return kvp.Value;
+
+			var channel = OpenPublisherChannel(outboxEvent);
+
+			return channel;
+		}
+		
+		private IModel OpenPublisherChannel(OutboxEvent outboxEvent)
+			=> OpenPublisherChannel(outboxEvent.EventName, outboxEvent.DomainModelVersion);
+
+		private IModel OpenPublisherChannel(string eventName, DomainModelVersion domainModelVersion)
+		{
+			var channel = OpenChannel(eventName, domainModelVersion);
+			channel.ConfirmSelect();
+			_publisherChannels.Add(TopicForEvent(eventName, domainModelVersion), channel);
+			return channel;
+		}
+		
+		private void StopPublishingAll()
+		{
+			foreach (var pair in _publisherChannels)
+				pair.Value.Close();
+
+			_publisherChannels = new Dictionary<string, IModel>();
+		}
+		
+		public IModel OpenListenerChannel(RabbitSubscription subscription)
+		{
+			var channel = OpenChannel(subscription.EventName, subscription.DomainModelVersion);
+
+			channel.QueueDeclare(
+				QueueName(subscription.EventName, subscription.DomainModelVersion),
+				durable: true, // survive broker restart?
+				exclusive: false, // used by one connection and deleted when that closes?
+				autoDelete: false); // delete when last subscriber unsubscribes?
+
+			channel.QueueBind(
+				queue: QueueName(subscription.EventName, subscription.DomainModelVersion),
+				exchange: TopicForEvent(subscription.EventName, subscription.DomainModelVersion),
+				routingKey: "");
+
+			subscription.Channel = channel;
+
+			return channel;
+		}
+
+		private string QueueName(Subscription subscription)
+			=> TopicSubscriptionForEvent(subscription.EventName, subscription.DomainModelVersion);
+
+		private string QueueName(IEvent theEvent)
+			=> TopicSubscriptionForEvent(theEvent.Header.Name, theEvent.Header.DomainModelVersion);
+
+		private string QueueName(string eventName, DomainModelVersion domainModelVersion)
+			=> TopicSubscriptionForEvent(eventName, domainModelVersion);
+
+		public async override Task AckAsync(IPubSubMessage message)
+		{
+			if (!(message is RabbitMessage))
+			{
+				throw new RabbitException(
+					"Expected IPubSubMessage to be a RabbitMessage. " +
+					"Something must be wrong with the implementation.");
+			}
+			else
+			{
+				var rabbitMessage = (RabbitMessage)message;
+				rabbitMessage.Channel.BasicAck(rabbitMessage.EventArgs.DeliveryTag, false);
+				await Task.Yield();
+			}
 		}
 	}
 }

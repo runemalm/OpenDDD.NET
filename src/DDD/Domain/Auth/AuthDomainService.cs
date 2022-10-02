@@ -28,9 +28,7 @@ namespace DDD.Domain.Auth
 			CancellationToken ct)
 		{
 			if (_settings.Auth.Enabled)
-			{
 				CheckRolesInToken(roles);
-			}
 			return Task.CompletedTask;
 		}
 		

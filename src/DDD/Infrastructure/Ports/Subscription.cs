@@ -5,7 +5,7 @@ namespace DDD.Infrastructure.Ports
 	public class Subscription
 	{
 		public string EventName;
-		public IDomainModelVersion DomainModelVersion;
+		public DomainModelVersion DomainModelVersion;
 		public IEventListener Listener;
 
 		public Subscription(IEventListener listener)

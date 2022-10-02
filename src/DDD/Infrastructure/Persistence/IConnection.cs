@@ -10,6 +10,7 @@ namespace DDD.Infrastructure.Persistence
         Task<int> ExecuteNonQueryAsync(string stmt);
         Task<IEnumerable<T>> ExecuteQueryAsync<T>(string stmt, IDictionary<string, object> parameters);
         Task<IEnumerable<T>> ExecuteQueryAsync<T>(string stmt);
+        Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object> parameters);
 
         Task Open();
         Task Close();

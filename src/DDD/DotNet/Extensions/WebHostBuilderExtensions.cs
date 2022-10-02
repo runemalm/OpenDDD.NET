@@ -19,22 +19,13 @@ namespace DDD.DotNet.Extensions
 	{
 		// Public API
 		
-		public static IWebHostBuilder AddDdd(this IWebHostBuilder webHostBuilder)
-		{
-			webHostBuilder.AddEnvFile("ENV_FILE", "CFG_");
-			webHostBuilder.AddSettings();
-			webHostBuilder.AddLogging();
-			return webHostBuilder;
-		}
-
 		public static IWebHostBuilder AddEnvFile(this IWebHostBuilder webHostBuilder, string envFileVariableName, string prefix = "", string defaultEnvFileVariableValue = "", bool overwriteExisting = true)
 		{
 			return webHostBuilder.ConfigureAppConfiguration((context, config) =>
 			{
 				var builtConfig = config.Build();
-
-				new EnvFileLoader(envFileVariableName, builtConfig).Load(defaultEnvFileVariableValue, overwriteExisting);
-
+				new EnvFileLoader(envFileVariableName, builtConfig)
+					.Load(defaultEnvFileVariableValue, overwriteExisting);
 				config.AddEnvironmentVariables(prefix: prefix);
 			});
 		}
@@ -45,18 +36,6 @@ namespace DDD.DotNet.Extensions
 				webHostBuilder.ConfigureServices((context, services) =>
 				{
 					services.Configure<Options>(context.Configuration);
-
-					services.AddTransient<IAuthSettings, AuthSettings>();
-					services.AddTransient<IAzureSettings, AzureSettings>();
-					services.AddTransient<IEmailSettings, EmailSettings>();
-					services.AddTransient<IGeneralSettings, GeneralSettings>();
-					services.AddTransient<IHttpSettings, HttpSettings>();
-					services.AddTransient<IMonitoringSettings, MonitoringSettings>();
-					services.AddTransient<IPersistenceSettings, PersistenceSettings>();
-					services.AddTransient<IPostgresSettings, PostgresSettings>();
-					services.AddTransient<IPubSubSettings, PubSubSettings>();
-					services.AddTransient<IRabbitSettings, RabbitSettings>();
-					services.AddTransient<IServiceBusSettings, ServiceBusSettings>();
 					services.AddTransient<ISettings, DddSettings>();
 					
 					// TODO

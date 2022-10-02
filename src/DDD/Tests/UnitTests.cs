@@ -4,28 +4,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Azure.Core.Pipeline;
+using DDD.Domain;
+using DDD.Tests.Helpers;
 using Xunit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using KellermanSoftware.CompareNetObjects;
+using KellermanSoftware.CompareNetObjects.TypeComparers;
 
 namespace DDD.Tests
 {
-    public class UnitTests : IDisposable
+    public class UnitTests
     {
         public UnitTests()
         {
+	        UnsetConfigEnvironmentVariables();
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Tests");
             Environment.SetEnvironmentVariable("ENV_FILE", "env.local.test");
             ConfigureJsonConvert();
 		}
 
-        public void Dispose()
-        {
-	        UnsetConfigEnvironmentVariables();
-        }
-        
         // Configuration
         
         public void UnsetConfigEnvironmentVariables()
@@ -33,7 +33,9 @@ namespace DDD.Tests
 	        foreach(DictionaryEntry e in Environment.GetEnvironmentVariables())
 	        {
 		        if (e.Key.ToString().StartsWith("CFG_"))
+		        {
 			        Environment.SetEnvironmentVariable(e.Key.ToString(), null);
+		        }
 	        }
         }
 
@@ -112,6 +114,9 @@ namespace DDD.Tests
 		public void AssertPersisted(object expected, object actual)
 			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
 		
+		public void AssertEvent(object expected, object actual)
+			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
+		
 		public void AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(object expected, object actual)
 		{
 			CompareLogic compareLogic = new CompareLogic();
@@ -119,10 +124,15 @@ namespace DDD.Tests
 			compareLogic.Config.MaxDifferences = 100;
 			compareLogic.Config.MaxMillisecondsDateDifference = 999;
 			compareLogic.Config.IgnoreCollectionOrder = true;
+			compareLogic.Config.CustomComparers = 
+				new List<BaseTypeComparer>
+				{
+					new DomainModelVersionComparer(RootComparerFactory.GetRootComparer())
+				};
 
 			ComparisonResult result = compareLogic.Compare(expected, actual);
 
 			Assert.True(result.AreEqual, result.DifferencesString);
 		}
-	}
+    }
 }

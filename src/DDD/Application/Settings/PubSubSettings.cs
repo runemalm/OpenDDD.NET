@@ -6,10 +6,8 @@ namespace DDD.Application.Settings
 	public class PubSubSettings : IPubSubSettings
 	{
 		public PubSubProvider Provider { get; set; }
-		public bool ListenerAcksRequired { get; }
-		public bool PublisherAcksRequired { get; }
-
-		public PubSubSettings() { }
+		public int MaxDeliveryRetries { get; }
+		public bool PublisherEnabled { get; }
 
 		public PubSubSettings(IOptions<Options> options)
 		{
@@ -23,12 +21,13 @@ namespace DDD.Application.Settings
 				else if (providerString.ToLower() == "servicebus")
 					provider = PubSubProvider.ServiceBus;
 
-			var listenerAcksRequired = options.Value.PUBSUB_LISTENER_ACKS_REQUIRED.IsTrue();
-			var publisherAcksRequired = options.Value.PUBSUB_PUBLISHER_ACKS_REQUIRED.IsTrue();
+			int.TryParse(options.Value.PUBSUB_MAX_DELIVERY_RETRIES, out var maxDeliveryRetries);
+
+			var publisherEnabled = options.Value.PUBSUB_PUBLISHER_ENABLED.IsTrue();
 
 			Provider = provider;
-			ListenerAcksRequired = listenerAcksRequired;
-			PublisherAcksRequired = publisherAcksRequired;
+			MaxDeliveryRetries = maxDeliveryRetries;
+			PublisherEnabled = publisherEnabled;
 		}
 	}
 }

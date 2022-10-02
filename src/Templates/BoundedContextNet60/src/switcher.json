@@ -1,0 +1,7 @@
+{
+  "solution": "Weather.sln",
+  "mappings": {
+    "DDD.NETCore": "../../../DDD/DDD.csproj"
+  },
+  "removeProjects": true
+}

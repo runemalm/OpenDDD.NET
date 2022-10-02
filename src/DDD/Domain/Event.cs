@@ -1,37 +1,54 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace DDD.Domain
 {
 	public class Event : IEvent, IEquatable<Event>
 	{
-		public EventId EventId { get; set; }
-		public ActionId ActionId { get; set; }
-		public DateTime OccuredAt { get; set; }
-		public string ActorId { get; set; }
-		public string ActorName { get; set; }
-		public string ContextName { get; set; }
-		public string EventName { get; set; }
-		public DomainModelVersion DomainModelVersion { get; set; }
+		public EventHeader Header { get; set; }
 
 		public Event() { }
 
-		public Event(string eventName, DomainModelVersion domainModelVersion, string contextName, ActionId actionId)
+		public Event(
+			string eventName, 
+			DomainModelVersion domainModelVersion, 
+			string contextName,
+			ActionId actionId,
+			IEnumerable<string> corrIds,
+			string actorId,
+			string actorName)
 		{
-			EventId = EventId.Create();
-			ActionId = actionId;
-			OccuredAt = DateTime.UtcNow;
-			EventName = eventName;
-			DomainModelVersion = domainModelVersion;
-			ContextName = contextName;
+			var eventType = 
+				contextName.ToLower() == "interchange" 
+					? EventType.IntegrationEvent 
+					: EventType.DomainEvent;
+
+			Header = 
+				new EventHeader(
+					eventName, 
+					contextName, 
+					DateTime.UtcNow, 
+					eventType, 
+					domainModelVersion,
+					actionId,
+					EventId.Create(),
+					corrIds,
+					actorId,
+					actorName);
 		}
-		
+
+		public void AddDeliveryFailure(string error)
+		{
+			Header.AddDeliveryFailure(error);
+		}
+
 		// Equality
 		
 		public bool Equals(Event other)
 		{
 			if (ReferenceEquals(null, other)) return false;
 			if (ReferenceEquals(this, other)) return true;
-			return Equals(EventId, other.EventId) && Equals(ActionId, other.ActionId) && OccuredAt.Equals(other.OccuredAt) && ActorId == other.ActorId && ActorName == other.ActorName && ContextName == other.ContextName && EventName == other.EventName && Equals(DomainModelVersion, other.DomainModelVersion);
+			return Equals(Header, other.Header);
 		}
 
 		public override bool Equals(object obj)
@@ -44,7 +61,7 @@ namespace DDD.Domain
 
 		public override int GetHashCode()
 		{
-			return HashCode.Combine(EventId, ActionId, OccuredAt, ActorId, ActorName, ContextName, EventName, DomainModelVersion);
+			return (Header != null ? Header.GetHashCode() : 0);
 		}
 
 		public static bool operator ==(Event left, Event right)

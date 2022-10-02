@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using DDD.Domain.Auth.Exceptions;
 using DDD.Domain.Exceptions;
 using DDD.Domain.Validation;
-using DDD.Application.Settings;
+using DDD.DotNet.Extensions;
 using Domain.Model.AuthFlow;
 using Microsoft.IdentityModel.Tokens;
 
@@ -21,14 +21,16 @@ namespace DDD.Domain.Auth
 		public IEnumerable<Claim> Claims { get; set; }
 		private const string Format = "[a-zA-Z0-9+/=]+\\.[a-zA-Z0-9+/=]+\\..+";
 
-		public JwtToken() {}
-		public JwtToken(DomainModelVersion domainModelVersion) : base(domainModelVersion) {}
-
 		// Public
 		
 		public static JwtToken Create(
-			DomainModelVersion domainModelVersion, AuthMethod authMethod, IEnumerable<Claim> claims, 
-			DateTime validFrom, DateTime validTo, string audience, string privateKey)
+			DomainModelVersion domainModelVersion, 
+			AuthMethod authMethod, 
+			IEnumerable<Claim> claims, 
+			DateTime validFrom, 
+			DateTime validTo, 
+			string audience, 
+			string privateKey)
 		{
 			var token = new JwtToken()
 			{
@@ -39,11 +41,22 @@ namespace DDD.Domain.Auth
 				ValidTo = validTo,
 				Audience = audience
 			};
+			token.ReadRoles();
 			token.Write(privateKey);
-				
 			token.Validate(privateKey);
   
 			return token;
+		}
+
+		private void ReadRoles()
+		{
+			var roles = new List<string>();
+			
+			foreach (var claim in Claims)
+				if (claim.Type.ToLower() == "roles")
+					roles.Add(claim.Value.ToLower());
+
+			Roles = roles;
 		}
 		
 		public void Write(string privateKey)
@@ -71,12 +84,32 @@ namespace DDD.Domain.Auth
 					"Couldn't read JWT token from string. The format was invalid.");
 			}
 
-			var handler = new JwtSecurityTokenHandler();
-			JwtSecurityToken secToken = handler.ReadJwtToken(rawString);
+			JwtSecurityToken secToken = null;
 
-			JwtToken token;	// TODO: Actually read...
-			
-			throw new NotImplementedException();
+			var handler = new JwtSecurityTokenHandler();
+			try
+			{
+				secToken = handler.ReadJwtToken(rawString);
+			}
+			catch (Exception e)
+			{
+				
+			}
+
+			JwtToken token = new JwtToken();
+					
+			if (secToken != null)
+			{
+				token.TokenType = TokenType.JWT;
+				token.AuthMethod = AuthMethod.Unknown;
+				token.Claims = secToken.Claims;
+				token.ValidFrom = secToken.ValidFrom;
+				token.ValidTo = secToken.ValidTo;
+				token.Audience = secToken.Audiences.First();
+				token.RawString = rawString;
+				
+				token.ReadRoles();
+			}
 
 			return token;
 		}
@@ -92,9 +125,6 @@ namespace DDD.Domain.Auth
 
 		public void Validate(string privateKey, IEnumerable<IEnumerable<string>> roles)
 		{
-			// TODO: Validate format
-			throw new NotImplementedException();
-			
 			CheckFormat();
 			CheckSignature(privateKey);
 			CheckExpired();
@@ -105,7 +135,16 @@ namespace DDD.Domain.Auth
 				.NotNullOrEmpty(token => token.RawString)
 				.Errors()
 				.ToList();
-  
+
+			var hasRoles = roles.Any(rolesCombination => rolesCombination.IsSubsetOf(Roles));
+			if (!hasRoles)
+			{
+				var error = new ValidationError();
+				error.Key = "missing_roles";
+				error.Details = "You don't have the required roles to access the resource(s).";
+				errors.Add(error);
+			}
+
 			if (errors.Any())
 			{
 				throw new InvariantException(
@@ -116,6 +155,8 @@ namespace DDD.Domain.Auth
 
 		private static bool ValidateFormat(string rawString)
 		{
+			if (rawString == null)
+				return false;
 			return Regex.IsMatch(rawString, Format, RegexOptions.IgnoreCase);
 		}
 
@@ -123,7 +164,7 @@ namespace DDD.Domain.Auth
 		{
 			if (!ValidateFormat(RawString))
 				throw new InvalidCredentialsException(
-					$"The token is not a valid jwt token string.");
+					$"The token is not a valid JWT token string.");
 		}
 
 		private void CheckSignature(string privateKey)
@@ -157,21 +198,14 @@ namespace DDD.Domain.Auth
 		
 			var expired = ValidTo < now;
 			var periodStarted = ValidFrom < now;
-		
+			
 			if (expired)
 				throw new InvalidCredentialsException("The token has expired.");
 		
 			if (!periodStarted)
 				throw new InvalidCredentialsException("The token is not valid yet.");
 		}
-		//
-		// private void CheckRoles(IEnumerable<IEnumerable<string>> roles)
-		// {
-		// 	var granted = roles.Any(rolesCombination => rolesCombination.IsSubsetOf(Roles));
-		// 	if (!granted)
-		// 		throw new ForbiddenException("You do not have required role(s).");
-		// }
-		
+
 		// Equality
 
 		public bool Equals(JwtToken other)

@@ -1,21 +1,23 @@
 ﻿using System.Threading.Tasks;
-using DDD.Domain;
 using DDD.Infrastructure.Ports.Adapters.Memory.Exceptions;
 using DDD.Logging;
-using Newtonsoft.Json;
 
 namespace DDD.Infrastructure.Ports.Adapters.Memory
 {
-	public class MemoryEventAdapter : EventAdapter
+	public class MemoryEventAdapter : EventAdapter<Subscription>
 	{
 		public MemoryEventAdapter(
 			string topic,
 			string client,
-			bool listenerAcksRequired,
-			bool publisherAcksRequired,
+			int maxDeliveryRetries,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter)
-			: base(topic, client, listenerAcksRequired, publisherAcksRequired, logger, monitoringAdapter)
+			: base(
+				topic, 
+				client, 
+				maxDeliveryRetries,
+				logger, 
+				monitoringAdapter)
 		{
 			
 		}
@@ -23,50 +25,66 @@ namespace DDD.Infrastructure.Ports.Adapters.Memory
 		public override async Task StartAsync()
 		{
 			IsStarted = true;
-
 			await Task.Yield();
 		}
 
 		public override async Task StopAsync()
 		{
 			IsStarted = false;
-
 			await Task.Yield();
 		}
 
 		public override Task<Subscription> SubscribeAsync(IEventListener listener)
 		{
-			var subscription = base.SubscribeAsync(listener);
-
-			// Start consuming
-			// TODO: Implement consumption..
-
-			return subscription;
+			var subscription = new Subscription(listener);
+			AddSubscription(subscription);
+			return Task.FromResult(subscription);
+		}
+		
+		public override async Task UnsubscribeAsync(IEventListener listener)
+		{
+			var subscription = GetSubscription(listener);
+			RemoveSubscription(subscription);
 		}
 
-		public async override Task AckAsync(IPubSubMessage message)
+		public override async Task AckAsync(IPubSubMessage message)
 		{
 			if (!(message is MemoryMessage))
+			{
 				throw new MemoryException(
 					"Expected IPubSubMessage to be a MemoryMessage. " +
 					"Something must be wrong with the implementation.");
+			}
 			else
 			{
 				var memoryMessage = (MemoryMessage)message;
-				// TODO: Ack..
+				
+				// Need no ack here since memory based event adapter will always succeed with delivery..
+				
 				await Task.Yield();
 			}
 		}
 
-		public override Task FlushAsync(OutboxEvent outboxEvent)
+		public override async Task FlushAsync(OutboxEvent outboxEvent)
 		{
-			var message = outboxEvent.JsonPayload;
+			if (!IsStarted)
+				throw new MemoryException("Can't flush event, memory event adapter is not started.");
 
-			// TODO: Send on bus..
+			var message = new MemoryMessage(outboxEvent.JsonPayload);
+
+			foreach (var sub in GetSubscriptions())
+			{
+				if (sub.EventName == outboxEvent.EventName)
+				{
+					if (sub.DomainModelVersion.ToStringWithWildcardBuild() ==
+					    outboxEvent.DomainModelVersion.ToStringWithWildcardBuild())
+					{
+						await sub.Listener.Handle(message);
+					}
+				}
+			}
 
 			base.FlushAsync(outboxEvent);
-
-			return Task.CompletedTask;
 		}
 	}
 }

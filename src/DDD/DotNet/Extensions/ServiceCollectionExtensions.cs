@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using DDD.Domain;
+using System.Text.Json.Serialization;
 using DDD.Domain.Auth;
 using DDD.Application.Exceptions;
 using DDD.Application.Settings.Exceptions;
@@ -15,11 +15,14 @@ using DDD.Infrastructure.Ports.Adapters.DotNet;
 using DDD.Infrastructure.Ports.Adapters.Http;
 using DDD.Infrastructure.Ports.Adapters.Memory;
 using DDD.Infrastructure.Ports.Adapters.Rabbit;
-using DDD.Infrastructure.Ports.Adapters.Repositories.Memory;
-using DDD.Infrastructure.Ports.Adapters.Repositories.Postgres;
 using DDD.Infrastructure.Ports.Adapters.ServiceBus;
 using DDD.Infrastructure.Ports.Adapters.Smtp;
 using DDD.Application.Settings;
+using DDD.Domain;
+using DDD.DotNet.HostedServices;
+using DDD.Infrastructure.Ports.Adapters.PubSub.Memory;
+using DDD.Infrastructure.Ports.Adapters.PubSub.Postgres;
+using DDD.Infrastructure.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NSwag;
@@ -35,19 +38,6 @@ namespace DDD.DotNet.Extensions
 
 		// public List<Type> RegisteredRepositoryTypes = new List<Type>();
 
-		public static IServiceCollection AddDdd(this IServiceCollection services, ISettings settings, IDomainModelVersion domainModelVersion)
-		{
-			services.AddAccessControl(settings);
-			services.AddEmail(settings);
-			services.AddHttpAdapter(settings);
-			services.AddHttpClient();
-			services.AddMonitoring(settings);
-			services.AddPersistence(settings);
-			services.AddPubSub(settings);
-			services.SetDomainModelVersion(domainModelVersion);
-			return services;
-		}
-		
 		public static IServiceCollection AddListener<TImplementation>(this IServiceCollection services)
 			where TImplementation : class, IEventListener
 		{
@@ -61,12 +51,12 @@ namespace DDD.DotNet.Extensions
 		
 		public static IServiceCollection AddAccessControl(this IServiceCollection services, ISettings settings)
 		{
-			services.AddSingleton<ICredentials, Credentials>();
+			services.AddScoped<ICredentials, Credentials>();
 			services.AddTransient<IAuthDomainService, AuthDomainService>();
 			return services;
 		}
 		
-		public static IServiceCollection AddEmail(this IServiceCollection services, ISettings settings)
+		public static IServiceCollection AddEmailAdapter(this IServiceCollection services, ISettings settings)
 		{
 			if (settings.Email.Provider == EmailProvider.Smtp)
 			{
@@ -85,13 +75,22 @@ namespace DDD.DotNet.Extensions
 			return services;
 		}
 		
-		public static IServiceCollection AddHttpAdapter(this IServiceCollection services, ISettings settings)
+		public static IMvcCoreBuilder AddHttpAdapter(this IServiceCollection services, ISettings settings)
 		{
+			var builder = services
+				.AddMvcCore(config => { })
+				.AddJsonOptions(opts =>
+				{
+					opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+				});
+			
+			services.AddHttpClient();
 			services.AddHttpAdapterDocs(settings);
 			services.AddCorsPolicy(settings);
-			return services;
+			
+			return builder;
 		}
-		
+
 		public static IServiceCollection AddMonitoring(this IServiceCollection services, ISettings settings)
 		{
 			if (settings.Monitoring.Provider == MonitoringProvider.Memory)
@@ -128,20 +127,22 @@ namespace DDD.DotNet.Extensions
 		{
 			services.AddPublishers(settings);
 			services.AddEventAdapters(settings);
-			services.AddEventRepository(settings);
+			services.AddOutbox(settings);
+			services.AddDeadLetterQueue(settings);
+			if (settings.PubSub.PublisherEnabled)
+			{
+				services.AddTransient<IPublisherService, PublisherService>();
+				services.AddHostedService<PublisherHostedService>();
+			}
 			return services;
 		}
 
-		// TODO: Remove and use DomainModelVersion.Latest() everywhere instead.
-		public static IServiceCollection SetDomainModelVersion(this IServiceCollection services, IDomainModelVersion domainModelVersion)
+		public static IServiceCollection AddAction<TAction, TCommand>(this IServiceCollection services)
 		{
-			services.AddSingleton<IDomainModelVersion>(domainModelVersion);
-			services.AddSingleton<DomainModelVersion>((DomainModelVersion)domainModelVersion);
+			services.AddTransient(typeof(TAction));
+			services.AddTransient(typeof(TCommand));
 			return services;
 		}
-
-		// public static IServiceCollection SetDomainModelVersion(this IServiceCollection services, int major, int minor, int build)
-		// 	=> services.AddSingleton<IDomainModelVersion>(DomainModelVersion.Create(major, minor, build));
 		
 		public static IServiceCollection AddRepository<TPort, TAdapter>(this IServiceCollection services)
 			where TAdapter : class
@@ -161,7 +162,8 @@ namespace DDD.DotNet.Extensions
 				options.AddDefaultPolicy(
 					policy => { policy
 						.WithOrigins(settings.Http.Cors.AllowedOrigins.ToArray())
-						.AllowAnyHeader().WithMethods("GET", "POST", "DELETE");
+						.AllowAnyHeader()
+						.WithMethods("GET", "POST", "PUT", "DELETE");
 					});
 			});
 			return services;
@@ -191,20 +193,39 @@ namespace DDD.DotNet.Extensions
 			return services;
 		}
 		
-		private static IServiceCollection AddEventRepository(this IServiceCollection services, ISettings settings)
+		private static IServiceCollection AddOutbox(this IServiceCollection services, ISettings settings)
 		{
 			if (settings.Persistence.Provider == PersistenceProvider.Memory)
 			{
-				services.AddRepository<IEventRepository, MemoryEventRepository>();
+				services.AddSingleton<IOutbox, MemoryOutbox>();
 			}
 			else if (settings.Persistence.Provider == PersistenceProvider.Postgres)
 			{
-				services.AddRepository<IEventRepository, PostgresEventRepository>();
+				services.AddSingleton<IOutbox, PostgresOutbox>();
 			}
 			else
 			{
 				throw new DddException(
-					$"Can't add event repository, unsupported persistence provider " +
+					$"Can't add outbox, unsupported persistence provider " +
+					$"in config: '{settings.Persistence.Provider}'.");
+			}
+			return services;
+		}
+		
+		private static IServiceCollection AddDeadLetterQueue(this IServiceCollection services, ISettings settings)
+		{
+			if (settings.Persistence.Provider == PersistenceProvider.Memory)
+			{
+				services.AddSingleton<IDeadLetterQueue, MemoryDeadLetterQueue>();
+			}
+			else if (settings.Persistence.Provider == PersistenceProvider.Postgres)
+			{
+				services.AddSingleton<IDeadLetterQueue, PostgresDeadLetterQueue>();
+			}
+			else
+			{
+				throw new DddException(
+					$"Can't add dead letter queue, unsupported persistence provider " +
 					$"in config: '{settings.Persistence.Provider}'.");
 			}
 			return services;
@@ -364,7 +385,9 @@ namespace DDD.DotNet.Extensions
 			{
 				context.Document.Info.Version = "all versions";
 				context.Document.Info.Description =
-					"These are the available domain actions.";
+					"The API versioning policy is additive.<br>" +
+					"All endpoints with the same major/minor version pairs are backwards compatible.<br>" +
+					"Only the APIs with the latest patch version of each major/minor version pair are defined below.";
 			}
 		}
 

@@ -1,4 +1,6 @@
-﻿namespace DDD.Application.Settings
+﻿using Microsoft.Extensions.Options;
+
+namespace DDD.Application.Settings
 {
 	public class Settings : ISettings
 	{
@@ -13,28 +15,18 @@
 		public IPubSubSettings PubSub { get; }
 		public IRabbitSettings Rabbit { get; }
 
-		public Settings(
-			IAuthSettings authSettings,
-			IAzureSettings azureSettings,
-			IEmailSettings emailSettings,
-			IGeneralSettings generalSettings,
-			IHttpSettings httpSettings,
-			IMonitoringSettings monitoringSettings,
-			IPersistenceSettings persistenceSettings,
-			IPostgresSettings postgresSettings,
-			IPubSubSettings pubSubSettings,
-			IRabbitSettings rabbitSettings)
+		public Settings(IOptions<Options> options)
 		{
-			Auth = authSettings;
-			Azure = azureSettings;
-			Email = emailSettings;
-			General = generalSettings;
-			Http = httpSettings;
-			Monitoring = monitoringSettings;
-			Persistence = persistenceSettings;
-			Postgres = postgresSettings;
-			PubSub = pubSubSettings;
-			Rabbit = rabbitSettings;
+			Auth = new AuthSettings(options);
+			Azure = new AzureSettings(new ServiceBusSettings(options));    // TODO: Normalize constructor
+			Email = new EmailSettings(options);
+			General = new GeneralSettings(options);
+			Http = new HttpSettings(options);
+			Monitoring = new MonitoringSettings(options);
+			Persistence = new PersistenceSettings(options);
+			Postgres = new PostgresSettings(options);
+			PubSub = new PubSubSettings(options);
+			Rabbit = new RabbitSettings(options);
 		}
 	}
 }

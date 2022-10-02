@@ -6,22 +6,30 @@ namespace DDD.Infrastructure.Ports
 {
 	public class OutboxEvent : IEquatable<OutboxEvent>
 	{
+		public string Id { get; set; }
 		public EventId EventId { get; set; }
 		public ActionId ActionId { get; set; }
 		public string EventName { get; set; }
 		public DomainModelVersion DomainModelVersion { get; set; }
 		public bool IsDomainEvent { get; set; }
+		public DateTime AddedAt { get; set; }
+		public bool IsPublishing { get; set; }
+		public int NumDeliveryFailures { get; set; }
 		public string JsonPayload { get; set; }
 
 		public OutboxEvent() { }
 
 		public OutboxEvent(IEvent theEvent)
 		{
-			IsDomainEvent = theEvent.GetType().IsSubclassOf(typeof(DomainEvent));
-			EventId = theEvent.EventId;
-			ActionId = theEvent.ActionId;
-			EventName = theEvent.EventName;
-			DomainModelVersion = theEvent.DomainModelVersion;
+			Id = Guid.NewGuid().ToString();
+			EventId = theEvent.Header.EventId;
+			ActionId = theEvent.Header.ActionId;
+			EventName = theEvent.Header.Name;
+			DomainModelVersion = theEvent.Header.DomainModelVersion;
+			IsDomainEvent = theEvent.Header.EventType == EventType.DomainEvent;
+			AddedAt = DateTime.UtcNow;
+			IsPublishing = false;
+			NumDeliveryFailures = theEvent.Header.NumDeliveryFailures;
 			JsonPayload = JsonConvert.SerializeObject(theEvent);
 		}
 		
@@ -31,7 +39,7 @@ namespace DDD.Infrastructure.Ports
 		{
 			if (ReferenceEquals(null, other)) return false;
 			if (ReferenceEquals(this, other)) return true;
-			return Equals(EventId, other.EventId) && Equals(ActionId, other.ActionId) && EventName == other.EventName && Equals(DomainModelVersion, other.DomainModelVersion) && IsDomainEvent == other.IsDomainEvent && JsonPayload == other.JsonPayload;
+			return AddedAt.Equals(other.AddedAt) && Equals(EventId, other.EventId) && Equals(ActionId, other.ActionId) && EventName == other.EventName && Equals(DomainModelVersion, other.DomainModelVersion) && IsDomainEvent == other.IsDomainEvent && IsPublishing == other.IsPublishing && JsonPayload == other.JsonPayload;
 		}
 
 		public override bool Equals(object obj)
@@ -44,7 +52,7 @@ namespace DDD.Infrastructure.Ports
 
 		public override int GetHashCode()
 		{
-			return HashCode.Combine(EventId, ActionId, EventName, DomainModelVersion, IsDomainEvent, JsonPayload);
+			return HashCode.Combine(AddedAt, EventId, ActionId, EventName, DomainModelVersion, IsDomainEvent, IsPublishing, JsonPayload);
 		}
 
 		public static bool operator ==(OutboxEvent left, OutboxEvent right)

@@ -12,8 +12,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Rabbit
 			base(
 				"Interchange",
 				settings.General.Context,
-				settings.PubSub.ListenerAcksRequired,
-				settings.PubSub.PublisherAcksRequired,
+				settings.PubSub.MaxDeliveryRetries,
 				settings.Rabbit.Host,
 				settings.Rabbit.Port,
 				logger,

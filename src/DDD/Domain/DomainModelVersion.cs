@@ -1,52 +1,33 @@
 ﻿using System;
+using System.Collections.Generic;
 using DDD.Application.Exceptions;
 
 namespace DDD.Domain
 {
-	public class DomainModelVersion : IDomainModelVersion, IEquatable<DomainModelVersion>
+	public class DomainModelVersion : IEquatable<DomainModelVersion>, IComparable<DomainModelVersion>
 	{
 		private Version _version { get; set; }
 
-		private DomainModelVersion() {}
+		public DomainModelVersion(string dotString)
+		{
+			if (string.IsNullOrEmpty(dotString))
+				throw new DddException($"The dotString must be of format 'x.x.x'. Was: '{dotString}'.");
+		
+			_version = new Version(dotString);
+		}
+		
+		public DomainModelVersion(int major, int minor, int build)
+		{
+			_version = new Version(major, minor, build);
+		}
 		
 		// Public API
 
-		public static DomainModelVersion Latest()
-		{
-			var version = new DomainModelVersion
-			{
-				_version = new Version(1, 0, 1)
-			};
-			return version;			
-		}
-		
-		public static DomainModelVersion Create(string dotString)
-		{
-			if (dotString == null || dotString == "")
-				// dotString = "9.9.9";
-				throw new DddException($"The dotString must be of format 'x.x.x'. Was: '{dotString}'.");
-			
-			var version = new DomainModelVersion
-			{
-				_version = new Version(dotString)
-			};
-			return version;
-		}
-
-		public static DomainModelVersion Create(
-			int major,
-			int minor,
-			int build)
-		{
-			var version = new DomainModelVersion
-			{
-				_version = new Version(major, minor, build)
-			};
-			return version;
-		}
-
 		public override string ToString()
 			=> _version.ToString();
+		
+		public string ToStringWithWildcardBuild()
+			=> $"{_version.Major}.{_version.Minor}.*";
 
 		// Equality
 
@@ -82,7 +63,9 @@ namespace DDD.Domain
 
 		public int CompareTo(DomainModelVersion other)
 		{
-			return _version.CompareTo(other._version);
+			if (ReferenceEquals(this, other)) return 0;
+			if (ReferenceEquals(null, other)) return 1;
+			return Comparer<Version>.Default.Compare(_version, other._version);
 		}
 		
 		public static bool operator <(DomainModelVersion left, DomainModelVersion right)

@@ -28,10 +28,7 @@ namespace DDD.DotNet.Middleware
             credentials.JwtToken = null;
 
             if (_settings.Auth.Enabled)
-			{
-                var jwtToken = GetJwtToken(context);
-                credentials.JwtToken = jwtToken;
-            }
+			    credentials.JwtToken = GetJwtToken(context);
 
             await _next(context);
         }

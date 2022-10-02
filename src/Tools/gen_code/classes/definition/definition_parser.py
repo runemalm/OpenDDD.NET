@@ -9,6 +9,7 @@ from classes.definition.http_adapter_command_definition import HttpAdapterComman
 from classes.definition.endpoint_definition import EndpointDefinition
 from classes.param import Param
 from classes.property import Property
+from classes.utils import Utils
 
 
 class DefinitionParser:
@@ -29,17 +30,20 @@ class DefinitionParser:
         cd = d['Command']
         definitions.add(self._parse_command(cd, action.name))
 
-      for version, vd in yml['Adapters']['Http'].items():
-        for d in vd['Endpoints']:
-          endpoint = self._parse_http_endpoint(d, version)
-          definitions.add(endpoint)
+      for key, vd in yml['Adapters']['Http'].items():
+        if Utils.is_wildcard_http_version_string(key):
+          version = key
+          for d in vd['Endpoints']:
+            endpoint = self._parse_http_endpoint(d, version)
+            definitions.add(endpoint)
 
-          cd = d['Command']
-          definitions.add(self._parse_http_command(cd, endpoint.name, version))
+            cd = d['Command']
+            definitions.add(self._parse_http_command(cd, endpoint.name, version))
 
-        for ct in vd['CommandTranslators']:
-          command_translator = self._parse_http_command_translator(ct, version)
-          definitions.add(command_translator)
+        elif key == "CommandTranslators":
+          for ct in vd:
+            command_translator = self._parse_http_command_translator(ct)
+            definitions.add(command_translator)
 
       for d in yml['Aggregates']:
         aggregate = self._parse_aggregate(d)
@@ -89,11 +93,10 @@ class DefinitionParser:
     definition.entity_is_aggregate = entity_is_aggregate
     return definition
 
-  def _parse_http_command_translator(self, d, version):
+  def _parse_http_command_translator(self, d):
     definition = CommandTranslatorDefinition()
 
     definition.name = d['Name']
-    definition.version = version
 
     return definition
 

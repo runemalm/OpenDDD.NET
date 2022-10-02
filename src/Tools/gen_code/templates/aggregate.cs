@@ -6,7 +6,7 @@ using DDD.Domain.Validation;
 
 namespace Domain.Model.{{ class_name }}
 {
-    public class {{ class_name }} : IAggregate, IEquatable<{{ class_name }}>
+    public class {{ class_name }} : BuildingBlock, IAggregate, IEquatable<{{ class_name }}>
     {
         public {{ class_name }}Id {{ class_name }}Id { get; set; }
         EntityId IAggregate.Id => {{ class_name }}Id;

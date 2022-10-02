@@ -2,6 +2,7 @@
 {
 	public enum AuthMethod
 	{
+		Unknown,
 		AzureOidc,
 		SimpleOidc
 	}

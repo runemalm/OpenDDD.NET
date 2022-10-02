@@ -4,12 +4,16 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DDD.Domain;
-using DDD.Application.Exceptions;
 
 namespace DDD.Infrastructure.Converters
 {
     public class EntityIdConverter : JsonConverterFactory
     {
+        public EntityIdConverter()
+        {
+            
+        }
+        
         public override bool CanConvert(Type typeToConvert)
         {
             return typeToConvert.IsSubclassOf(typeof(EntityId));
@@ -42,56 +46,13 @@ namespace DDD.Infrastructure.Converters
                 Type typeToConvert,
                 JsonSerializerOptions options)
             {
-                var domainModelVersion = DomainModelVersion.Latest();
                 var value = reader.GetString();
                 
                 var entityId = 
-                    typeToConvert.GetMethod("Create", new [] {typeof(DomainModelVersion), typeof(string)})
-                        .Invoke(null, new object[] { domainModelVersion, value });
+                    typeToConvert.GetMethod("Create", new [] {typeof(string)})
+                        .Invoke(null, new object[] { value });
                 
                 return (T)entityId;
-                
-                
-                // if (reader.TokenType != JsonTokenType.StartObject)
-                // {
-                //     throw new JsonException();
-                // }
-                //
-                // string domainModelVersionString = "";
-                // string value = "";
-                //
-                // while (reader.Read())
-                // {
-                //     if (reader.TokenType == JsonTokenType.EndObject)
-                //     {
-                //         var domainModelVersion = DomainModelVersion.Create(domainModelVersionString);
-                //         var entityId = 
-                //             typeToConvert.GetMethod("Create", new [] {typeof(DomainModelVersion), typeof(string)})
-                //                 .Invoke(null, new object[] { domainModelVersion, value });
-                //
-                //         return (T)entityId;
-                //     }
-                //
-                //     // Get the key.
-                //     if (reader.TokenType != JsonTokenType.PropertyName)
-                //     {
-                //         throw new JsonException();
-                //     }
-                //
-                //     string? propertyName = reader.GetString();
-                //
-                //     reader.Read();
-                //
-                //     if (propertyName == propertyNameAccordingToNamingPolicy("Value", options))
-                //         value = reader.GetString();
-                //     else if (propertyName == propertyNameAccordingToNamingPolicy("DomainModelVersion", options))
-                //         domainModelVersionString = reader.GetString();
-                //     else
-                //         throw new DddException(
-                //             $"Unexpected property name in JSON string when trying to convert EntityId: '{propertyName}'");
-                // }
-                //
-                // throw new JsonException();
             }
         
             public override void Write(
@@ -100,13 +61,6 @@ namespace DDD.Infrastructure.Converters
                 JsonSerializerOptions options)
             {
                 writer.WriteStringValue(entityId.Value);
-                
-                // writer.WriteStartObject();
-                //
-                // writer.WriteString(propertyNameAccordingToNamingPolicy("Value", options), entityId.Value);
-                // writer.WriteString(propertyNameAccordingToNamingPolicy("DomainModelVersion", options), entityId.DomainModelVersion.ToString());
-                //
-                // writer.WriteEndObject();
             }
 
             private string propertyNameAccordingToNamingPolicy(string input, JsonSerializerOptions options)

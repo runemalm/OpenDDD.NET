@@ -17,14 +17,15 @@ export $(shell sed 's/=.*//' env.make)
 ##########################################################################
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
-NETWORK := dddfordotnet
-BUILD_VERSION := 0.9.0-alpha6
+NETWORK := ddddotnetcore
+BUILD_VERSION := 0.9.1-alpha.5
 
 SRC_DIR := $(PWD)/src
 DDD_DIR := $(SRC_DIR)/DDD
 BUILD_DIR := $(DDD_DIR)/DDD/bin
 TESTS_DIR := $(SRC_DIR)/DDD.Tests
 TOOLS_DIR := $(SRC_DIR)/Tools
+PROJECT_TEMPLATES_DIR := $(SRC_DIR)/Templates
 FEED_DIR := $(HOME)/Projects/LocalFeed
 USER_NUGET_CONFIG_DIR=$(HOME)/.config/NuGet/NuGet.Config
 
@@ -112,14 +113,31 @@ pack: ##@Build	 Create the nuget in local feed
 	cd $(SRC_DIR) && \
 	dotnet pack -c Release -o $(FEED_DIR) -p:PackageVersion=$(BUILD_VERSION)
 
+.PHONY: push
+push: ##@Build	 Push the nuget to the global feed
+	cd $(FEED_DIR) && \
+	dotnet nuget push DDD.NETCore.$(BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
+
 ##########################################################################
 # TOOLS
 ##########################################################################
 
 .PHONY: build-tools-image
 build-tools-image: ##@Tools	Build the tools image
-	cd $(TOOLS_DIR) && docker build --progress plain -t runemalm/dddfordotnet-tools .
+	cd $(TOOLS_DIR) && docker build --progress plain -t runemalm/dddnetcore-tools .
 
 .PHONY: push-tools-image
 push-tools-image: ##@Tools	Push the tools image
 	echo "TODO..."
+
+##########################################################################
+# PROJECT TEMPLATES
+##########################################################################
+
+.PHONY: uninstall-template-net60
+uninstall-template-net60: ##@Project Templates	Uninstall the .Net 6.0 project template
+	cd $(PROJECT_TEMPLATES_DIR)/BoundedContextNet60 && dotnet new --uninstall .
+
+.PHONY: install-template-net60
+install-template-net60: ##@Project Templates	Install the .Net 6.0 project template
+	cd $(PROJECT_TEMPLATES_DIR)/BoundedContextNet60 && dotnet new --install .

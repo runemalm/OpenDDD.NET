@@ -35,7 +35,7 @@ class Definitions:
 				if definition.name == name:
 					return definition
 			elif what == "http_command_translator" and type(definition) == CommandTranslatorDefinition:
-				if definition.name == name and definition.version == version:
+				if definition.name == name:
 					return definition
 			elif what == "http_command" and type(definition) == HttpAdapterCommandDefinition:
 				if definition.name == name and definition.version == version:

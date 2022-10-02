@@ -3,12 +3,15 @@ using System.Threading.Tasks;
 using DDD.Logging;
 using DDD.Application;
 using DDD.Domain.Auth;
-using Application.Actions.Commands;
 using DDD.Application.Settings;
+using DDD.Domain;
+using DDD.Infrastructure.Persistence;
+using DDD.Infrastructure.Ports;
+using Application.Actions.Commands;
 
 namespace Application.Actions
 {
-    public class {{class_name}} : Action<{{command_name}}, {{return_class_name}}>
+    public class {{class_name}} : DDD.Application.Action<{{command_name}}, {{return_class_name}}>
     {
         private readonly ISettings _settings;
         private readonly ILogger _logger;
@@ -16,25 +19,30 @@ namespace Application.Actions
         public {{class_name}}(
             IAuthDomainService authDomainService,
             ISettings settings,
-            ILogger logger) : base(authDomainService)
+            ILogger logger,
+            IDomainPublisher domainPublisher,
+            IInterchangePublisher interchangePublisher,
+            IOutbox outbox,
+            IPersistenceService persistenceService) 
+            : base(authDomainService, domainPublisher, interchangePublisher, outbox, persistenceService)
         {
             _settings = settings;
             _logger = logger;
         }
 
-        [Transactional]
-        public override Task<{{return_class_name}}> ExecuteAsync(
+        public override async Task<{{return_class_name}}> ExecuteAsync(
             {{command_name}} command,
+            ActionId actionId,
             CancellationToken ct)
         {
             throw new System.NotImplementedException("Auto-generated action has not been implemented.");
 
-            // // Validate command
-            // Validate(command);
-            //
             // // Run
             // // ...
             // var xxx = {{return_class_name}}.Create(_settings);
+            //
+            // // Persist
+            // await ...
             //
             // // Return
             // return Task.FromResult(xxx);

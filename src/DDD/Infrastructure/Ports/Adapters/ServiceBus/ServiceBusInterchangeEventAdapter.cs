@@ -8,12 +8,11 @@ namespace DDD.Infrastructure.Ports.Adapters.ServiceBus
 		public ServiceBusInterchangeEventAdapter(
 			ISettings settings,
 			ILogger logger,
-			IMonitoringPort monitoringAdapter) :
-			base(
+			IMonitoringPort monitoringAdapter) 
+			: base(
 				"Interchange",
 				settings.General.Context,
-				settings.PubSub.ListenerAcksRequired,
-				settings.PubSub.PublisherAcksRequired,
+				settings.PubSub.MaxDeliveryRetries,
 				settings.Azure.ServiceBus.ConnString,
 				settings.Azure.ServiceBus.SubName,
 				logger,

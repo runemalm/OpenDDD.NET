@@ -15,8 +15,7 @@ namespace DDD.Application.Settings
 		public RabbitSettings(IOptions<Options> options)
 		{
 			var host = options.Value.RABBIT_HOST;
-			int port;
-			Int32.TryParse(options.Value.RABBIT_PORT, out port);
+			int.TryParse(options.Value.RABBIT_PORT, out var port);
 
 			var username = options.Value.RABBIT_USERNAME;
 			var password = options.Value.RABBIT_PASSWORD;

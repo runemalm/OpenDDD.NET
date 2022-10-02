@@ -9,14 +9,14 @@ namespace DDD.Infrastructure.Converters
     {
         public override bool CanConvert(Type typeToConvert)
         {
-            return typeToConvert == typeof(DomainModelVersion) || typeToConvert == typeof(IDomainModelVersion);
+            return typeToConvert == typeof(DomainModelVersion) || typeToConvert == typeof(DomainModelVersion);
         }
 
         public override DomainModelVersion Read(
             ref Utf8JsonReader reader,
             Type typeToConvert,
             JsonSerializerOptions options) =>
-            DomainModelVersion.Create(reader.GetString());
+            new DomainModelVersion(reader.GetString());
 
         public override void Write(
             Utf8JsonWriter writer,

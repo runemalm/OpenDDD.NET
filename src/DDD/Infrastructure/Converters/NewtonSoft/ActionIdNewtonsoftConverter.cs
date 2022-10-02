@@ -20,35 +20,3 @@ namespace DDD.Infrastructure.Converters.NewtonSoft
         }
     }
 }
-
-
-// using System;
-// using DDD.Domain;
-// using Newtonsoft.Json;
-//
-// namespace DDD.Infrastructure.Converters.NewtonSoft
-// {
-//     public class ActionIdNewtonsoftConverter : JsonConverter
-//     {
-//         public override bool CanConvert(Type type)
-//         {
-//             return type == typeof(ActionId);
-//         }
-//  
-//         public override object ReadJson(
-//             JsonReader reader,
-//             Type type,
-//             object value,
-//             JsonSerializer serializer)
-//             => new ActionId() { Value = reader.ReadAsString() };
-//
-//         public override void WriteJson(
-//             JsonWriter writer,
-//             object value,
-//             JsonSerializer serializer)
-//         {
-//             var actionId = (ActionId)value;
-//             writer.WriteValue(actionId.Value);
-//         }
-//     }
-// }

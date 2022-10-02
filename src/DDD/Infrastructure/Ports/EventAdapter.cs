@@ -11,17 +11,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using JsonSerializer = System.Text.Json.JsonSerializer;
-
-// using SystemJsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DDD.Infrastructure.Ports
 {
-	public abstract class EventAdapter : IEventAdapter
+	public abstract class EventAdapter<TSub> : IEventAdapter where TSub : Subscription
 	{
 		protected string _context;
 		protected string _client;
-		private ICollection<Subscription> _subscriptions = new List<Subscription>();
+		private ICollection<TSub> _subscriptions = new List<TSub>();
 		private IDictionary<ActionId, ICollection<IEvent>> _published = new Dictionary<ActionId, ICollection<IEvent>>();
 		private IDictionary<ActionId, ICollection<OutboxEvent>> _flushed = new Dictionary<ActionId, ICollection<OutboxEvent>>();
 		public bool IsStarted = false;
@@ -29,11 +26,13 @@ namespace DDD.Infrastructure.Ports
 		public bool IsStopping = false;
 		protected ILogger _logger;
 		protected IMonitoringPort _monitoringAdapter;
-		private bool _listenerAcksRequired;
-		private bool _publisherAcksRequired;
+		public int MaxDeliveryRetries { get; }
 
 		public abstract Task StartAsync();
 		public abstract Task StopAsync();
+		public abstract Task<Subscription> SubscribeAsync(IEventListener listener);
+		public abstract Task UnsubscribeAsync(IEventListener listener);
+		public abstract Task AckAsync(IPubSubMessage message);
 
 		protected readonly JsonSerializerSettings _jsonSerializerSettings =
 			new JsonSerializerSettings
@@ -55,71 +54,26 @@ namespace DDD.Infrastructure.Ports
 		public EventAdapter(
 			string context,
 			string client,
-			bool listenerAcksRequired,
-			bool publisherAcksRequired,
+			int maxDeliveryRetries,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter)
 		{
 			_context = context;
 			_client = client;
-			_listenerAcksRequired = listenerAcksRequired;
-			_publisherAcksRequired = publisherAcksRequired;
+			MaxDeliveryRetries = maxDeliveryRetries;
 			_logger = logger;
 			_monitoringAdapter = monitoringAdapter;
 		}
 
-		public abstract Task AckAsync(IPubSubMessage message);
-
-		protected async Task Handle(IPubSubMessage message, IEventListener listener)
-		{
-			if (_listenerAcksRequired)
-			{
-				await listener.React(message);
-				await AckAsync(message);
-			}
-			else
-			{
-				await AckAsync(message);
-				await listener.React(message);
-			}
-		}
-
-		public virtual Task<Subscription> SubscribeAsync(IEventListener listener)
-		{
-			if (!IsStarted)
-				throw new PubSubException(
-					"Event adapter must be started before you can subscribe.");
-
-			var subscription = GetSubscription(listener);
-
-			if (subscription != null)
-				throw new Exception(
-					"Can't subscribe, we have already subscribed for that " +
-					"event in this event adapter. Only one subscription " +
-					"per event and adapter is allowed.");
-
-			subscription = CreateSubscription(listener);
-
-			AddSubscription(subscription);
-
-			return Task.FromResult(subscription);
-		}
-
-		private Subscription CreateSubscription(IEventListener listener)
-		{
-			var subscription = new Subscription(listener);
-			return subscription;
-		}
-
-		private void AddSubscription(Subscription subscription)
+		protected void AddSubscription(TSub subscription)
 		{
 			_subscriptions.Add(subscription);
 		}
 
-		private Subscription GetSubscription(IEventListener listener)
+		protected TSub GetSubscription(IEventListener listener)
 			=> GetSubscription(listener.ListensTo, listener.ListensToVersion);
 
-		private Subscription GetSubscription(string eventName, IDomainModelVersion domainModelVersion)
+		protected TSub GetSubscription(string eventName, DomainModelVersion domainModelVersion)
 		{
 			foreach (var subscription in _subscriptions)
 				if (subscription.EventName == eventName &&
@@ -128,9 +82,18 @@ namespace DDD.Infrastructure.Ports
 			return null;
 		}
 
-		public IEnumerable<Subscription> GetSubscriptions()
+		protected IEnumerable<TSub> GetSubscriptions()
 		{
 			return _subscriptions;
+		}
+		
+		protected void RemoveSubscription(TSub subscription)
+		{
+			_subscriptions = 
+				_subscriptions
+					.Where(s =>
+						!(s.EventName == subscription.EventName && s.DomainModelVersion == subscription.DomainModelVersion))
+					.ToList();
 		}
 
 		public virtual Task PublishAsync(IEvent theEvent)
@@ -138,12 +101,12 @@ namespace DDD.Infrastructure.Ports
 			/*
 			 * Add event to the outbox.
 			 */
-			if (!_published.ContainsKey(theEvent.ActionId))
-				_published.Add(theEvent.ActionId, new List<IEvent>());
-			_published[theEvent.ActionId].Add(theEvent);
+			if (!_published.ContainsKey(theEvent.Header.ActionId))
+				_published.Add(theEvent.Header.ActionId, new List<IEvent>());
+			_published[theEvent.Header.ActionId].Add(theEvent);
 			return Task.CompletedTask;
 		}
-
+		
 		public bool HasPublished(IEvent theEvent)
 		{
 			CompareLogic compareLogic = new CompareLogic();
@@ -172,18 +135,18 @@ namespace DDD.Infrastructure.Ports
 			{
 				foreach (var o in outboxEvents)
 				{
-					if (o.EventName == theEvent.EventName)
+					if (o.EventName == theEvent.Header.Name)
 					{
 						var theEventObject = (JObject)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(theEvent));
 						var flushedEventObject = (JObject)JsonConvert.DeserializeObject(o.JsonPayload);
 
-						theEventObject.Remove("eventId");
-						theEventObject.Remove("actionId");
-						theEventObject.Remove("occuredAt");
-						flushedEventObject.Remove("eventId");
-						flushedEventObject.Remove("actionId");
-						flushedEventObject.Remove("occuredAt");
-					
+						((JObject)theEventObject["header"]).Remove("eventId");
+						((JObject)theEventObject["header"]).Remove("actionId");
+						((JObject)theEventObject["header"]).Remove("occuredAt");
+						((JObject)flushedEventObject["header"]).Remove("eventId");
+						((JObject)flushedEventObject["header"]).Remove("actionId");
+						((JObject)flushedEventObject["header"]).Remove("occuredAt");
+
 						var isEqual = JObject.DeepEquals(theEventObject, flushedEventObject);
 
 						if (isEqual)
@@ -205,20 +168,8 @@ namespace DDD.Infrastructure.Ports
 
 		public virtual Task FlushAsync(OutboxEvent outboxEvent)
 		{
-			var hasPublished =
-				_published.ContainsKey(outboxEvent.ActionId) &&
-				_published[outboxEvent.ActionId].Any(o => o.EventId == outboxEvent.EventId);
-
-			if (!hasPublished)
-			{
-				var eventName = PropertyInOutboxEvent<string>("EventName", outboxEvent);
-				throw new PubSubException(
-					$"Can't flush event '{eventName}' because it hasn't been published.");
-			}
-
 			RemoveFromPublished(outboxEvent);
 			AddToFlushed(outboxEvent);
-
 			return Task.CompletedTask;
 		}
 		
@@ -227,7 +178,9 @@ namespace DDD.Infrastructure.Ports
 			if (_published.ContainsKey(outboxEvent.ActionId))
 			{
 				_published[outboxEvent.ActionId] =
-					_published[outboxEvent.ActionId].Where(o => o.EventId != outboxEvent.EventId).ToList();
+					_published[outboxEvent.ActionId].Where(
+						o => 
+							o.Header.EventId != outboxEvent.EventId).ToList();
 			}
 		}
 		
@@ -249,25 +202,22 @@ namespace DDD.Infrastructure.Ports
 			throw new NotImplementedException();
 		}
 
-		public string SerializeEvent(IEvent theEvent)
-			=> JsonConvert.SerializeObject(theEvent, _jsonSerializerSettings);
-
 		public string TopicForEvent(IEvent theEvent)
-			=> TopicForEvent(theEvent.EventName, theEvent.DomainModelVersion);
+			=> TopicForEvent(theEvent.Header.Name, theEvent.Header.DomainModelVersion);
 
 		public string TopicForEvent(IEventListener listener)
 			=> TopicForEvent(listener.ListensTo, listener.ListensToVersion);
 
-		public string TopicForEvent(string eventName, IDomainModelVersion domainModelVersion)
-			=> $"{_context}-{eventName}-{domainModelVersion}";
+		public string TopicForEvent(string eventName, DomainModelVersion domainModelVersion)
+			=> $"{_context}-{eventName}-{domainModelVersion.ToStringWithWildcardBuild()}";
 
 		public string TopicSubscriptionForEvent(IEvent theEvent)
-			=> TopicSubscriptionForEvent(theEvent.EventName, theEvent.DomainModelVersion);
+			=> TopicSubscriptionForEvent(theEvent.Header.Name, theEvent.Header.DomainModelVersion);
 
 		public string TopicSubscriptionForEvent(IEventListener listener)
 			=> TopicSubscriptionForEvent(listener.ListensTo, listener.ListensToVersion);
 
-		public string TopicSubscriptionForEvent(string eventName, IDomainModelVersion domainModelVersion)
+		public string TopicSubscriptionForEvent(string eventName, DomainModelVersion domainModelVersion)
 			=> $"{TopicForEvent(eventName, domainModelVersion)}-{_client}";
 
 		public string GetContext()

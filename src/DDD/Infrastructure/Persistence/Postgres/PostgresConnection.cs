@@ -87,39 +87,23 @@ namespace DDD.Infrastructure.Persistence.Postgres
                 {
                     var aggregate = JsonSerializer.Deserialize<T>(reader.GetFieldValue<string>(1));
                     aggregates.Add(aggregate);
-                    
-                    // if (typeof(T) == typeof(IEvent))
-                    // {
-                    //     // Temp, find better way later..
-                    //     var settings =
-                    //         new JsonSerializerSettings()
-                    //         {
-                    //             TypeNameHandling = TypeNameHandling.All,
-                    //             TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full,
-                    //             ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                    //             Converters = new List<JsonConverter>()
-                    //             {
-                    //                 new StringEnumConverter(),
-                    //                 new ActionIdNewtonsoftConverter(),
-                    //                 new EventIdNewtonsoftConverter(),
-                    //                 // new EntityIdNewtonsoftConverter(),
-                    //                 new DomainModelVersionNewtonsoftConverter()
-                    //             }
-                    //         };
-                    //     
-                    //     var aggregate2 = JsonConvert.DeserializeObject(reader.GetFieldValue<string>(1), settings);
-                    //     var aggregate = JsonConvert.DeserializeObject(reader.GetFieldValue<string>(1), settings);
-                    //     aggregates.Add((T)aggregate);
-                    // }
-                    // else
-                    // {
-                    //     var aggregate = JsonConvert.DeserializeObject<T>(reader.GetFieldValue<string>(1));
-                    //     aggregates.Add(aggregate);
-                    // }
                 }
             }
 
             return aggregates;
+        }
+        
+        public override async Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object> parameters)
+        {
+            var cmd = new NpgsqlCommand(stmt, _sqlConn, _sqlTrx);
+
+            if (parameters != null)
+                foreach (KeyValuePair<string, object> kvp in parameters)
+                    cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
+
+            T scalar = (T)await cmd.ExecuteScalarAsync();
+
+            return scalar;
         }
     }
 }

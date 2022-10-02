@@ -9,9 +9,7 @@ namespace DDD.Domain
 	{
 		public readonly string Value;
 		
-		public EntityId(DomainModelVersion domainModelVersion) : base(domainModelVersion) {}
-
-		public EntityId(DomainModelVersion domainModelVersion, string value) : base(domainModelVersion)
+		public EntityId(string value)
 		{
 			Value = value;
 		}

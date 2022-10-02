@@ -8,9 +8,11 @@ namespace DDD.Infrastructure.Ports
 	{
 		public abstract Context Context { get; }
 		public abstract string ListensTo { get; }
-		public abstract IDomainModelVersion ListensToVersion { get; }
+		public abstract DomainModelVersion ListensToVersion { get; }
 
-		Task Start();
+		Task StartAsync();
+		Task StopAsync();
 		Task<bool> React(IPubSubMessage message);
+		Task Handle(IPubSubMessage message);
 	}
 }

@@ -34,7 +34,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Memory
 			=> throw new NotImplementedException();
 
 		public override Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, CancellationToken ct)
-			=> Task.FromResult(Items.Where(where.Compile()));
+			=> Task.FromResult(Items.Where(where.Compile()).ToList().AsEnumerable());
 		
 		public override Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 			=> throw new NotImplementedException();

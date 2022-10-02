@@ -12,8 +12,7 @@ namespace DDD.Infrastructure.Ports.Adapters.ServiceBus
 			base(
 				settings.General.Context,
 				settings.General.Context,
-				settings.PubSub.ListenerAcksRequired,
-				settings.PubSub.PublisherAcksRequired,
+				settings.PubSub.MaxDeliveryRetries,
 				settings.Azure.ServiceBus.ConnString,
 				settings.Azure.ServiceBus.SubName,
 				logger,

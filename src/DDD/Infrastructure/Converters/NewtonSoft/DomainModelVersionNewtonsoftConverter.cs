@@ -16,7 +16,7 @@ namespace DDD.Infrastructure.Converters.NewtonSoft
             bool hasExistingValue, JsonSerializer serializer)
         {
             string s = (string)reader.Value;
-            return DomainModelVersion.Create(s);
+            return new DomainModelVersion(s);
         }
     }
 }
