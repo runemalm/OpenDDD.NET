@@ -5,7 +5,8 @@ env.*
 !env.make.sample
 scratch
 src/Templates/testing
-!src/Templates/BoundedContextNet60/env.local.vs
+*.sublime-project
+*.sublime-workspace
 
 # globs
 Makefile.in
