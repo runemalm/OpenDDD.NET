@@ -1,5 +1,6 @@
 {
   "solution": "Weather.sln",
+  "solutionFolder": null,
   "mappings": {
     "DDD.NETCore": "../../../DDD/DDD.csproj"
   },

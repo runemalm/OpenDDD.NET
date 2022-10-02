@@ -7,7 +7,7 @@
     <RootNamespace>WebApplicationNet6</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DDD.NETCore" Version="0.9.1-alpha.3" />
+    <PackageReference Include="DDD.NETCore" Version="1.0.0-alpha.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
   <ItemGroup>

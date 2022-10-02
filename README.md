@@ -1,3 +1,4 @@
+
 ## DDD.NETCore
 
 This is a framework for doing DDD with .Net Core. 
@@ -91,7 +92,7 @@ If you want to contribute to the code base, create a pull request on the develop
 - [x] Integration Event Publishing
 - [x] Rabbit Event Adapter
 - [x] Memory Event Adapter
-- [ ] PubSub
+- [x] PubSub
 - [x] Auth Domain Service
 - [x] Auth
 - [x] Aggregate
@@ -138,6 +139,9 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Administration
 
 ### Release Notes:
+
+**1.0.0-alpha.1** - 2022-10-02
+- New v1.0.0 alpha release.
 
 **0.9.0-alpha7** - 2022-07-31
 - First alpha test release on nuget.org.

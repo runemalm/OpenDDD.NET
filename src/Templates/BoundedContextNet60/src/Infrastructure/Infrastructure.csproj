@@ -9,6 +9,6 @@
     <ProjectReference Include="..\Interchange\Interchange.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DDD.NETCore" Version="0.9.1-alpha.3" />
+    <PackageReference Include="DDD.NETCore" Version="1.0.0-alpha.1" />
   </ItemGroup>
 </Project>
