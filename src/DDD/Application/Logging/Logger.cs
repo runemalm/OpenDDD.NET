@@ -1,6 +1,6 @@
 ﻿using System;
-using DDD.Application.Settings;
 using Microsoft.Extensions.Logging;
+using DDD.Application.Settings;
 using IMicrosoftLogger = Microsoft.Extensions.Logging.ILogger;
 using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
 

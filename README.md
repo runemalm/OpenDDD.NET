@@ -1,30 +1,31 @@
-
 ## DDD.NETCore
 
-This is a framework for doing DDD with .Net Core. 
+This is a framework for domain-driven design (DDD) development with C# and .NET Core.
 
-Star and/or follow the project to receive notifications when version 1.0.0 is released.
+Built-in support for fully autonomous development.
 
-The aim is to provide a full framework to implement bounded contexts with .Net Core.
+Star and/or follow the project to don't miss notifications of upcoming releases.
 
-### Design: 
+### Key Features
 
-The design is based on these patterns:
+- Domain model versioning.
+- Fully autonomous development.
+- Auto-generated API documentation.
+- Backwards compatible API support.
+- On-the-fly migrations.
+- Recommended workflow guidelines.
 
-- DDD
-- Hexagonal Architecture
-- Near-infinite Scalability ("Entity" concept)
-- xUnit
+### Design Patterns
 
-### Theory: 
-  
-The following sources are recommended:
-  
-- [Domain-Driven Design: Tackling Complexity in the Heart of Software - Eric Evans](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)  
-- [Implementing Domain-Driven Design - Vaughn Vernon](https://www.amazon.com/Implementing-Domain-Driven-Design-Vaughn-Vernon/dp/0321834577)  
-- [Hexagonal Architecture - Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/)
-- [Life Beyond Distributed Transactions - Pat Helland](https://queue.acm.org/detail.cfm?id=3025012)
-- [xUnit - Wikipedia](https://en.wikipedia.org/wiki/XUnit)
+The framework is based on the following design patterns:
+
+- [Domain-Driven Design](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)  
+- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+- Event-Driven Architecture
+- [Near-infinite Scalability ("Entity" concept)](https://queue.acm.org/detail.cfm?id=3025012)
+- [xUnit](https://en.wikipedia.org/wiki/XUnit)
+- API versioning
+- Env-files
 
 ### Supported versions:
 
@@ -36,7 +37,7 @@ The following sources are recommended:
 ### Installation:
 
     Install-Package DDD.NETCore
-  
+
 ### Example:
 
 These files below are from the [shipping domain]() example project.

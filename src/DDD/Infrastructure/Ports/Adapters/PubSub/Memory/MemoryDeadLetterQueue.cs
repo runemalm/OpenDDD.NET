@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using DDD.Infrastructure.Ports.PubSub;
 
 namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 {

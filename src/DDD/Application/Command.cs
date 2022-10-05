@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using DDD.Domain.Validation;
+using DDD.Domain.Model.Validation;
 
 namespace DDD.Application
 {

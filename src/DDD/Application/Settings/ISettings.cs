@@ -1,4 +1,15 @@
-﻿namespace DDD.Application.Settings
+﻿using DDD.Application.Settings.Auth;
+using DDD.Application.Settings.Azure;
+using DDD.Application.Settings.Email;
+using DDD.Application.Settings.General;
+using DDD.Application.Settings.Http;
+using DDD.Application.Settings.Monitoring;
+using DDD.Application.Settings.Persistence;
+using DDD.Application.Settings.Postgres;
+using DDD.Application.Settings.PubSub;
+using DDD.Application.Settings.Rabbit;
+
+namespace DDD.Application.Settings
 {
 	public interface ISettings
 	{

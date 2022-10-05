@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using DDD.Application;
 using DDD.Domain;
-using DDD.Infrastructure.Persistence;
-using DDD.Infrastructure.Ports.Adapters.Postgres.Exceptions;
+using DDD.Domain.Model;
+using DDD.Domain.Model.BuildingBlocks;
+using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
+using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Services.Persistence;
 
 namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
 {

@@ -2,7 +2,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DDD.Application;
 using DDD.Domain;
+using DDD.Domain.Model;
+using DDD.Domain.Model.BuildingBlocks;
+using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Infrastructure.Ports.PubSub;
 
 namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 {

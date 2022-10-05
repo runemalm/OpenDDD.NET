@@ -1,5 +1,6 @@
 ﻿using System;
 using DDD.Domain;
+using DDD.Domain.Model;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
 
