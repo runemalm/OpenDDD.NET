@@ -6,9 +6,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 

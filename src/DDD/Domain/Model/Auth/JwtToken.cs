@@ -4,7 +4,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Text.RegularExpressions;
 using DDD.Domain.Model.Auth.Exceptions;
 using DDD.Domain.Model.Validation;
 using DDD.NETCore.Extensions;
@@ -14,52 +13,90 @@ namespace DDD.Domain.Model.Auth
 {
 	public class JwtToken : AccessToken, IEquatable<JwtToken>
 	{
-		public readonly string Issuer = "DddForDotNet-IAM";
-		public string Audience { get; set; }
-		public IEnumerable<Claim> Claims { get; set; }
-		private const string Format = "[a-zA-Z0-9+/=]+\\.[a-zA-Z0-9+/=]+\\..+";
+		public string UserId { get; set; }
+		public IEnumerable<string> Audiences { get; set; }
+		public string Issuer { get; set; }
+		public DateTime ValidFrom { get; set; }
+		public DateTime ValidTo { get; set; }
+		public IEnumerable<string> Roles { get; set; }
 
 		// Public
 		
 		public static JwtToken Create(
-			DomainModelVersion domainModelVersion, 
-			AuthMethod authMethod, 
-			IEnumerable<Claim> claims, 
-			DateTime validFrom, 
-			DateTime validTo, 
-			string audience, 
+			string userId,
+			AuthMethod authMethod,
+			IEnumerable<string> audiences,
+			string issuer,
+			DateTime validFrom,
+			DateTime validTo,
+			IEnumerable<string> roles,
+			IEnumerable<string> rolesClaimsTypes,
 			string privateKey)
 		{
 			var token = new JwtToken()
 			{
-				TokenType = TokenType.JWT,
+				UserId = userId,
 				AuthMethod = authMethod,
-				Claims = claims,
+				TokenType = TokenType.JWT,
+				Audiences = audiences,
+				Issuer = issuer,
 				ValidFrom = validFrom,
 				ValidTo = validTo,
-				Audience = audience
+				Roles = roles
 			};
-			token.ReadRoles();
-			token.Write(privateKey);
+			token.Write(privateKey, rolesClaimsTypes);
 			token.Validate(privateKey);
   
 			return token;
 		}
-
-		private void ReadRoles()
-		{
-			var roles = new List<string>();
-			
-			foreach (var claim in Claims)
-				if (claim.Type.ToLower() == "roles")
-					roles.Add(claim.Value.ToLower());
-
-			Roles = roles;
-		}
 		
-		public void Write(string privateKey)
+		public static JwtToken Read(
+			string jwtString, 
+			IEnumerable<string> rolesClaimsTypes, 
+			AuthMethod authMethod = AuthMethod.Unknown)
 		{
-			var jwtPayload = new JwtPayload(Issuer, Audience, Claims, ValidFrom, ValidTo);
+			var handler = new JwtSecurityTokenHandler();
+			JwtSecurityToken secToken = handler.ReadJwtToken(jwtString);
+
+			var jwtToken =
+				new JwtToken()
+				{
+					UserId = null,
+					AuthMethod = authMethod,
+					TokenType = TokenType.JWT,
+					RawString = jwtString,
+					Audiences = secToken.Audiences,
+					Issuer = secToken.Issuer,
+					ValidFrom = secToken.ValidFrom,
+					ValidTo = secToken.ValidTo,
+					Roles = null
+				};
+
+			if (authMethod == AuthMethod.Unknown)
+				jwtToken.ReadAuthMethod(secToken.Claims);
+			jwtToken.ReadRoles(secToken.Claims, rolesClaimsTypes);
+			jwtToken.ReadUserId(secToken.Claims);
+
+			return jwtToken;
+		}
+
+		public void Write(string privateKey, IEnumerable<string> rolesClaimsTypes)
+		{
+			var claims = ClaimsFromRoles(Roles, rolesClaimsTypes).ToList();
+			
+			claims.AddRange(
+				new List<Claim>(){ ClaimFromAuthMethod(AuthMethod) });
+			
+			claims.AddRange(
+				new List<Claim>(){ ClaimFromUserId(UserId) });
+			
+			var jwtPayload = 
+				new JwtPayload(
+					Issuer, 
+					Audiences.First(), 
+					claims,
+					ValidFrom, 
+					ValidTo);
 
 			var credentials = 
 				new SigningCredentials(
@@ -73,57 +110,74 @@ namespace DDD.Domain.Model.Auth
 						new JwtHeader(credentials),
 						jwtPayload));
 		}
-
-		public static JwtToken Read(string rawString)
+		
+		private void ReadAuthMethod(IEnumerable<Claim> claims)
 		{
-			if (!ValidateFormat(rawString))
-			{
-				throw new AuthException(
-					"Couldn't read JWT token from string. The format was invalid.");
-			}
-
-			JwtSecurityToken secToken = null;
-
-			var handler = new JwtSecurityTokenHandler();
-			try
-			{
-				secToken = handler.ReadJwtToken(rawString);
-			}
-			catch (Exception e)
-			{
-				
-			}
-
-			JwtToken token = new JwtToken();
-					
-			if (secToken != null)
-			{
-				token.TokenType = TokenType.JWT;
-				token.AuthMethod = AuthMethod.Unknown;
-				token.Claims = secToken.Claims;
-				token.ValidFrom = secToken.ValidFrom;
-				token.ValidTo = secToken.ValidTo;
-				token.Audience = secToken.Audiences.First();
-				token.RawString = rawString;
-				
-				token.ReadRoles();
-			}
-
-			return token;
+			var found = false;
+			
+			foreach (var claim in claims)
+				if (claim.Type == "AuthMethod")
+				{
+					found = true;
+					if (!Enum.TryParse<AuthMethod>(claim.Value, out var authMethod))
+						throw new AuthException("Couldn't parse auth method from claim value.");
+					AuthMethod = authMethod;
+					break;
+				}
+			if (!found)
+				AuthMethod = AuthMethod.Unknown;
 		}
+
+		private void ReadRoles(IEnumerable<Claim> claims, IEnumerable<string> rolesClaimsTypes)
+		{
+			var roles = new List<string>();
+
+			foreach (var claim in claims)
+				if (rolesClaimsTypes.Contains(claim.Type))
+					roles.Add(claim.Value.ToLower());
+
+			Roles = roles;
+		}
+		
+		private void ReadUserId(IEnumerable<Claim> claims)
+		{
+			foreach (var claim in claims)
+				if (claim.Type == "UserId")
+					UserId = claim.Value;
+		}
+
+		private IEnumerable<Claim> ClaimsFromRoles(IEnumerable<string> roles, IEnumerable<string> rolesClaimsTypes)
+		{
+			var claims = new List<Claim>();
+
+			if (rolesClaimsTypes.Count() > 0)
+			{
+				foreach (var role in roles)
+					claims.Add(
+						new Claim(
+							rolesClaimsTypes.First(), 
+							role));
+			}
+
+			return claims;
+		}
+		
+		private Claim ClaimFromAuthMethod(AuthMethod authMethod)
+			=> new Claim("AuthMethod", authMethod.ToString());
+
+		private Claim ClaimFromUserId(string userId)
+			=> new Claim("UserId", userId);
 
 		// Validation
 
 		public void Validate(string privateKey)
 		{
-			CheckFormat();
 			CheckSignature(privateKey);
 			CheckExpired();
 		}
 
 		public void Validate(string privateKey, IEnumerable<IEnumerable<string>> roles)
 		{
-			CheckFormat();
 			CheckSignature(privateKey);
 			CheckExpired();
 			
@@ -149,20 +203,6 @@ namespace DDD.Domain.Model.Auth
 					$"JwtToken is invalid with errors: " +
 					$"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
 			}
-		}
-
-		private static bool ValidateFormat(string rawString)
-		{
-			if (rawString == null)
-				return false;
-			return Regex.IsMatch(rawString, Format, RegexOptions.IgnoreCase);
-		}
-
-		private void CheckFormat()
-		{
-			if (!ValidateFormat(RawString))
-				throw new InvalidCredentialsException(
-					$"The token is not a valid JWT token string.");
 		}
 
 		private void CheckSignature(string privateKey)
@@ -205,12 +245,12 @@ namespace DDD.Domain.Model.Auth
 		}
 
 		// Equality
-
+		
 		public bool Equals(JwtToken other)
 		{
 			if (ReferenceEquals(null, other)) return false;
 			if (ReferenceEquals(this, other)) return true;
-			return Issuer == other.Issuer && Audience == other.Audience && Equals(Claims, other.Claims);
+			return base.Equals(other) && Equals(Audiences, other.Audiences) && Issuer == other.Issuer && ValidFrom.Equals(other.ValidFrom) && ValidTo.Equals(other.ValidTo) && Equals(Roles, other.Roles);
 		}
 
 		public override bool Equals(object obj)
@@ -223,7 +263,17 @@ namespace DDD.Domain.Model.Auth
 
 		public override int GetHashCode()
 		{
-			return HashCode.Combine(base.GetHashCode(), Issuer, Audience, Claims);
+			return HashCode.Combine(base.GetHashCode(), Audiences, Issuer, ValidFrom, ValidTo, Roles);
+		}
+
+		public static bool operator ==(JwtToken left, JwtToken right)
+		{
+			return Equals(left, right);
+		}
+
+		public static bool operator !=(JwtToken left, JwtToken right)
+		{
+			return !Equals(left, right);
 		}
 	}
 

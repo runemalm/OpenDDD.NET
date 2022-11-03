@@ -1,5 +1,4 @@
-﻿using DDD.Domain.Model.BuildingBlocks;
-using DDD.Domain.Model.BuildingBlocks.ValueObject;
+﻿using DDD.Domain.Model.BuildingBlocks.ValueObject;
 
 namespace DDD.Domain.Model.Auth
 {

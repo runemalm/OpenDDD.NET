@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using DDD.Logging;
 using DDD.Application.Settings;
 using DDD.Domain.Model.Auth;
 using DDD.Domain.Model.Auth.Exceptions;
-using Microsoft.AspNetCore.Http;
 
 namespace DDD.NETCore.Middleware
 {
@@ -56,9 +57,18 @@ namespace DDD.NETCore.Middleware
 			}
 
             if (raw != null)
-                return JwtToken.Read(raw);
+            {
+                // TODO: Read tokens from claims..
+                var jwtToken = JwtToken.Read(raw, new List<string>());
+                return jwtToken;
+            }
 
             return null;
+        }
+
+        private IEnumerable<string> GetRolesClaimsTypesForAuthMethod(AuthMethod authMethod)
+        {
+            return new List<string>();
         }
     }
 }

@@ -3,6 +3,7 @@
 	public enum AuthMethod
 	{
 		Unknown,
+		FormPost,
 		AzureOidc,
 		SimpleOidc
 	}

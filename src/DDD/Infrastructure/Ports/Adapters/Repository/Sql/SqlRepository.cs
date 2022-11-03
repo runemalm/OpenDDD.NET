@@ -7,9 +7,6 @@ using System.Threading.Tasks;
 using DDD.Application;
 using DDD.Application.Exceptions;
 using DDD.Application.Settings;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
@@ -17,16 +14,16 @@ using DDD.Infrastructure.Ports.Repository;
 using DDD.Infrastructure.Services.Persistence;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace DDD.Infrastructure.Ports.Adapters.Repository.Ado
+namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 {
-	public abstract class AdoRepository<T, TId> : Repository<T>, IRepository<T> where T : IAggregate where TId : EntityId
+	public abstract class SqlRepository<T, TId> : Repository<T>, IRepository<T> where T : IAggregate where TId : EntityId
 	{
 		private readonly ISettings _settings;
 		private readonly string _tableName;
 		private readonly IMigrator<T> _migrator;
 		private readonly IPersistenceService _persistenceService;
 
-		public AdoRepository(ISettings settings, string tableName, IMigrator<T> migrator, IPersistenceService persistenceService)
+		public SqlRepository(ISettings settings, string tableName, IMigrator<T> migrator, IPersistenceService persistenceService)
 		{
 			_settings = settings;
 			_tableName = tableName;

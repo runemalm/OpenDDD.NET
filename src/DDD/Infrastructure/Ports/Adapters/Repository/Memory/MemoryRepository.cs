@@ -5,12 +5,10 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Infrastructure.Ports.Repository;
+using Namotion.Reflection;
 
 namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 {
@@ -35,15 +33,30 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 
 		public override Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
 			=> Task.FromResult(Items.Where(where.Compile()).FirstOrDefault());
-		
-		public override Task<T> GetFirstOrDefaultWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
-			=> throw new NotImplementedException();
+
+		public override async Task<T> GetFirstOrDefaultWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId,
+			CancellationToken ct)
+			=> (await GetWithAsync(andWhere, actionId, ct)).FirstOrDefault();
 
 		public override Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, CancellationToken ct)
 			=> Task.FromResult(Items.Where(where.Compile()).ToList().AsEnumerable());
 		
 		public override Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
-			=> throw new NotImplementedException();
+		{
+			var filtered = new List<T>();
+			
+			foreach (var item in Items)
+			{
+				foreach (var tuple in andWhere)
+				{
+					var value = item.TryGetPropertyValue<string>(tuple.Item1);
+					if (value == tuple.Item2)
+						filtered.Add(item);
+				}
+			}
+
+			return Task.FromResult(filtered.AsEnumerable());
+		}
 
 		public override Task SaveAsync(T aggregate, ActionId actionId, CancellationToken ct)
 		{
