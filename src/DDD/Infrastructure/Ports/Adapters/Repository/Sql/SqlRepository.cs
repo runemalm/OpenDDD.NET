@@ -108,9 +108,9 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			aggregates = _migrator.Migrate(aggregates);
 			return aggregates.FirstOrDefault();
 		}
-		
-		public override Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, CancellationToken ct)
-			=> throw new NotImplementedException();
+
+		public override async Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
+			=> (await GetAllAsync(actionId, ct)).ToList().Where(where.Compile());
 		
 		public override async Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{

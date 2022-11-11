@@ -38,7 +38,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 			CancellationToken ct)
 			=> (await GetWithAsync(andWhere, actionId, ct)).FirstOrDefault();
 
-		public override Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, CancellationToken ct)
+		public override Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
 			=> Task.FromResult(Items.Where(where.Compile()).ToList().AsEnumerable());
 		
 		public override Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
