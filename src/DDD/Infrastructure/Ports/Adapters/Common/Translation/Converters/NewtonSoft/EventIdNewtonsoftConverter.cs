@@ -1,9 +1,6 @@
 ﻿using System;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
-using DDD.Domain.Model.BuildingBlocks.Event;
 using Newtonsoft.Json;
+using DDD.Domain.Model.BuildingBlocks.Event;
 using SystemJsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.NewtonSoft

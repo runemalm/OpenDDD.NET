@@ -1,8 +1,6 @@
 ﻿using System;
-using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
 using Newtonsoft.Json;
+using DDD.Application;
 using SystemJsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.NewtonSoft
