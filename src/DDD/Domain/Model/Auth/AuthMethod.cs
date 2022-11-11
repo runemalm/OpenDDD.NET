@@ -5,6 +5,7 @@
 		Unknown,
 		FormPost,
 		AzureOidc,
+		FacebookOidc,
 		SimpleOidc
 	}
 }
