@@ -6,6 +6,7 @@ from classes.definition.command_definition import CommandDefinition
 from classes.definition.command_translator_definition import CommandTranslatorDefinition
 from classes.definition.entity_id_definition import EntityIdDefinition
 from classes.definition.http_adapter_command_definition import HttpAdapterCommandDefinition
+from classes.definition.http_bb_translator_definition import HttpBbTranslatorDefinition
 from classes.definition.endpoint_definition import EndpointDefinition
 from classes.param import Param
 from classes.property import Property
@@ -39,6 +40,11 @@ class DefinitionParser:
 
             cd = d['Command']
             definitions.add(self._parse_http_command(cd, endpoint.name, version))
+
+        elif key == "BuildingBlockTranslators":
+          for bt in vd:
+            http_bb_translator = self._parse_http_bb_translator(bt)
+            definitions.add(http_bb_translator)
 
         elif key == "CommandTranslators":
           for ct in vd:
@@ -91,6 +97,13 @@ class DefinitionParser:
     definition.name = entity_id_name
     definition.entity_name = entity_name
     definition.entity_is_aggregate = entity_is_aggregate
+    return definition
+
+  def _parse_http_bb_translator(self, d):
+    definition = HttpBbTranslatorDefinition()
+
+    definition.name = d['Name']
+
     return definition
 
   def _parse_http_command_translator(self, d):

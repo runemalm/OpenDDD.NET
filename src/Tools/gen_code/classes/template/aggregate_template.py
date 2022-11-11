@@ -39,10 +39,11 @@ class AggregateTemplate(Template):
 		for prop in definition.properties:
 			arg = f"{prop.type_} {self._first_char_lower(prop.name)}"
 			method_args.append(arg)
+		method_args.append("ActionId actionId")
 		return ",\n            ".join(method_args)
 
 	def _property_init_args(self, definition):
-		init_args = []
+		init_args = ["DomainModelVersion = XxxDomainModelVersion.Latest()"]
 		for prop in definition.properties:
 			arg = f"{prop.name} = {self._first_char_lower(prop.name)}"
 			init_args.append(arg)

@@ -34,12 +34,18 @@ class Program:
 			elif self.arguments.what == "aggregate":
 				name = self.arguments.name
 				code.append(self._gen_aggregate(name))
+			elif self.arguments.what == "aggregate_migrator":
+				name = self.arguments.name
+				code.append(self._gen_aggregate_migrator(name))
 			elif self.arguments.what == "command":
 				name = self.arguments.name
 				code.append(self._gen_command(name))
 			elif self.arguments.what == "entity_id":
 				name = self.arguments.name
 				code.append(self._gen_entity_id(name))
+			elif self.arguments.what == "http_bb_translator":
+				name = self.arguments.name
+				code.append(self._gen_http_bb_translator(name))
 			elif self.arguments.what == "http_command_translator":
 				name = self.arguments.name
 				version = self.arguments.version
@@ -55,7 +61,7 @@ class Program:
 				raise Exception(f"Don't know how to generate a '{self.arguments.what}'.")
 
 		for c in code:
-			if c.what in ["action", "aggregate", "command", "entity_id", "http_command_translator", "http_command"]:
+			if c.what in ["action", "aggregate", "aggregate_migrator", "command", "entity_id", "http_bb_translator", "http_command_translator", "http_command"]:
 				if not exists(c.path) or input(f"Overwrite '{c.path}'? (y/n)") in ["y", "yes"]:
 					self.writer.write(c)
 			elif c.what in ["http_endpoint"]:
@@ -83,6 +89,13 @@ class Program:
 		code = self.generator.gen_aggregate(definition)
 		return code
 
+	def _gen_aggregate_migrator(self, name):
+		definition = self.definitions.get("aggregate", name)
+		if not definition:
+			raise Exception(f"No aggregate definition found in yaml file called '{name}'.")
+		code = self.generator.gen_aggregate_migrator(definition)
+		return code
+
 	def _gen_command(self, name):
 		definition = self.definitions.get("command", name)
 		if not definition:
@@ -95,6 +108,13 @@ class Program:
 		if not definition:
 			raise Exception(f"No entity ID definition found in yaml file called '{name}'.")
 		code = self.generator.gen_entity_id(definition)
+		return code
+
+	def _gen_http_bb_translator(self, name):
+		definition = self.definitions.get("http_bb_translator", name)
+		if not definition:
+			raise Exception(f"No http bb definition found in yaml file called '{name}'.")
+		code = self.generator.gen_http_bb_translator(definition)
 		return code
 
 	def _gen_http_command_translator(self, name, version):
