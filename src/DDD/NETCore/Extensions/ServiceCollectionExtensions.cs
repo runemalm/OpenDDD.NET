@@ -152,6 +152,24 @@ namespace DDD.NETCore.Extensions
 			services.AddTransient(typeof(TCommand));
 			return services;
 		}
+
+		public static IServiceCollection AddHttpBuildingBlockTranslator<TTranslator>(this IServiceCollection services)
+		{
+			services.AddTransient(typeof(TTranslator));
+			return services;
+		}
+		
+		public static IServiceCollection AddHttpCommandTranslator<TTranslator>(this IServiceCollection services)
+		{
+			services.AddTransient(typeof(TTranslator));
+			return services;
+		}
+		
+		public static IServiceCollection AddMigrator<TMigrator>(this IServiceCollection services)
+		{
+			services.AddTransient(typeof(TMigrator));
+			return services;
+		}
 		
 		public static IServiceCollection AddRepository<TPort, TAdapter>(this IServiceCollection services)
 			where TAdapter : class
