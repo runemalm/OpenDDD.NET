@@ -17,6 +17,7 @@ namespace DDD.Infrastructure.Ports.Repository
         public abstract Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetAllAsync(ActionId actionId, CancellationToken ct);
         public abstract Task<T> GetAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
+        public abstract Task<IEnumerable<T>> GetAsync(IEnumerable<EntityId> entityIds, ActionId actionId, CancellationToken ct);
         public abstract Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct);
         public abstract Task<T> GetFirstOrDefaultWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct);

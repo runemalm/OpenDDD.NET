@@ -98,9 +98,24 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 
 			return default(T);
 		}
+		
+		public override async Task<IEnumerable<T>> GetAsync(IEnumerable<EntityId> entityIds, ActionId actionId, CancellationToken ct)
+		{
+			var conn = await _persistenceService.GetConnectionAsync(actionId);
+			
+			var stmt = $"SELECT * FROM {_tableName} WHERE id IN (@ids)";
+			
+			var parameters = new Dictionary<string, object>();
+			parameters.Add("@ids", String.Join(',', entityIds));
 
-		public override Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
-			=> throw new NotImplementedException();
+			var aggregates = await conn.ExecuteQueryAsync<T>(stmt, parameters);
+			aggregates = _migrator.Migrate(aggregates).ToList();
+
+			return aggregates;
+		}
+
+		public override async Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
+			=> (await GetAllAsync(actionId, ct)).ToList().Where(where.Compile()).FirstOrDefault();
 		
 		public override async Task<T> GetFirstOrDefaultWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{

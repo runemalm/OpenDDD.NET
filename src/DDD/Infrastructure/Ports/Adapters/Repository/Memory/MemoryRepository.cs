@@ -30,6 +30,9 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 		
 		public override async Task<T> GetAsync(EntityId entityId, ActionId actionId, CancellationToken ct)
 			=> await Task.FromResult(Items.FirstOrDefault(i => i.Id == entityId));
+		
+		public override async Task<IEnumerable<T>> GetAsync(IEnumerable<EntityId> entityIds, ActionId actionId, CancellationToken ct)
+			=> await Task.FromResult(Items.Where(i => entityIds.Contains(i.Id)));
 
 		public override Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
 			=> Task.FromResult(Items.Where(where.Compile()).FirstOrDefault());
