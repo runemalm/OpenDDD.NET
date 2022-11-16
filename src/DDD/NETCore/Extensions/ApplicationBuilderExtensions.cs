@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
@@ -13,10 +12,11 @@ using JsonConverter = Newtonsoft.Json.JsonConverter;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using DDD.Application;
 using DDD.Application.Exceptions;
-using DDD.Infrastructure.Ports;
 using DDD.Application.Settings;
+using DDD.Domain.Model;
 using DDD.Domain.Model.Auth.Exceptions;
 using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.Domain.Model.Validation;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.NewtonSoft;
 using DDD.Infrastructure.Ports.PubSub;
@@ -165,6 +165,8 @@ namespace DDD.NETCore.Extensions
 						exception.IsOrIsSubType(typeof(MissingCredentialsException));
                     var isForbiddenException = exception.IsOrIsSubType(typeof(ForbiddenException));
                     var isOtherAuthException = exception.IsOrIsSubType(typeof(AuthException));
+                    var isInvariantException = exception.IsOrIsSubType(typeof(InvariantException));
+                    var isOtherDomainException = exception.IsOrIsSubType(typeof(DomainException));
 
                     // Prepare response
 					if (!context.Response.HasStarted)
@@ -183,6 +185,10 @@ namespace DDD.NETCore.Extensions
 					if (isNotFoundException)
 						context.Response.StatusCode = StatusCodes.Status404NotFound;
 					else if (isInvalidCommandException)
+						context.Response.StatusCode = StatusCodes.Status400BadRequest;
+					else if (isInvariantException)
+						context.Response.StatusCode = StatusCodes.Status400BadRequest;
+					else if (isOtherDomainException)
 						context.Response.StatusCode = StatusCodes.Status400BadRequest;
 					else if (isUnauthorizedException)
 						context.Response.StatusCode = StatusCodes.Status401Unauthorized;
