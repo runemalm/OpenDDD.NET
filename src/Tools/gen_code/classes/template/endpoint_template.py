@@ -30,7 +30,7 @@ class EndpointTemplate(Template):
 				'param_location': self._header_param_location(definition),
 				'command_translator_var_name': self._command_translator_var_name(definition),
 				'action_var_name': self._action_var_name(definition),
-				'return_value_translator_var_name': self.return_value_translator_var_name(definition),
+				'return_value_translator_var_name': self._return_value_translator_var_name(definition),
 				'action_param_var_name': self._action_param_var_name(definition),
 				'command_translator_param_var_name': self._command_translator_param_var_name(definition),
 				'path': self._header_path(definition),
@@ -59,6 +59,8 @@ class EndpointTemplate(Template):
 			return "HttpGet"
 		elif definition.method.lower() == "post":
 			return "HttpPost"
+		elif definition.method.lower() == "put":
+			return "HttpPut"
 		elif definition.method.lower() == "delete":
 			return "HttpDelete"
 		raise Exception(f"Unsupported method: '{definition.method}'.")
@@ -78,7 +80,7 @@ class EndpointTemplate(Template):
 		name = name[0] + name[1].lower() + name[2:]
 		return name
 
-	def return_value_translator_var_name(self, definition):
+	def _return_value_translator_var_name(self, definition):
 		if definition.returns == None:
 			return None
 		returns = Utils.strip_api_version_suffix(definition.returns)
