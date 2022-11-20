@@ -1,12 +1,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Logging;
-using DDD.Application;
-using DDD.Domain.Auth;
 using DDD.Application.Settings;
-using DDD.Domain;
-using DDD.Infrastructure.Persistence;
-using DDD.Infrastructure.Ports;
+using DDD.Application;
+using DDD.Domain.Services.Auth;
+using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Services.Persistence;
 using Application.Actions.Commands;
 
 namespace Application.Actions
@@ -23,7 +22,7 @@ namespace Application.Actions
             IDomainPublisher domainPublisher,
             IInterchangePublisher interchangePublisher,
             IOutbox outbox,
-            IPersistenceService persistenceService) 
+            IPersistenceService persistenceService)
             : base(authDomainService, domainPublisher, interchangePublisher, outbox, persistenceService)
         {
             _settings = settings;
@@ -37,9 +36,16 @@ namespace Application.Actions
         {
             throw new System.NotImplementedException("Auto-generated action has not been implemented.");
 
+            // // Authorize
+            // await _authDomainService.AuthorizeRolesAsync(new[]
+            //     {
+            //         new[] { "web.superuser" },
+            //     }, 
+            //     ct);
+
             // // Run
             // // ...
-            // var xxx = {{return_class_name}}.Create(_settings);
+            // var xxx = await {{return_class_name}}.CreateAsync({{return_class_name}}Id, command., actionId);
             //
             // // Persist
             // await ...

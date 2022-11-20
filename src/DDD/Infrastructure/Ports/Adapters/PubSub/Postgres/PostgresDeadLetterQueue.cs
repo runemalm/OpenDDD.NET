@@ -2,7 +2,8 @@
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Infrastructure.Persistence;
+using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Services.Persistence;
 
 namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
 {

@@ -1,67 +1,197 @@
-
 ## DDD.NETCore
 
-This is a framework for doing DDD with .Net Core. 
+This is a framework for domain-driven design (DDD) development with C# and .NET Core.
 
-Star and/or follow the project to receive notifications when version 1.0.0 is released.
+Star and/or follow the project to don't miss notifications of upcoming releases.
 
-The aim is to provide a full framework to implement bounded contexts with .Net Core.
+### Goal
 
-### Design: 
+The goal with this project is to be able to do DDD with .NET Core.
 
-The design is based on these patterns:
+We couldn't find an existing framework with the features that we required. We wanted to be able to autonomously refine and implement the domain model, without worrying about dependencies on frontend teams and other third-party clients.
 
-- DDD
-- Hexagonal Architecture
-- Near-infinite Scalability ("Entity" concept)
-- xUnit
+Another requirement was that it should be possible to build "near-infinitely scalable" applications, based on the *Entity* pattern.
 
-### Theory: 
-  
-The following sources are recommended:
-  
-- [Domain-Driven Design: Tackling Complexity in the Heart of Software - Eric Evans](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)  
-- [Implementing Domain-Driven Design - Vaughn Vernon](https://www.amazon.com/Implementing-Domain-Driven-Design-Vaughn-Vernon/dp/0321834577)  
-- [Hexagonal Architecture - Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/)
-- [Life Beyond Distributed Transactions - Pat Helland](https://queue.acm.org/detail.cfm?id=3025012)
-- [xUnit - Wikipedia](https://en.wikipedia.org/wiki/XUnit)
+We also really like the hexagonal architecture pattern and how a software system becomes easier to understand when it's used.
 
-### Supported versions:
+And so this framework was born.
+
+### Key Features
+
+- Domain model versioning.
+- Fully autonomous development.
+- Auto-generated API documentation.
+- Backwards-compatible API support.
+- On-the-fly migration.
+- Recommended workflow.
+
+### Design Patterns
+
+The framework is based on the following design patterns:
+
+- [Domain-Driven Design](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)  
+- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+- [Event-Carried State Transfer](https://martinfowler.com/articles/201701-event-driven.html)
+- [Near-infinite Scalability](https://queue.acm.org/detail.cfm?id=3025012)
+- [xUnit](https://en.wikipedia.org/wiki/XUnit)
+- [Expand and Contract](https://martinfowler.com/bliki/ParallelChange.html)
+- [Env files](https://12factor.net/config)
+
+Credits to Eric Evans for his [seminal book on DDD](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215) and 
+Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon/IDDD_Samples) of DDD in Java.
+
+### Supported versions
 
 - .Net Core 7.0 (not tested)
 - .Net Core 6.0
 - .Net Core 5.0 (not tested)
 - .Net Core 3.1
   
-### Installation:
+### Installation
 
     Install-Package DDD.NETCore
-  
-### Example:
 
-These files below are from the [shipping domain]() example project.
+### Example
+
+These files below are from the [WeatherForecast]() sample project.
 
 ```c#
 // Program.cs
 
-TODO
-```
-
-```c#
-// Startup.cs
-
-TODO
-```
-
-```c#
-// Shipment.cs
-
-TODO
-```
+void ConfigureServices(WebApplicationBuilder builder)  
+{  
+    var services = builder.Services;  
   
+    // DDD.NETCore  
+    services.AddAccessControl(settings);  
+    services.AddMonitoring(settings);  
+    services.AddPersistence(settings);  
+    services.AddPubSub(settings);  
+  
+    // App  
+    AddDomainServices(services);  
+    AddApplicationService(services);  
+    AddSecondaryAdapters(services);  
+    AddPrimaryAdapters(services);  
+}
+
+# code removed in favour of brevity ...
+
+services.AddAction<PredictWeatherAction, PredictWeatherCommand>();
+services.AddListener<WeatherPredictedListener>();
+services.AddRepository<IForecastRepository, PostgresForecastRepository>();
+
+# code removed in favour of brevity ...
+```
+
+```c#
+// Forecast.cs
+
+namespace Domain.Model.Forecast  
+{  
+  public class Forecast : Aggregate, IAggregate, IEquatable<Forecast>  
+  {  
+        public ForecastId ForecastId { get; set; }  
+        EntityId IAggregate.Id => ForecastId;  
+          
+        public DateTime Date { get; set; }  
+        public int TemperatureC { get; set; }  
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);  
+        public string Summary { get; set; }  
+  
+        // Public  
+  
+        public static async Task<Forecast> PredictTomorrow(  
+            ForecastId forecastId,   
+            ActionId actionId,  
+            IDomainPublisher domainPublisher,  
+            IInterchangePublisher interchangePublisher,  
+            IIcForecastTranslator icForecastTranslator)  
+        {  
+            var forecast =  
+                new Forecast()  
+                {  
+                    DomainModelVersion = Domain.Model.DomainModelVersion.Latest(),  
+                    ForecastId = forecastId,  
+                    Date = DateTime.Now.AddDays(1),  
+                    TemperatureC = Random.Shared.Next(-20, 55),  
+                    Summary = Summaries[Random.Shared.Next(Summaries.Length)]  
+                };  
+  
+            forecast.Validate();  
+              
+            await domainPublisher.PublishAsync(new WeatherPredicted(forecast, actionId));  
+            await interchangePublisher.PublishAsync(new IcWeatherPredicted(icForecastTranslator.To(forecast), actionId));  
+  
+            return forecast;  
+        }
+
+        # code removed in favour of brevity ...
+  }
+}
+```
+
+```bash
+# env.local.vs
+
+# Logging
+CFG_LOGGING_LEVEL_DOTNET=Information
+CFG_LOGGING_LEVEL=Debug
+
+# General
+CFG_GENERAL_CONTEXT=Weather
+
+# Auth
+CFG_AUTH_ENABLED=false
+CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=some-fake-private-key
+CFG_AUTH_JWT_TOKEN_NAME=Authorization
+CFG_AUTH_JWT_TOKEN_LOCATION=header
+CFG_AUTH_JWT_TOKEN_SCHEME=Bearer
+
+# Http Adapter
+CFG_HTTP_CORS_ALLOWED_ORIGINS=https://localhost:5052,http://localhost:5051
+CFG_HTTP_DOCS_DEFINITIONS=Public,Public,
+CFG_HTTP_DOCS_ENABLED=true
+CFG_HTTP_DOCS_HTTP_ENABLED=true
+CFG_HTTP_DOCS_HTTPS_ENABLED=false
+CFG_HTTP_DOCS_HOSTNAME=localhost:5051
+CFG_HTTP_DOCS_AUTH_EXTRA_TOKENS=
+CFG_HTTP_DOCS_TITLE=Weather API
+
+# Persistence
+CFG_PERSISTENCE_PROVIDER=Postgres
+
+# Postgres
+CFG_POSTGRES_CONN_STR="Host=localhost:9092;Username=net60;Password=net60;Database=net60"
+
+# PubSub
+CFG_PUBSUB_PROVIDER=Rabbit
+CFG_PUBSUB_MAX_DELIVERY_RETRIES=3
+CFG_PUBSUB_PUBLISHER_ENABLED=true
+
+# Monitoring
+CFG_MONITORING_PROVIDER=AppInsights
+
+# Service Bus
+CFG_SERVICEBUS_CONN_STR=
+CFG_SERVICEBUS_SUB_NAME=
+
+# Rabbit
+CFG_RABBIT_HOST=localhost
+CFG_RABBIT_PORT=5672
+CFG_RABBIT_USERNAME=guest
+CFG_RABBIT_PASSWORD=guest
+
+# Email
+CFG_EMAIL_ENABLED=true
+CFG_EMAIL_PROVIDER=smtp
+CFG_EMAIL_SMTP_HOST=localhost
+CFG_EMAIL_SMTP_PORT=1025
+```
+
 ### Documentation:
   
-Documentation is coming..
+Documentation is coming in v1.0.0 rc.
 
 ### Contribution:
   
@@ -77,7 +207,7 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Visual Studio Project Template .NET 3.1
 - [x] Start Context
 - [x] Stop Context
-- [x] Control
+- [ ] Control
 - [x] On-the-fly aggregate migration
 - [x] Auto-code Generation from domain.yml File
 - [x] Postgres Dead Letter Queue
@@ -92,7 +222,7 @@ If you want to contribute to the code base, create a pull request on the develop
 - [x] Integration Event Publishing
 - [x] Rabbit Event Adapter
 - [x] Memory Event Adapter
-- [x] PubSub
+- [ ] PubSub
 - [x] Auth Domain Service
 - [x] Auth
 - [x] Aggregate
@@ -140,8 +270,25 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes:
 
+**1.0.0-alpha.3** - 2022-11-20
+
+- Refactor JwtToken and add IdToken.
+- Add more tasks to code generation tool.
+- Add support for http put methods to code generation tool.
+- Add some missing repository method implementations.
+- Add GetAsync(IEnumerable<...> ...) to repositories.
+- Add convenience methods to ApplicationExtensions.
+- Return 400 http status code on domain- and invariant exceptions in primary http adapter.
+
+**1.0.0-alpha.2** - 2022-10-09
+
+- Make the hexagonal architecture more represented in the namespaces.
+ 
 **1.0.0-alpha.1** - 2022-10-02
-- New v1.0.0 alpha release.
+
+This is the first (alpha) release of the framework.
+Please try it out and submit tickets or otherwise reach out if you find any issues or have any questions.
 
 **0.9.0-alpha7** - 2022-07-31
-- First alpha test release on nuget.org.
+
+First alpha release on nuget.org.

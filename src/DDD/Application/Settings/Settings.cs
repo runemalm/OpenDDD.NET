@@ -1,4 +1,15 @@
-﻿using Microsoft.Extensions.Options;
+﻿using DDD.Application.Settings.Auth;
+using DDD.Application.Settings.Azure;
+using DDD.Application.Settings.Email;
+using DDD.Application.Settings.General;
+using DDD.Application.Settings.Http;
+using DDD.Application.Settings.Monitoring;
+using DDD.Application.Settings.Persistence;
+using DDD.Application.Settings.Postgres;
+using DDD.Application.Settings.PubSub;
+using DDD.Application.Settings.Rabbit;
+using DDD.Application.Settings.ServiceBus;
+using Microsoft.Extensions.Options;
 
 namespace DDD.Application.Settings
 {

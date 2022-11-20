@@ -1,21 +1,26 @@
 using System;
 using System.Linq;
-using DDD.Domain;
-using DDD.Domain.Exceptions;
-using DDD.Domain.Validation;
+using System.Threading.Tasks;
+using DDD.Application;
+using DDD.Domain.Model.BuildingBlocks.Aggregate;
+using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.Domain.Model.Validation;
+using XxxDomainModelVersion = Domain.Model.DomainModelVersion;
 
 namespace Domain.Model.{{ class_name }}
 {
-    public class {{ class_name }} : BuildingBlock, IAggregate, IEquatable<{{ class_name }}>
+    public class {{ class_name }} : Aggregate, IAggregate, IEquatable<{{ class_name }}>
     {
         public {{ class_name }}Id {{ class_name }}Id { get; set; }
         EntityId IAggregate.Id => {{ class_name }}Id;
         
         {{ property_expressions }}
 
+        public {{ class_name }}() {}
+
         // Public
 
-        public static {{ class_name }} Create(
+        public static async Task<{{ class_name }}> CreateAsync(
             {{ property_method_args }})
         {
             throw new NotImplementedException();
