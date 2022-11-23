@@ -13,6 +13,7 @@
 		public string EMAIL_PROVIDER { get; set; }
 		public string EMAIL_SMTP_HOST { get; set; }
 		public string EMAIL_SMTP_PORT { get; set; }
+		public string HTTP_URLS { get; set; }
 		public string HTTP_CORS_ALLOWED_ORIGINS { get; set; }
 		public string HTTP_DOCS_DESCRIPTION { get; set; }
 		public string HTTP_DOCS_ENABLED { get; set; }
