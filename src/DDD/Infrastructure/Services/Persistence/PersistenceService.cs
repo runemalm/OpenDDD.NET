@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DDD.Application;
+using DDD.Application.Exceptions;
 using DDD.Domain;
 using DDD.Domain.Model;
 using DDD.Logging;
@@ -11,13 +13,13 @@ namespace DDD.Infrastructure.Services.Persistence
 	{
 		protected readonly ILogger _logger;
 		protected readonly string _connString;
-		private readonly IDictionary<ActionId, IConnection> _connections;
+		private readonly ConcurrentDictionary<ActionId, IConnection> _connections;
 
 		public PersistenceService(string connString, ILogger logger)
 		{
 			_logger = logger;
 			_connString = connString;
-			_connections = new Dictionary<ActionId, IConnection>();
+			_connections = new ConcurrentDictionary<ActionId, IConnection>();
 		}
 		
 		private IConnection GetExistingConnectionAsync(ActionId actionId)
@@ -52,7 +54,9 @@ namespace DDD.Infrastructure.Services.Persistence
 			if (conn == null)
 			{
 				conn = await OpenConnectionAsync();
-				_connections.Add(actionId, conn);
+				var success = _connections.TryAdd(actionId, conn);
+				if (!success)
+					throw new DddException("Couldn't add connection to collection.");
 			}
 			return conn;
 		}
@@ -67,7 +71,10 @@ namespace DDD.Infrastructure.Services.Persistence
 			else
 			{
 				conn.Close();
-				_connections.Remove(actionId);
+				IConnection removedConn;
+				var success = _connections.TryRemove(actionId, out removedConn);
+				if (!success)
+					throw new DddException("Couldn't remove connection from collection.");
 			}
 			return Task.CompletedTask;
 		}
