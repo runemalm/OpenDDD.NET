@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using DDD.Domain;
-using DDD.Domain.Model;
 using DDD.Domain.Services.Auth;
-using DDD.Infrastructure.Ports;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Infrastructure.Services.Persistence;
 
@@ -69,22 +64,6 @@ namespace DDD.Application
 			await _outbox.AddAllAsync(actionId, integrationEvents, ct);
 		}
 
-		// Authorization
-		
-		public void AuthorizeRoles(
-			IEnumerable<IEnumerable<string>> roles,
-			CancellationToken ct)
-		{
-			AuthorizeRolesAsync(roles, ct).Wait();
-		}
-
-		public async Task AuthorizeRolesAsync(
-			IEnumerable<IEnumerable<string>> roles,
-			CancellationToken ct)
-		{
-			await _authDomainService.AuthorizeRolesAsync(roles, ct);
-		}
-		
 		// Validation
 
 		private void Validate(ICommand command)
