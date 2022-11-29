@@ -5,6 +5,8 @@
 		public string GENERAL_CONTEXT { get; set; }
 
 		public string AUTH_ENABLED { get; set; }
+		public string AUTH_RBAC_PROVIDER { get; set; }
+		public string AUTH_RBAC_EXTERNAL_REALM_ID { get; set; }
 		public string AUTH_JWT_TOKEN_PRIVATE_KEY { get; set; }
 		public string AUTH_JWT_TOKEN_NAME { get; set; }
 		public string AUTH_JWT_TOKEN_LOCATION { get; set; }
