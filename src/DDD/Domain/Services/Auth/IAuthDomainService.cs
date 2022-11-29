@@ -7,16 +7,16 @@ namespace DDD.Domain.Services.Auth
 {
 	public interface IAuthDomainService : IDomainService
 	{
-		// Any mode
+		// Authenticated
 		Task AssureAuthenticatedAsync(ActionId actionId, CancellationToken ct);
 		
-		// RBAC mode
-		Task AssurePermissionsInWorldAsync(string domainName, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
-		Task AssurePermissionsInRealmAsync(string realmId, string domainName, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
-		Task AssurePermissionsInResourceGroupAsync(string resourceGroupId, string domainName, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
-		Task AssurePermissionsInResourceAsync(string resourceId, string domainName, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
-
-		// Role-names-in-token mode
+		// Role names in token
 		Task AssureRolesInTokenAsync(IEnumerable<IEnumerable<string>> roles, ActionId actionId, CancellationToken ct);
+		
+		// RBAC
+		Task AssurePermissionsInWorldAsync(string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
+		Task AssurePermissionsInRealmAsync(string externalRealmId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
+		Task AssurePermissionsInResourceGroupAsync(string externalRealmId, string resourceGroupId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
+		Task AssurePermissionsInResourceAsync(string externalRealmId, string resourceId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
 	}
 }

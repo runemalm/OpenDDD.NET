@@ -8,6 +8,11 @@ namespace DDD.Domain.Model.Auth
 		public AuthMethod AuthMethod { get; set; }
 		public TokenType TokenType { get; set; }
 		public string RawString { get; set; }
+		
+		public override string ToString()
+		{
+			return RawString;
+		}
 
 		// Equality
 		
