@@ -119,6 +119,24 @@ push: ##@Build	 Push the nuget to the global feed
 	dotnet nuget push DDD.NETCore.$(BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
 
 ##########################################################################
+# .NET Core
+##########################################################################
+.PHONY: restore
+restore: ##@Build	 restore the solution
+	cd src && dotnet restore
+
+.PHONY: clear-nuget-caches
+clear-nuget-caches: ##@Build	 clean all nuget caches
+	nuget locals all -clear
+
+.PHONY: deep-rebuild
+deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
+	make clean
+	make clear-nuget-caches
+	make restore
+	make build
+
+##########################################################################
 # TOOLS
 ##########################################################################
 
