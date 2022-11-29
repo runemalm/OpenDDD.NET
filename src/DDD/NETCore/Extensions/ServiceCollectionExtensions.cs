@@ -19,10 +19,10 @@ using DDD.Application.Settings.Persistence;
 using DDD.Application.Settings.PubSub;
 using DDD.Domain.Model.Auth;
 using DDD.Domain.Services.Auth;
-using DDD.Infrastructure.Ports;
+using DDD.Infrastructure.Ports.Adapters.Auth.IAM.Negative;
+using DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam;
 using DDD.Infrastructure.Ports.Adapters.Email.Memory;
 using DDD.Infrastructure.Ports.Adapters.Email.Smtp;
-using DDD.Infrastructure.Ports.Adapters.Http;
 using DDD.Infrastructure.Ports.Adapters.Http.Common;
 using DDD.Infrastructure.Ports.Adapters.Http.NETCore;
 using DDD.Infrastructure.Ports.Adapters.Monitoring.AppInsights;
@@ -31,6 +31,7 @@ using DDD.Infrastructure.Ports.Adapters.PubSub.Memory;
 using DDD.Infrastructure.Ports.Adapters.PubSub.Postgres;
 using DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit;
 using DDD.Infrastructure.Ports.Adapters.PubSub.ServiceBus;
+using DDD.Infrastructure.Ports.Auth;
 using DDD.Infrastructure.Ports.Monitoring;
 using DDD.Infrastructure.Ports.Email;
 using DDD.Infrastructure.Ports.PubSub;
@@ -62,6 +63,26 @@ namespace DDD.NETCore.Extensions
 		{
 			services.AddScoped<ICredentials, Credentials>();
 			services.AddTransient<IAuthDomainService, AuthDomainService>();
+			services.AddIamAdapter(settings);
+			return services;
+		}
+		
+		public static IServiceCollection AddIamAdapter(this IServiceCollection services, ISettings settings)
+		{
+			if (settings.Auth.Rbac.Provider == RbacProvider.Negative)
+			{
+				services.AddTransient<IIamPort, NegativeIamAdapter>();
+			}
+			else if (settings.Auth.Rbac.Provider == RbacProvider.PowerIAM)
+			{
+				services.AddTransient<IIamPort, PowerIamAdapter>();
+			}
+			else
+			{
+				throw new DddException(
+					$"Can't add iam adapter for unsupported " +
+					$"rbac provider: '{settings.Auth.Rbac.Provider}'.");
+			}
 			return services;
 		}
 		

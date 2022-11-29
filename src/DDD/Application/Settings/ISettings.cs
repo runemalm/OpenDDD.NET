@@ -6,6 +6,7 @@ using DDD.Application.Settings.Http;
 using DDD.Application.Settings.Monitoring;
 using DDD.Application.Settings.Persistence;
 using DDD.Application.Settings.Postgres;
+using DDD.Application.Settings.PowerIam;
 using DDD.Application.Settings.PubSub;
 using DDD.Application.Settings.Rabbit;
 
@@ -20,6 +21,7 @@ namespace DDD.Application.Settings
 		IHttpSettings Http { get; }
 		IMonitoringSettings Monitoring { get; }
 		IPersistenceSettings Persistence { get; }
+		IPowerIamSettings PowerIam { get; }
 		IPostgresSettings Postgres { get; }
 		IPubSubSettings PubSub { get; }
 		IRabbitSettings Rabbit { get; }

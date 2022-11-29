@@ -31,6 +31,8 @@
 		public string PERSISTENCE_PROVIDER { get; set; }
 		
 		public string POSTGRES_CONN_STR { get; set; }
+		
+		public string POWERIAM_URL { get; set; }
 
 		public string PUBSUB_PROVIDER { get; set; }
 		public string PUBSUB_CLIENT { get; set; }
