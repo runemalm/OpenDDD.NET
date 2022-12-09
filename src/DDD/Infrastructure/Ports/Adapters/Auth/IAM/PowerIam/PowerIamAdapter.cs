@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,18 +46,28 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 			IEnumerable<string> permissions, 
 			ActionId actionId, 
 			CancellationToken ct)
-				=> _api.AssurePermissionsInWorldAsync(domain, permissions.ToList(), 0, ct);
+			=> _api.AssurePermissionsInWorldAsync(
+				domain, 
+				permissions.ToList(), 
+				0, 
+				ct);
 
 		public Task<bool> HasPermissionsInRealmAsync(
+			string realmId,
 			string externalRealmId,
-			string domain, 
-			IEnumerable<string> permissions, 
+			string domain,
+			IEnumerable<string> permissions,
 			ActionId actionId,
 			CancellationToken ct)
-				=> _api.AssurePermissionsInRealmAsync(externalRealmId, domain, permissions.ToList(), 0, ct);
+			=> _api.AssurePermissionsInRealmAsync(
+				realmId, 
+				externalRealmId, 
+				domain, 
+				permissions.ToList(), 
+				0, 
+				ct);
 
 		public Task<bool> HasPermissionsInResourceGroupAsync(
-			string externalRealmId,
 			string resourceGroupId, 
 			string domain, 
 			IEnumerable<string> permissions,
@@ -66,7 +77,6 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 		}
 
 		public Task<bool> HasPermissionsInResourceAsync(
-			string externalRealmId,
 			string resourceId, 
 			string domain, 
 			IEnumerable<string> permissions, 

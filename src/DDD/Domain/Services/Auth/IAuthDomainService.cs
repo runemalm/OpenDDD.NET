@@ -15,8 +15,8 @@ namespace DDD.Domain.Services.Auth
 		
 		// RBAC
 		Task AssurePermissionsInWorldAsync(string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
-		Task AssurePermissionsInRealmAsync(string externalRealmId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
-		Task AssurePermissionsInResourceGroupAsync(string externalRealmId, string resourceGroupId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
-		Task AssurePermissionsInResourceAsync(string externalRealmId, string resourceId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
+		Task AssurePermissionsInRealmAsync(string realmId, string externalRealmId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
+		Task AssurePermissionsInResourceGroupAsync(string resourceGroupId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
+		Task AssurePermissionsInResourceAsync(string resourceId, string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct);
 	}
 }

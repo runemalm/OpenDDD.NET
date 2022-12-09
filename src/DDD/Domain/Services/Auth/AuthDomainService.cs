@@ -70,13 +70,19 @@ namespace DDD.Domain.Services.Auth
 
 			await AssureAuthenticatedAsync(actionId, ct);
 
-			var hasPermissions = await _iamAdapter.HasPermissionsInWorldAsync(domain, permissions, actionId, ct);
+			var hasPermissions = 
+				await _iamAdapter.HasPermissionsInWorldAsync(
+					domain, 
+					permissions, 
+					actionId, 
+					ct);
 
 			if (!hasPermissions)
 				throw new ForbiddenException();
 		}
 
 		public async Task AssurePermissionsInRealmAsync(
+			string realmId,
 			string externalRealmId, 
 			string domain, 
 			IEnumerable<string> permissions, 
@@ -87,7 +93,14 @@ namespace DDD.Domain.Services.Auth
 			
 			await AssureAuthenticatedAsync(actionId, ct);
 			
-			var hasPermissions = await _iamAdapter.HasPermissionsInRealmAsync(externalRealmId, domain, permissions, actionId, ct);
+			var hasPermissions = 
+				await _iamAdapter.HasPermissionsInRealmAsync(
+					realmId, 
+					externalRealmId, 
+					domain, 
+					permissions, 
+					actionId, 
+					ct);
 
 			if (!hasPermissions)
 				throw new ForbiddenException();
@@ -95,7 +108,6 @@ namespace DDD.Domain.Services.Auth
 
 
 		public async Task AssurePermissionsInResourceGroupAsync(
-			string externalRealmId,
 			string resourceGroupId,
 			string domain, 
 			IEnumerable<string> permissions, 
@@ -106,14 +118,19 @@ namespace DDD.Domain.Services.Auth
 			
 			await AssureAuthenticatedAsync(actionId, ct);
 			
-			var hasPermissions = await _iamAdapter.HasPermissionsInResourceGroupAsync(externalRealmId, resourceGroupId, domain, permissions, actionId, ct);
+			var hasPermissions = 
+				await _iamAdapter.HasPermissionsInResourceGroupAsync(
+					resourceGroupId, 
+					domain, 
+					permissions, 
+					actionId, 
+					ct);
 
 			if (!hasPermissions)
 				throw new ForbiddenException();
 		}
 
 		public async Task AssurePermissionsInResourceAsync(
-			string externalRealmId,
 			string resourceId, 
 			string domain, 
 			IEnumerable<string> permissions, 
@@ -124,7 +141,13 @@ namespace DDD.Domain.Services.Auth
 			
 			await AssureAuthenticatedAsync(actionId, ct);
 			
-			var hasPermissions = await _iamAdapter.HasPermissionsInResourceAsync(externalRealmId, resourceId, domain, permissions, actionId, ct);
+			var hasPermissions = 
+				await _iamAdapter.HasPermissionsInResourceAsync(
+					resourceId, 
+					domain, 
+					permissions, 
+					actionId, 
+					ct);
 
 			if (!hasPermissions)
 				throw new ForbiddenException();
