@@ -270,9 +270,18 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes:
 
+**1.0.0-alpha.4** - 2022-12-10
+
+- Add configuration setting for which server urls to listen to. (**breaking**)
+- Fix concurrency issues with memory repositories.
+- Add support for IAM ports.
+- Add 'PowerIAM' adapter.
+- Add RBAC auth settings. (**breaking**)
+- Add a base 'Migrator' class. (**breaking**)
+
 **1.0.0-alpha.3** - 2022-11-20
 
-- Refactor JwtToken and add IdToken.
+- Refactor JwtToken and add IdToken. (**breaking**)
 - Add more tasks to code generation tool.
 - Add support for http put methods to code generation tool.
 - Add some missing repository method implementations.
