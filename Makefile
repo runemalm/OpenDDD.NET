@@ -107,6 +107,13 @@ build: ##@Build	 build the solution
 	cd $(SRC_DIR) && \
 	dotnet build
 
+.PHONY: deep-rebuild
+deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
+	make clean
+	make clear-nuget-caches
+	make restore
+	make build
+
 .PHONY: pack
 pack: ##@Build	 Create the nuget in local feed
 	make build
@@ -128,13 +135,6 @@ restore: ##@Build	 restore the solution
 .PHONY: clear-nuget-caches
 clear-nuget-caches: ##@Build	 clean all nuget caches
 	nuget locals all -clear
-
-.PHONY: deep-rebuild
-deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
-	make clean
-	make clear-nuget-caches
-	make restore
-	make build
 
 ##########################################################################
 # TOOLS
