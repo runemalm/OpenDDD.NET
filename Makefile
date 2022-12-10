@@ -18,7 +18,7 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := ddddotnetcore
-BUILD_VERSION := 1.0.0-alpha.3
+BUILD_VERSION := 1.0.0-alpha.4
 
 SRC_DIR := $(PWD)/src
 DDD_DIR := $(SRC_DIR)/DDD
@@ -117,6 +117,24 @@ pack: ##@Build	 Create the nuget in local feed
 push: ##@Build	 Push the nuget to the global feed
 	cd $(FEED_DIR) && \
 	dotnet nuget push DDD.NETCore.$(BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
+
+##########################################################################
+# .NET Core
+##########################################################################
+.PHONY: restore
+restore: ##@Build	 restore the solution
+	cd src && dotnet restore
+
+.PHONY: clear-nuget-caches
+clear-nuget-caches: ##@Build	 clean all nuget caches
+	nuget locals all -clear
+
+.PHONY: deep-rebuild
+deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
+	make clean
+	make clear-nuget-caches
+	make restore
+	make build
 
 ##########################################################################
 # TOOLS

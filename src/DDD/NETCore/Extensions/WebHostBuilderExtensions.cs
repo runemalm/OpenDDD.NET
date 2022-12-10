@@ -34,6 +34,11 @@ namespace DDD.NETCore.Extensions
 			webHostBuilder =
 				webHostBuilder.ConfigureServices((context, services) =>
 				{
+					// Set server urls
+					var urls = context.Configuration.GetSection("HTTP_URLS").Value.Split(',');
+					webHostBuilder.UseSetting(WebHostDefaults.ServerUrlsKey, string.Join(';', urls));
+					
+					// Add settings
 					services.Configure<Options>(context.Configuration);
 					services.AddTransient<ISettings, DddSettings>();
 					

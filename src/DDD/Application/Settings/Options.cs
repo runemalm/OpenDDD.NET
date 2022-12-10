@@ -5,6 +5,8 @@
 		public string GENERAL_CONTEXT { get; set; }
 
 		public string AUTH_ENABLED { get; set; }
+		public string AUTH_RBAC_PROVIDER { get; set; }
+		public string AUTH_RBAC_EXTERNAL_REALM_ID { get; set; }
 		public string AUTH_JWT_TOKEN_PRIVATE_KEY { get; set; }
 		public string AUTH_JWT_TOKEN_NAME { get; set; }
 		public string AUTH_JWT_TOKEN_LOCATION { get; set; }
@@ -13,6 +15,7 @@
 		public string EMAIL_PROVIDER { get; set; }
 		public string EMAIL_SMTP_HOST { get; set; }
 		public string EMAIL_SMTP_PORT { get; set; }
+		public string HTTP_URLS { get; set; }
 		public string HTTP_CORS_ALLOWED_ORIGINS { get; set; }
 		public string HTTP_DOCS_DESCRIPTION { get; set; }
 		public string HTTP_DOCS_ENABLED { get; set; }
@@ -28,6 +31,8 @@
 		public string PERSISTENCE_PROVIDER { get; set; }
 		
 		public string POSTGRES_CONN_STR { get; set; }
+		
+		public string POWERIAM_URL { get; set; }
 
 		public string PUBSUB_PROVIDER { get; set; }
 		public string PUBSUB_CLIENT { get; set; }

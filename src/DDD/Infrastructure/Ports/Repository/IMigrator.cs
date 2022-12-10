@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
+using DDD.Domain.Model.BuildingBlocks.Aggregate;
 
 namespace DDD.Infrastructure.Ports.Repository
 {
-	public interface IMigrator<T> where T : IBuildingBlock
+	public interface IMigrator<T> where T : IAggregate
 	{
 		T Migrate(T buildingBlock);
 

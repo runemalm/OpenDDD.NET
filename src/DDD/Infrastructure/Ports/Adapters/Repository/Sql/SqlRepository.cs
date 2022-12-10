@@ -103,10 +103,10 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
 			
-			var stmt = $"SELECT * FROM {_tableName} WHERE id IN (@ids)";
+			var stmt = $"SELECT * FROM {_tableName} WHERE id = ANY (@ids)";
 			
 			var parameters = new Dictionary<string, object>();
-			parameters.Add("@ids", String.Join(',', entityIds));
+			parameters.Add("@ids", entityIds.Select(e => e.ToString()).ToArray());
 
 			var aggregates = await conn.ExecuteQueryAsync<T>(stmt, parameters);
 			aggregates = _migrator.Migrate(aggregates).ToList();

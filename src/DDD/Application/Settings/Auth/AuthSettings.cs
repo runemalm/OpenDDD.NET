@@ -7,20 +7,22 @@ namespace DDD.Application.Settings.Auth
 	public class AuthSettings : IAuthSettings
 	{
 		public bool Enabled { get; }
+		public IAuthRbacSettings Rbac { get; set; }
 		public IAuthJwtTokenSettings JwtToken { get; }
+		
 		public AuthSettings() { }
 
 		public AuthSettings(IOptions<Options> options)
 		{
-			var enabled = options.Value.AUTH_ENABLED.IsTrue();
+			// Enabled
+			Enabled = options.Value.AUTH_ENABLED.IsTrue();
+
+			Rbac = new AuthRbacSettings(options);
 
 			// JWT Token
-			var jwtToken = new AuthJwtTokenSettings(options);
-			
-			// Azure OIDC
-			Enabled = enabled;
-			JwtToken = jwtToken;
-			
+			JwtToken = new AuthJwtTokenSettings(options);
+
+			// Validate
 			if (Enabled && JwtToken.PrivateKey.IsNullOrEmpty())
 				throw new SettingsException(
 					$"Settings auth enabled with no or empty private key is not allowed.");

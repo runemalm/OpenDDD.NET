@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -14,14 +15,16 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 {
 	public abstract class MemoryRepository<T> : Repository<T>, IRepository<T> where T : IAggregate
 	{
-		protected ICollection<T> Items = new List<T>();
+		protected BlockingCollection<T> Items = new BlockingCollection<T>();
 
 		public override Task DeleteAllAsync(ActionId actionId, CancellationToken ct)
-			=> Task.FromResult(Items = new List<T>());
+			=> Task.FromResult(Items = new BlockingCollection<T>());
 
 		public override Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct)
 		{
-			Items = Items.Where(i => i.Id != entityId).ToList();
+			Items = new BlockingCollection<T>(
+				new ConcurrentQueue<T>(
+					Items.Where(i => i.Id != entityId)));
 			return Task.CompletedTask;
 		}
 
@@ -66,68 +69,14 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 			if (!Items.Contains(aggregate))
 				Items.Add(aggregate);
 			else
-				Items = Items.Select(i => i.Id == aggregate.Id ? aggregate : i).ToList();
+				Items =
+					new BlockingCollection<T>(
+						new ConcurrentQueue<T>(
+							Items.Select(i => i.Id == aggregate.Id ? aggregate : i)));
 			return Task.CompletedTask;
 		}
 
 		public override Task<string> GetNextIdentityAsync()
 			=> Task.FromResult(Guid.NewGuid().ToString());
-
-
-		
-		// TODO: Use below when implementing the linq-based methods.
-
-		//public async Task<T> GetAsync(string id, CancellationToken ct)
-		//	=> await Task.FromResult(Items.FirstOrDefault(i => i.Id == id));
-
-		//public async Task CreateAsync(IEnumerable<T> items, CancellationToken ct)
-		//{
-		//	foreach (var i in items)
-		//		Items = Items.Append<T>(i);
-		//	await Task.CompletedTask;
-		//}
-
-		//public async Task CreateAsync(T item, CancellationToken ct)
-		//{
-		//	if (Items.FirstOrDefault(i => i.Id == item.Id) != null)
-		//		throw new Exception("Set a unique Id");
-		//	Items = Items.Append<T>(item);
-		//	await Task.CompletedTask;
-		//}
-
-		//public async Task UpdateAsync(T item, CancellationToken ct)
-		//	=> await Task.FromResult(Items = Items.Select(i => i.Id == item.Id ? item : i));
-
-		//public async Task UpsertAsync(T item, CancellationToken ct)
-		//{
-		//	var exists = (await GetAsync(item.Id, ct)) != null;
-		//	if (!exists)
-		//		Items = Items.Append<T>(item);
-		//	else
-		//		await UpdateAsync(item, ct);
-		//}
-
-		//public Task DeleteAsync(Expression<Func<T, bool>> where, CancellationToken ct)
-		//	=> Task.FromResult(Items = Items.Except(Items.Where(where.Compile())));
-
-		//public Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> where, CancellationToken ct)
-		//	=> Task.FromResult(Items.Where(where.Compile()));
-
-		//public async Task<T> GetFirstAsync(
-		//	CancellationToken ct,
-		//	string sortOrder,
-		//	Expression<Func<T, object>> sortBy,
-		//	Expression<Func<T, bool>> where = null)
-		//{
-		//	var filtered = await FindAsync(where ?? (_ => true), ct);
-		//	var sorted =
-		//		sortOrder == "Ascending"
-		//			? filtered.OrderBy(sortBy.Compile())
-		//			: filtered.OrderByDescending(sortBy.Compile());
-		//	return sorted.FirstOrDefault();
-		//}
-
-		//public async Task<T> FindOneAsync(Expression<Func<T, bool>> where, CancellationToken ct)
-		//	=> (await FindAsync(where, ct)).FirstOrDefault();
 	}
 }
