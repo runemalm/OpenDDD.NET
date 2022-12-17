@@ -41,9 +41,7 @@ namespace DDD.NETCore.Extensions
 					// Add settings
 					services.Configure<Options>(context.Configuration);
 					services.AddTransient<ISettings, DddSettings>();
-					
-					// TODO
-					services.AddSingleton<IRegistrationTracker, RegistrationTracker>();
+
 				});
 			return webHostBuilder;
 		}
