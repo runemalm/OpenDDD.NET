@@ -42,10 +42,10 @@ Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon
 
 ### Supported versions
 
-- .Net Core 7.0 (not tested)
-- .Net Core 6.0
-- .Net Core 5.0 (not tested)
-- .Net Core 3.1
+- .NET 7 (not tested)
+- .NET 6.0
+- .NET 5.0 (not tested)
+- .NET Core 3.1
   
 ### Installation
 
@@ -210,10 +210,10 @@ If you want to contribute to the code base, create a pull request on the develop
 
 - [ ] GitHub README
 - [ ] NuGet README
-- [ ] Visual Studio Project Template .NET 7.0
+- [ ] Visual Studio Project Template .NET 7
 - [x] Visual Studio Project Template .NET 6.0
 - [ ] Visual Studio Project Template .NET 5.0
-- [ ] Visual Studio Project Template .NET 3.1
+- [ ] Visual Studio Project Template .NET Core 3.1
 - [x] Start Context
 - [x] Stop Context
 - [x] Control
