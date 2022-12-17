@@ -20,7 +20,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Email.Memory
 
 		public async Task SendAsync(
 			string fromEmail, string fromName, string toEmail, string toName, 
-			string subject, string message, CancellationToken ct)
+			string subject, string message, bool isHtml, CancellationToken ct)
 		{
 			SentCount++;
 		}

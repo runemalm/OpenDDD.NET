@@ -23,7 +23,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Email.Smtp
 
 		public async Task SendAsync(
 			string fromEmail, string fromName, string toEmail, string toName, 
-			string subject, string message, CancellationToken ct)
+			string subject, string message, bool isHtml, CancellationToken ct)
 		{
 			MailAddress from = new MailAddress(fromEmail, fromName, Encoding.UTF8);
 			MailAddress to = new MailAddress(toEmail, toName, Encoding.UTF8);
@@ -32,9 +32,10 @@ namespace DDD.Infrastructure.Ports.Adapters.Email.Smtp
 			msg.BodyEncoding =  Encoding.UTF8;
 			msg.Subject = subject;
 			msg.SubjectEncoding = Encoding.UTF8;
+			msg.IsBodyHtml = isHtml;
 			
 			await _client.SendMailAsync(msg);
-			
+
 			msg.Dispose();
 		}
 		
