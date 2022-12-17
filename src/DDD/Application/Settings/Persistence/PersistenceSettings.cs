@@ -5,7 +5,8 @@ namespace DDD.Application.Settings.Persistence
 	public class PersistenceSettings : IPersistenceSettings
 	{
 		public PersistenceProvider Provider { get; set; }
-		
+		public IPersistencePoolingSettings Pooling { get; set; }
+
 		public PersistenceSettings() { }
 
 		public PersistenceSettings(IOptions<Options> options)
@@ -19,6 +20,7 @@ namespace DDD.Application.Settings.Persistence
 					provider = PersistenceProvider.Postgres;
 
 			Provider = provider;
+			Pooling = new PersistencePoolingSettings(options);
 		}
 	}
 }
