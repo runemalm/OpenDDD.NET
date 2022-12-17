@@ -143,12 +143,15 @@ CFG_GENERAL_CONTEXT=Weather
 
 # Auth
 CFG_AUTH_ENABLED=false
+CFG_AUTH_RBAC_PROVIDER=
+CFG_AUTH_RBAC_EXTERNAL_REALM_ID=
 CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=some-fake-private-key
 CFG_AUTH_JWT_TOKEN_NAME=Authorization
 CFG_AUTH_JWT_TOKEN_LOCATION=header
 CFG_AUTH_JWT_TOKEN_SCHEME=Bearer
 
 # Http Adapter
+CFG_HTTP_URLS=http://localhost:9000
 CFG_HTTP_CORS_ALLOWED_ORIGINS=https://localhost:5052,http://localhost:5051
 CFG_HTTP_DOCS_DEFINITIONS=Public,Public,
 CFG_HTTP_DOCS_ENABLED=true
@@ -160,6 +163,9 @@ CFG_HTTP_DOCS_TITLE=Weather API
 
 # Persistence
 CFG_PERSISTENCE_PROVIDER=Postgres
+CFG_PERSISTENCE_POOLING_ENABLED=true
+CFG_PERSISTENCE_POOLING_MIN_SIZE=0
+CFG_PERSISTENCE_POOLING_MAX_SIZE=100
 
 # Postgres
 CFG_POSTGRES_CONN_STR="Host=localhost:9092;Username=net60;Password=net60;Database=net60"
@@ -207,7 +213,7 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Visual Studio Project Template .NET 3.1
 - [x] Start Context
 - [x] Stop Context
-- [ ] Control
+- [x] Control
 - [x] On-the-fly aggregate migration
 - [x] Auto-code Generation from domain.yml File
 - [x] Postgres Dead Letter Queue
@@ -222,7 +228,7 @@ If you want to contribute to the code base, create a pull request on the develop
 - [x] Integration Event Publishing
 - [x] Rabbit Event Adapter
 - [x] Memory Event Adapter
-- [ ] PubSub
+- [x] PubSub
 - [x] Auth Domain Service
 - [x] Auth
 - [x] Aggregate
