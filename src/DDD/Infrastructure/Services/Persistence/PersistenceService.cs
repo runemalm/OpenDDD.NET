@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DDD.Application;
 using DDD.Application.Exceptions;
-using DDD.Domain;
-using DDD.Domain.Model;
 using DDD.Logging;
 
 namespace DDD.Infrastructure.Services.Persistence
@@ -80,5 +78,11 @@ namespace DDD.Infrastructure.Services.Persistence
 		}
 
 		public abstract Task<IConnection> OpenConnectionAsync();
+
+		public virtual Task StartAsync()
+			=> Task.CompletedTask;
+
+		public virtual Task StopAsync()
+			=> ReleaseConnectionAsync(ActionId.BootId());
 	}
 }

@@ -16,6 +16,15 @@ namespace DDD.Application
 			return actionId;
 		}
 
+		public static ActionId BootId()
+		{
+			var actionId = new ActionId
+			{
+				Value = "BootActionId"
+			};
+			return actionId;
+		}
+
 		public override string ToString()
 		{
 			return Value;

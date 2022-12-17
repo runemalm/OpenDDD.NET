@@ -12,6 +12,12 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
 			
 		}
 		
+		public override async Task StartAsync()
+			=> await base.StartAsync();
+
+		public override async Task StopAsync()
+			=> await base.StopAsync();
+
 		public override async Task<IConnection> OpenConnectionAsync()
 		{
 			var conn = new PostgresConnection(_connString);

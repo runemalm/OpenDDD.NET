@@ -1,7 +1,5 @@
 ﻿using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
 
 namespace DDD.Infrastructure.Services.Persistence
 {
@@ -13,5 +11,7 @@ namespace DDD.Infrastructure.Services.Persistence
         Task<IConnection> GetConnectionAsync(ActionId actionId);
         Task ReleaseConnectionAsync(ActionId actionId);
         Task<IConnection> OpenConnectionAsync();
+        Task StartAsync();
+        Task StopAsync();
     }
 }

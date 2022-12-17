@@ -20,6 +20,7 @@ using DDD.Domain.Model.Validation;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.NewtonSoft;
 using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Services.Persistence;
 using DDD.NETCore.Middleware;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
@@ -242,6 +243,7 @@ namespace DDD.NETCore.Extensions
 		
 		private static IApplicationBuilder StartCommonAdapters(this IApplicationBuilder app)
 		{
+			app.StartPersistenceService();
 			app.StartInterchangeEventAdapter();
 			app.StartDomainEventAdapter();
 			return app;
@@ -255,6 +257,16 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder StartSecondaryAdapters(this IApplicationBuilder app)
 		{
+			return app;
+		}
+		
+		private static IApplicationBuilder StartPersistenceService(this IApplicationBuilder app)
+		{
+			var persistenceService =
+				app.ApplicationServices.GetService<IPersistenceService>();
+		
+			persistenceService.StartAsync().Wait();
+		
 			return app;
 		}
 
@@ -309,6 +321,7 @@ namespace DDD.NETCore.Extensions
 		{
 			app.StopInterchangeEventAdapter();
 			app.StopDomainEventAdapter();
+			app.StopPersistenceService();
 			return app;
 		}
 		
@@ -316,6 +329,16 @@ namespace DDD.NETCore.Extensions
 		{
 			foreach (var listener in app.ApplicationServices.GetServices<IEventListener>())
 				listener.StopAsync().Wait();
+			return app;
+		}
+		
+		private static IApplicationBuilder StopPersistenceService(this IApplicationBuilder app)
+		{
+			var persistenceService =
+				app.ApplicationServices.GetService<IPersistenceService>();
+		
+			persistenceService.StopAsync().Wait();
+		
 			return app;
 		}
 
