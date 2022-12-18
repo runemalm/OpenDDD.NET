@@ -433,9 +433,10 @@ namespace DDD.NETCore.Extensions
 			{
 				context.Document.Info.Version = "all versions";
 				context.Document.Info.Description =
-					"The API versioning policy is additive.<br>" +
-					"All endpoints with the same major/minor version pairs are backwards compatible.<br>" +
-					"Only the APIs with the latest patch version of each major/minor version pair are defined below.";
+					"The API follows the contract/expand strategy." +
+					"This means the versioning policy is additive.<br>" +
+					"Within the same major version, all endpoints are backwards compatible.<br>" +
+					"Only the APIs with the latest patch version of each major version are defined below.";
 			}
 		}
 
