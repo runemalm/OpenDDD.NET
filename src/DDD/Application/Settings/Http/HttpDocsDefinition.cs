@@ -8,8 +8,6 @@ namespace DDD.Application.Settings.Http
 		public string Attribute { get; set; }
 		public string BasePath { get; set; }
 
-		public HttpDocsDefinition() { }
-
 		public HttpDocsDefinition(string settingString)
 		{
 			Name = settingString;

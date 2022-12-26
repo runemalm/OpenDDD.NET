@@ -22,6 +22,7 @@ using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.NewtonSoft
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Infrastructure.Services.Persistence;
 using DDD.NETCore.Middleware;
+using Microsoft.IdentityModel.Tokens;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
 namespace DDD.NETCore.Extensions
@@ -223,13 +224,21 @@ namespace DDD.NETCore.Extensions
 						if (settings.Http.Docs.HttpsEnabled)
 							document.Schemes.Add(NSwag.OpenApiSchema.Https);
 
-						if (settings.Http.Docs.Hostname != "" && settings.Http.Docs.Hostname != null)
-							document.Host = settings.Http.Docs.Hostname;
+						if (!settings.Http.Docs.Hostname.IsNullOrEmpty())
+						{
+							var port = 0;
+							if (settings.Http.Docs.HttpEnabled)
+								port = settings.Http.Docs.HttpPort != 80 ? settings.Http.Docs.HttpPort : 0;
+							else if (settings.Http.Docs.HttpsEnabled)
+								port = settings.Http.Docs.HttpsPort != 443 ? settings.Http.Docs.HttpsPort : 0;
+
+							document.Host = $"{settings.Http.Docs.Hostname}{(port != 0 ? ":"+port : "")}";
+						}
 					};
 				})
 				.UseSwaggerUi3(c =>
 				{
-					c.DocExpansion = "none";
+					c.DocExpansion = "none"; // 'list', 'full' or 'none'
 				});
 			return app;
 		}

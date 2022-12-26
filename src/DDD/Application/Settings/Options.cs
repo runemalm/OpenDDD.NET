@@ -19,11 +19,14 @@
 		public string HTTP_CORS_ALLOWED_ORIGINS { get; set; }
 		public string HTTP_DOCS_DESCRIPTION { get; set; }
 		public string HTTP_DOCS_ENABLED { get; set; }
+		public string HTTP_DOCS_MAJOR_VERSIONS { get; set; }
 		public string HTTP_DOCS_DEFINITIONS { get; set; }
 		public string HTTP_DOCS_AUTH_EXTRA_TOKENS { get; set; }
 		public string HTTP_DOCS_HTTP_ENABLED { get; set; }
 		public string HTTP_DOCS_HTTPS_ENABLED { get; set; }
 		public string HTTP_DOCS_HOSTNAME { get; set; }
+		public string HTTP_DOCS_HTTP_PORT { get; set; }
+		public string HTTP_DOCS_HTTPS_PORT { get; set; }
 		public string HTTP_DOCS_TITLE { get; set; }
 
 		public string MONITORING_PROVIDER { get; set; }
