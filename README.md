@@ -202,9 +202,13 @@ CFG_EMAIL_SMTP_PORT=1025
   
 Documentation is coming in v1.0.0 rc.
 
-### Semantic versioning in HTTP adapters ("APIs")
+### Semantic versioning
 
-DDD.NETCore requires you to start http adapter (api) versions at  `1.0.0`  and increment as follows:
+Your primary http adapters effectively provides an "API" for clients of the application.
+
+DDD.NETCore requires you to use SemVer2.0 policy for versioning. This means that backwards *compatible* changes increments the patch- and minor versions. Backwards *incompatible* changes thus increments the major version.
+
+See table below for when to increment the numbers:
 
 | Code Status                               | Stage         | Rule                                                               | Example Version |
 |-------------------------------------------|---------------|--------------------------------------------------------------------|-----------------|
