@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +17,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 		private readonly ISettings _settings;
 		private readonly ILogger _logger;
 		private readonly ICredentials _credentials;
-		private V102Api _api { get; set; }
+		private AccessApi _accessApi { get; set; }
 
 		public PowerIamAdapter(ISettings settings, ILogger logger, ICredentials credentials)
 		{
@@ -38,7 +37,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 			if (_credentials.JwtToken != null)
 				config.ApiKey.Add("Authorization", $"Bearer {_credentials.JwtToken.RawString}");
 			
-			_api = new V102Api(config);
+			_accessApi = new AccessApi(config);
 		}
 
 		public Task<bool> HasPermissionsInWorldAsync(
@@ -46,7 +45,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 			IEnumerable<string> permissions, 
 			ActionId actionId, 
 			CancellationToken ct)
-			=> _api.AssurePermissionsInWorldAsync(
+			=> _accessApi.AssurePermissionsInWorldAsync(
 				domain, 
 				permissions.ToList(), 
 				0, 
@@ -59,7 +58,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 			IEnumerable<string> permissions,
 			ActionId actionId,
 			CancellationToken ct)
-			=> _api.AssurePermissionsInRealmAsync(
+			=> _accessApi.AssurePermissionsInRealmAsync(
 				realmId, 
 				externalRealmId, 
 				domain, 
