@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NSwag;
-using NSwag.Generation.Processors;
-using NSwag.Generation.Processors.Contexts;
 using NSwag.Generation.Processors.Security;
 using DDD.NETCore.HostedServices;
 using DDD.Application.Exceptions;
@@ -23,8 +18,6 @@ using DDD.Infrastructure.Ports.Adapters.Auth.IAM.Negative;
 using DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam;
 using DDD.Infrastructure.Ports.Adapters.Email.Memory;
 using DDD.Infrastructure.Ports.Adapters.Email.Smtp;
-using DDD.Infrastructure.Ports.Adapters.Http.Common;
-using DDD.Infrastructure.Ports.Adapters.Http.NETCore;
 using DDD.Infrastructure.Ports.Adapters.Monitoring.AppInsights;
 using DDD.Infrastructure.Ports.Adapters.Monitoring.Memory;
 using DDD.Infrastructure.Ports.Adapters.PubSub.Memory;
@@ -39,6 +32,8 @@ using DDD.Infrastructure.Services.Persistence;
 using DDD.Infrastructure.Services.Persistence.Memory;
 using DDD.Infrastructure.Services.Persistence.Postgres;
 using DDD.Infrastructure.Services.Publisher;
+using DDD.NETCore.Extensions.Swagger;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DDD.NETCore.Extensions
 {
@@ -310,71 +305,101 @@ namespace DDD.NETCore.Extensions
 
 		private static IServiceCollection AddSwaggerDocuments(this IServiceCollection services, ISettings settings)
 		{
-			foreach (var defSelector in settings.Http.Docs.Definitions)
+			/*
+			 * Each 'document' corresponds to a specific api version definition in the UI.
+			 * Documents are added by the NSwag 'generator'.
+			 * 
+			 * The generator is defined below, it adds 'processors'.
+			 * The 'document processor' is used to add the 'security definitions'.
+			 * The 'operation processor' is used to add the endpoints.
+			 *
+			 * So NSwag will used the configured generator below to create the openapi yml file.
+			 */
+			foreach (var majorVersion in settings.Http.Docs.MajorVersions)
 			{
-				var defAttributeName = defSelector.Attribute;
-
-				services.AddOpenApiDocument(c =>
+				if (!settings.Http.Docs.Definitions.Any())
 				{
-					var title = $"{settings.General.Context} API";
-
-					if (settings.Http.Docs.Title != "")
-						title = settings.Http.Docs.Title;
-
-					c.Title = title;
-					c.DocumentName = defSelector.Name;
-					c.DocumentProcessors.Add(new DocumentProcessor(settings));
-
-					// Security definitions
-					var securityNames = new List<string>();
-
-					if (settings.Auth.Enabled)
+					services.AddSwaggerDocument(settings, majorVersion, "", "");
+				}
+				else
+				{
+					foreach (var defSelector in settings.Http.Docs.Definitions)
 					{
-						services.ValidateJwtSettings(settings.Auth.JwtToken);
-						
+						services.AddSwaggerDocument(settings, majorVersion, defSelector.Name, defSelector.BasePath);
+					}
+				}
+			}
+			return services;
+		}
+
+		private static IServiceCollection AddSwaggerDocument(this IServiceCollection services, ISettings settings, int majorVersion, string definitionName, string basePath)
+		{
+			services.AddOpenApiDocument(c =>
+			{
+				var title = $"{settings.General.Context} API";
+
+				if (settings.Http.Docs.Title != "")
+					title = settings.Http.Docs.Title;
+
+				c.Title = title;
+				c.DocumentName = $"Version {majorVersion}{(!definitionName.IsNullOrEmpty() ? " ("+definitionName+")" : "")}";
+				c.DocumentProcessors.Add(new DocumentProcessor(settings, majorVersion));
+
+				// Security definitions
+				var securityNames = new List<string>();
+
+				if (settings.Auth.Enabled)
+				{
+					services.ValidateJwtSettings(settings.Auth.JwtToken);
+
+					c.DocumentProcessors.Add(
+						new SecurityDefinitionAppender(
+							"JWT Token",
+							new OpenApiSecurityScheme
+							{
+								Type = OpenApiSecuritySchemeType.ApiKey,
+								Name = settings.Auth.JwtToken.Name,
+								In = ApiKeyLocationFromString(settings.Auth.JwtToken.Location),
+								Description =
+									$"Type into the textbox: " +
+									$"{settings.Auth.JwtToken.Scheme} " +
+									$"{{your jwt token}}."
+							}));
+
+					securityNames.Add("JWT Token");
+
+					foreach (var extraToken in settings.Http.Docs.AuthExtraTokens)
+					{
 						c.DocumentProcessors.Add(
 							new SecurityDefinitionAppender(
-								"JWT Token",
+								extraToken.Name,
 								new OpenApiSecurityScheme
 								{
 									Type = OpenApiSecuritySchemeType.ApiKey,
-									Name = settings.Auth.JwtToken.Name,
-									In = ApiKeyLocationFromString(settings.Auth.JwtToken.Location),
-									Description =
-										$"Type into the textbox: " +
-										$"{settings.Auth.JwtToken.Scheme} " +
-										$"{{your jwt token}}."
+									Name = extraToken.KeyName,
+									In = ApiKeyLocationFromString(extraToken.Location),
+									Description = extraToken.Description
 								}));
 
-						securityNames.Add("JWT Token");
-
-						foreach (var extraToken in settings.Http.Docs.AuthExtraTokens)
-						{
-							c.DocumentProcessors.Add(
-								new SecurityDefinitionAppender(
-									extraToken.Name,
-									new OpenApiSecurityScheme
-									{
-										Type = OpenApiSecuritySchemeType.ApiKey,
-										Name = extraToken.KeyName,
-										In = ApiKeyLocationFromString(extraToken.Location),
-										Description = extraToken.Description
-									}));
-
-							securityNames.Add(extraToken.Name);
-						}
+						securityNames.Add(extraToken.Name);
 					}
+				}
 
-					// Security requirements
-					c.OperationProcessors.Insert(
-						0,
-						new OperationProcessor(
-							defAttributeName,
-							securityNames,
-							defSelector.BasePath,
-							settings.Http.Docs.Hostname));
-				});
-			}
+				// Security requirements
+				c.OperationProcessors.Insert(
+					0,
+					new OperationProcessor(
+						majorVersion,
+						definitionName,
+						securityNames,
+						basePath,
+						settings.Http.Docs.Hostname,
+						settings.Http.Docs.HttpEnabled,
+						settings.Http.Docs.HttpsEnabled,
+						settings.Http.Docs.HttpPort,
+						settings.Http.Docs.HttpsPort));
+			});
+			
 			return services;
 		}
 		
@@ -415,222 +440,6 @@ namespace DDD.NETCore.Extensions
 					throw new SettingsException(
 						$"Unsupported 'location' in http docs auth def " +
 						$"api key: {value}");
-			}
-		}
-
-		// Helpers
-
-		private class DocumentProcessor : IDocumentProcessor
-		{
-			private ISettings _settings;
-
-			public DocumentProcessor(ISettings settings) : base()
-			{
-				_settings = settings;
-			}
-
-			public void Process(DocumentProcessorContext context)
-			{
-				context.Document.Info.Version = "all versions";
-				context.Document.Info.Description =
-					"The API versioning policy is additive.<br>" +
-					"All endpoints with the same major/minor version pairs are backwards compatible.<br>" +
-					"Only the APIs with the latest patch version of each major/minor version pair are defined below.";
-			}
-		}
-
-		private class OperationProcessor : IOperationProcessor
-		{
-			private ICollection<string> _versions = new List<string>();
-			private string _defAttributeName;
-			private IEnumerable<string> _securityNames;
-			private string _basePath;
-			private string _hostname;
-
-			public OperationProcessor(
-				string defAttributeName,
-				IEnumerable<string> securityNames,
-				string basePath,
-				string hostname)
-			{
-				_defAttributeName = defAttributeName;
-				_securityNames = securityNames;
-				_basePath = basePath;
-				_hostname = hostname;
-			}
-
-			public bool Process(OperationProcessorContext context)
-			{
-				var name = context.ControllerType.Name;
-
-				// Is in base class and has docs definition attribute?
-				var isFromHttpAdapter = context.ControllerType.IsSubclassOf(typeof(NETCoreHttpAdapter));
-				var passAttributeFilter =
-					context.MethodInfo.GetCustomAttributes().Any(
-						a =>
-							a.GetType().IsSubclassOf(typeof(DocsDefinitionAttribute)) &&
-							a.GetType().Name == _defAttributeName);
-
-				// Version?
-				var version = "";
-
-				if (isFromHttpAdapter)
-				{
-					version = GetVersion(context);
-
-					SaveVersion(version);
-
-					context.OperationDescription.Operation.Tags = new List<string>() { version };
-					context.OperationDescription.Operation.IsDeprecated = GetDeprecationStatus(context);
-					context.OperationDescription.Operation.OperationId = context.MethodInfo.Name;
-				}
-
-				// Protected?
-				var protectedAttributes =
-					context.MethodInfo.DeclaringType.GetCustomAttributes(true)
-					.Union(context.MethodInfo.GetCustomAttributes(true))
-					.OfType<ProtectedAttribute>();
-
-				var allowAnonymousAttributes =
-					context.MethodInfo.DeclaringType.GetCustomAttributes(true)
-					.Union(context.MethodInfo.GetCustomAttributes(true))
-					.OfType<AllowAnonymousAttribute>();
-
-				var hasProtected = protectedAttributes.Any();
-				var hasAllowAnonymous = allowAnonymousAttributes.Any();
-				var isProtected = hasProtected && !hasAllowAnonymous;
-
-				if (isProtected)
-				{
-					context.OperationDescription.Operation.Responses.Add(
-						"401", new OpenApiResponse { Description = "Unauthorized - there was something wrong with your credentials." });
-					context.OperationDescription.Operation.Responses.Add(
-						"403", new OpenApiResponse { Description = "Forbidden - you don't have enough permissions to execute the action." });
-
-					var schemes = new OpenApiSecurityRequirement();
-
-					foreach (var securityName in _securityNames)
-						schemes.Add(securityName, new List<string>());
-
-					context.OperationDescription.Operation.Security =
-						new List<OpenApiSecurityRequirement>() { schemes };
-				}
-
-				// Add common responses to scheme
-				context.OperationDescription.Operation.Responses.Add(
-					"400", new OpenApiResponse { Description = "Bad Request - you sent invalid data." });
-				context.OperationDescription.Operation.Responses.Add(
-					"404", new OpenApiResponse { Description = "Not Found - one or more entities could not be found." });
-				context.OperationDescription.Operation.Responses.Add(
-					"500", new OpenApiResponse { Description = "Internal Server Error - an unknown error occured." });
-
-				// Base path
-				if (_basePath != "")
-					context.OperationDescription.Operation.Servers =
-						new List<OpenApiServer>()
-						{
-							new OpenApiServer() { Url = $"{_hostname}/{_basePath}" }
-						};
-
-				return isFromHttpAdapter && passAttributeFilter;
-			}
-
-			private bool GetDeprecationStatus(OperationProcessorContext context)
-			{
-				var versionDeprecated = IsVersionDeprecated(context);
-				var endpointDeprecated = IsEndpointDeprecated(context);
-
-				return endpointDeprecated || versionDeprecated;
-			}
-
-			private bool IsVersionDeprecated(OperationProcessorContext context)
-			{
-				var hasAttribute =
-					context.ControllerType.GetCustomAttributesData().Any(
-						a => a.AttributeType == typeof(DeprecatedAttribute));
-
-				return hasAttribute;
-			}
-
-			private bool IsEndpointDeprecated(OperationProcessorContext context)
-			{
-				var hasAttribute =
-					context.MethodInfo.GetCustomAttributes().Any(
-						a => a.GetType() == typeof(DeprecatedAttribute));
-
-				return hasAttribute;
-			}
-
-			private string GetVersion(OperationProcessorContext context)
-			{
-				var attribute =
-					context.ControllerType.GetCustomAttributesData().Where(
-						a => a.AttributeType == typeof(RouteAttribute)).First();
-
-				if (attribute == null)
-					throw new Exception(
-						"HttpAdapter class is missing the 'Route' " +
-						"attribute. Please add it.");
-
-				var version = attribute.ConstructorArguments[0].Value.ToString();
-
-				return version;
-			}
-
-			private void SaveVersion(string version)
-			{
-				if (!_versions.Contains(version)) _versions.Add(version);
-				_versions = OrderVersions(_versions);
-			}
-
-			private ICollection<string> OrderVersions(ICollection<string> versions)
-			{
-				var ordered = new List<Version>();
-				var hasV1 = false;
-
-				foreach (var s in versions)
-				{
-					Version semantic = null;
-
-					if (s == "v1")
-						hasV1 = true;   // Exception for v1
-					else
-					{
-						try
-						{
-							semantic = new Version(s.Replace("v", ""));
-						}
-						catch (Exception)
-						{
-							throw new Exception(
-								$"You must use semantic API versions " +
-								$"in your http adapters (vx.y.z). " +
-								$"Invalid version: {s}");
-						}
-
-						ordered.Add(semantic);
-					}
-				}
-
-				ordered.Sort();
-				ordered.Reverse();
-
-				var result = ordered.Select(o => $"v{o}").ToList();
-
-				if (hasV1)
-					result.Insert(ordered.Count(), "v1");
-
-				return result;
-			}
-
-			private string FirstCharToUpper(string input)
-			{
-				switch (input)
-				{
-					case null: throw new ArgumentNullException(nameof(input));
-					case "": throw new ArgumentException($"{nameof(input)} cannot be empty", nameof(input));
-					default: return input[0].ToString().ToUpper() + input.Substring(1);
-				}
 			}
 		}
 	}

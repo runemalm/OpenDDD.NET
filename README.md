@@ -42,10 +42,10 @@ Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon
 
 ### Supported versions
 
-- .Net Core 7.0 (not tested)
-- .Net Core 6.0
-- .Net Core 5.0 (not tested)
-- .Net Core 3.1
+- .NET 7 (not tested)
+- .NET 6.0
+- .NET 5.0 (not tested)
+- .NET Core 3.1
   
 ### Installation
 
@@ -143,12 +143,15 @@ CFG_GENERAL_CONTEXT=Weather
 
 # Auth
 CFG_AUTH_ENABLED=false
+CFG_AUTH_RBAC_PROVIDER=PowerIAM
+CFG_AUTH_RBAC_EXTERNAL_REALM_ID=some-external-id
 CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=some-fake-private-key
 CFG_AUTH_JWT_TOKEN_NAME=Authorization
 CFG_AUTH_JWT_TOKEN_LOCATION=header
 CFG_AUTH_JWT_TOKEN_SCHEME=Bearer
 
 # Http Adapter
+CFG_HTTP_URLS=http://localhost:9000
 CFG_HTTP_CORS_ALLOWED_ORIGINS=https://localhost:5052,http://localhost:5051
 CFG_HTTP_DOCS_DEFINITIONS=Public,Public,
 CFG_HTTP_DOCS_ENABLED=true
@@ -160,6 +163,9 @@ CFG_HTTP_DOCS_TITLE=Weather API
 
 # Persistence
 CFG_PERSISTENCE_PROVIDER=Postgres
+CFG_PERSISTENCE_POOLING_ENABLED=true
+CFG_PERSISTENCE_POOLING_MIN_SIZE=0
+CFG_PERSISTENCE_POOLING_MAX_SIZE=100
 
 # Postgres
 CFG_POSTGRES_CONN_STR="Host=localhost:9092;Username=net60;Password=net60;Database=net60"
@@ -171,6 +177,9 @@ CFG_PUBSUB_PUBLISHER_ENABLED=true
 
 # Monitoring
 CFG_MONITORING_PROVIDER=AppInsights
+
+# PowerIAM
+CFG_POWERIAM_URL=http://localhost:9000
 
 # Service Bus
 CFG_SERVICEBUS_CONN_STR=
@@ -193,6 +202,19 @@ CFG_EMAIL_SMTP_PORT=1025
   
 Documentation is coming in v1.0.0 rc.
 
+### Semantic versioning in HTTP adapters ("APIs")
+
+DDD.NETCore requires you to start http adapter (api) versions at  `1.0.0`  and increment as follows:
+
+| Code Status                               | Stage         | Rule                                                               | Example Version |
+|-------------------------------------------|---------------|--------------------------------------------------------------------|-----------------|
+| First release                             | New product   | Start with 1.0.0                                                   | 1.0.0           |
+| Backward-compatible bug fixes             | Patch release | Increment the third digit                                          | 1.0.1           |
+| Backward compatible new features          | Minor release | Increment the middle digit and reset last digit to zero            | 1.1.0           |
+| Changes that break backward compatibility | Major release | Increment the first digit and reset middle and last digits to zero | 2.0.0           |
+
+In addition, you can utilise `alpha`, `beta` and `rc` in your version numbers to specify pre-release, beta and release candidates.
+
 ### Contribution:
   
 If you want to contribute to the code base, create a pull request on the develop branch.
@@ -201,13 +223,13 @@ If you want to contribute to the code base, create a pull request on the develop
 
 - [ ] GitHub README
 - [ ] NuGet README
-- [ ] Visual Studio Project Template .NET 7.0
+- [ ] Visual Studio Project Template .NET 7
 - [x] Visual Studio Project Template .NET 6.0
 - [ ] Visual Studio Project Template .NET 5.0
-- [ ] Visual Studio Project Template .NET 3.1
+- [ ] Visual Studio Project Template .NET Core 3.1
 - [x] Start Context
 - [x] Stop Context
-- [ ] Control
+- [x] Control
 - [x] On-the-fly aggregate migration
 - [x] Auto-code Generation from domain.yml File
 - [x] Postgres Dead Letter Queue
@@ -222,7 +244,7 @@ If you want to contribute to the code base, create a pull request on the develop
 - [x] Integration Event Publishing
 - [x] Rabbit Event Adapter
 - [x] Memory Event Adapter
-- [ ] PubSub
+- [x] PubSub
 - [x] Auth Domain Service
 - [x] Auth
 - [x] Aggregate
@@ -269,6 +291,13 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Administration
 
 ### Release Notes:
+
+**1.0.0-alpha.5** - 2022-12-26
+
+- Refactor to follow semver2.0 strictly in http adapter. (**breaking**)
+- Add support for configuring persistence pooling.
+- Add html support to email port. (**breaking**)
+- Fix memory leak where db connections weren't closed.
 
 **1.0.0-alpha.4** - 2022-12-10
 

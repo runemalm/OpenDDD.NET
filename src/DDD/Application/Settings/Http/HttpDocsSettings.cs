@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DDD.NETCore.Extensions;
 using Microsoft.Extensions.Options;
 
@@ -7,15 +8,16 @@ namespace DDD.Application.Settings.Http
 {
 	public class HttpDocsSettings : IHttpDocsSettings
 	{
+		public IEnumerable<int> MajorVersions { get; }
 		public IEnumerable<HttpDocsDefinition> Definitions { get; }
 		public IEnumerable<HttpDocsAuthExtraToken> AuthExtraTokens { get; }
 		public bool Enabled { get; }
 		public bool HttpEnabled { get; }
 		public bool HttpsEnabled { get; }
 		public string Hostname { get; }
+		public int HttpPort { get; }
+		public int HttpsPort { get; }
 		public string Title { get; }
-
-		public HttpDocsSettings() { }
 
 		public HttpDocsSettings(IOptions<Options> options)
 		{
@@ -23,7 +25,14 @@ namespace DDD.Application.Settings.Http
 			var httpEnabled = options.Value.HTTP_DOCS_HTTP_ENABLED.IsTrue();
 			var httpsEnabled = options.Value.HTTP_DOCS_HTTPS_ENABLED.IsTrue();
 			var hostname = options.Value.HTTP_DOCS_HOSTNAME;
+			var httpPort = options.Value.HTTP_DOCS_HTTP_PORT.IntValue();
+			var httpsPort = options.Value.HTTP_DOCS_HTTPS_PORT.IntValue();
 			var title = options.Value.HTTP_DOCS_TITLE;
+			
+			// Versions
+			var majorVersions = 
+				options.Value.HTTP_DOCS_MAJOR_VERSIONS?.Split(",")
+					.Select(Int32.Parse).AsEnumerable();
 
 			// Defs
 			var definitions = new List<HttpDocsDefinition>();
@@ -48,13 +57,13 @@ namespace DDD.Application.Settings.Http
 
 			// Extra auth tokens
 			var extraTokens = new List<HttpDocsAuthExtraToken>();
-			chunks = new string[0];
+			chunks = Array.Empty<string>();
 
 			if (options.Value.HTTP_DOCS_AUTH_EXTRA_TOKENS != null)
 			{
 				chunks =
 					options.Value.HTTP_DOCS_AUTH_EXTRA_TOKENS.Split(
-						new string[] { "::" }, StringSplitOptions.None);
+						new[] { "::" }, StringSplitOptions.None);
 			}
 
 			foreach (var chunk in chunks)
@@ -72,6 +81,7 @@ namespace DDD.Application.Settings.Http
 				}
 			}
 
+			MajorVersions = majorVersions;
 			Enabled = enabled;
 			Definitions = definitions;
 			AuthExtraTokens = extraTokens;
@@ -79,6 +89,8 @@ namespace DDD.Application.Settings.Http
 			HttpEnabled = httpEnabled;
 			HttpsEnabled = httpsEnabled;
 			Hostname = hostname;
+			HttpPort = httpPort;
+			HttpsPort = httpsPort;
 			Title = title;
 		}
 	}

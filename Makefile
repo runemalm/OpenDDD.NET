@@ -18,7 +18,7 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := ddddotnetcore
-BUILD_VERSION := 1.0.0-alpha.4
+BUILD_VERSION := 1.0.0-alpha.5
 
 SRC_DIR := $(PWD)/src
 DDD_DIR := $(SRC_DIR)/DDD
@@ -107,6 +107,13 @@ build: ##@Build	 build the solution
 	cd $(SRC_DIR) && \
 	dotnet build
 
+.PHONY: deep-rebuild
+deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
+	make clean
+	make clear-nuget-caches
+	make restore
+	make build
+
 .PHONY: pack
 pack: ##@Build	 Create the nuget in local feed
 	make build
@@ -128,13 +135,6 @@ restore: ##@Build	 restore the solution
 .PHONY: clear-nuget-caches
 clear-nuget-caches: ##@Build	 clean all nuget caches
 	nuget locals all -clear
-
-.PHONY: deep-rebuild
-deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
-	make clean
-	make clear-nuget-caches
-	make restore
-	make build
 
 ##########################################################################
 # TOOLS

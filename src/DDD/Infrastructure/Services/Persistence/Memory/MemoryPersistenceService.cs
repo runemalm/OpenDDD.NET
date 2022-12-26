@@ -18,5 +18,11 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
 			await conn.Open();
 			return conn;
 		}
+		
+		public override async Task StartAsync()
+			=> await base.StartAsync();
+
+		public override async Task StopAsync()
+			=> await base.StopAsync();
 	}
 }

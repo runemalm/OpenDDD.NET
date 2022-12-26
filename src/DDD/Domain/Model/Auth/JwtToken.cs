@@ -93,7 +93,7 @@ namespace DDD.Domain.Model.Auth
 			var jwtPayload = 
 				new JwtPayload(
 					Issuer, 
-					Audiences.First(), 
+					Audiences.FirstOrDefault(), 
 					claims,
 					ValidFrom, 
 					ValidTo);

@@ -49,8 +49,8 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 				$"CREATE TABLE IF NOT EXISTS {_tableName} " +
 				$"(id VARCHAR UNIQUE NOT NULL,data json NOT NULL)";
 
-			using (var conn = await _persistenceService.OpenConnectionAsync())
-				await conn.ExecuteNonQueryAsync(stmt);
+			var conn = await _persistenceService.GetConnectionAsync(ActionId.BootId());
+			await conn.ExecuteNonQueryAsync(stmt);
 		}
 
 		public override async Task DeleteAllAsync(ActionId actionId, CancellationToken ct)
