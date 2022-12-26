@@ -202,6 +202,19 @@ CFG_EMAIL_SMTP_PORT=1025
   
 Documentation is coming in v1.0.0 rc.
 
+### Semantic versioning in HTTP adapters ("APIs")
+
+DDD.NETCore requires you to start http adapter (api) versions at  `1.0.0`  and increment as follows:
+
+| Code Status                               | Stage         | Rule                                                               | Example Version |
+|-------------------------------------------|---------------|--------------------------------------------------------------------|-----------------|
+| First release                             | New product   | Start with 1.0.0                                                   | 1.0.0           |
+| Backward-compatible bug fixes             | Patch release | Increment the third digit                                          | 1.0.1           |
+| Backward compatible new features          | Minor release | Increment the middle digit and reset last digit to zero            | 1.1.0           |
+| Changes that break backward compatibility | Major release | Increment the first digit and reset middle and last digits to zero | 2.0.0           |
+
+In addition, you can utilise `alpha`, `beta` and `rc` in your version numbers to specify pre-release, beta and release candidates.
+
 ### Contribution:
   
 If you want to contribute to the code base, create a pull request on the develop branch.
