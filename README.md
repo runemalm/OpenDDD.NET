@@ -292,6 +292,13 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes:
 
+**1.0.0-alpha.5** - 2022-12-26
+
+- Refactor to follow semver2.0 strictly in http adapter. (**breaking**)
+- Add support for configuring persistence pooling.
+- Add html support to email port. (**breaking**)
+- Fix memory leak where db connections weren't closed.
+
 **1.0.0-alpha.4** - 2022-12-10
 
 - Add configuration setting for which server urls to listen to. (**breaking**)
