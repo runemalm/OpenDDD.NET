@@ -1,6 +1,5 @@
 ﻿using DDD.Application.Settings;
 using DDD.Domain.Model.Auth;
-using DDD.Domain.Services.Auth;
 using DDD.Logging;
 
 namespace DDD.Domain.Services
@@ -10,18 +9,15 @@ namespace DDD.Domain.Services
 		protected readonly ICredentials _credentials;
 		protected readonly ISettings _settings;
 		protected readonly ILogger _logger;
-		protected readonly IAuthDomainService _authDomainService;
 
 		public DomainService(
 			ICredentials credentials,
 			ISettings settings,
-			ILogger logger,
-			IAuthDomainService authDomainService)
+			ILogger logger)
 		{
 			_credentials = credentials;
 			_settings = settings;
 			_logger = logger;
-			_authDomainService = authDomainService;
 		}
 	}
 }
