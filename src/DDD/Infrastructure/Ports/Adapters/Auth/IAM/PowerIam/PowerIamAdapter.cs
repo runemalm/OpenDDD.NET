@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,35 +42,35 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 		}
 
 		public Task<bool> HasPermissionsInWorldAsync(
-			string domain, 
-			IEnumerable<string> permissions, 
+			IEnumerable<(string, string)> permissions, 
 			ActionId actionId, 
 			CancellationToken ct)
-			=> _accessApi.AssurePermissionsInWorldAsync(
-				domain, 
-				permissions.ToList(), 
-				0, 
-				ct);
+			=> throw new NotImplementedException();	
+			// => _accessApi.AssurePermissionsInWorldAsync(
+			// 	domain, 
+			// 	permissions.ToList(), 
+			// 	0, 
+			// 	ct);
 
 		public Task<bool> HasPermissionsInRealmAsync(
 			string realmId,
 			string externalRealmId,
-			string domain,
-			IEnumerable<string> permissions,
+			IEnumerable<(string, string)> permissions,
 			ActionId actionId,
 			CancellationToken ct)
-			=> _accessApi.AssurePermissionsInRealmAsync(
-				realmId, 
-				externalRealmId, 
-				domain, 
-				permissions.ToList(), 
-				0, 
-				ct);
+			=> throw new NotImplementedException();
+			// => _accessApi.AssurePermissionsInRealmAsync(
+			// 	realmId, 
+			// 	externalRealmId, 
+			// 	domain, 
+			// 	permissions.ToList(), 
+			// 	0, 
+			// 	ct);
 
 		public Task<bool> HasPermissionsInResourceGroupAsync(
 			string resourceGroupId, 
 			string domain, 
-			IEnumerable<string> permissions,
+			IEnumerable<(string, string)> permissions,
 			ActionId actionId, CancellationToken ct)
 		{
 			throw new System.NotImplementedException();
@@ -78,7 +79,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 		public Task<bool> HasPermissionsInResourceAsync(
 			string resourceId, 
 			string domain, 
-			IEnumerable<string> permissions, 
+			IEnumerable<(string, string)> permissions, 
 			ActionId actionId,
 			CancellationToken ct)
 		{
