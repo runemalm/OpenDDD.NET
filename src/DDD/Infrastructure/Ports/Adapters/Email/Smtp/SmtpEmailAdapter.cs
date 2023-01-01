@@ -41,7 +41,17 @@ namespace DDD.Infrastructure.Ports.Adapters.Email.Smtp
 		
 		private SmtpClient CreateClient()
 		{
-			return new SmtpClient(_settings.Email.Smtp.Host, _settings.Email.Smtp.Port);
+			var client = new SmtpClient(_settings.Email.Smtp.Host, _settings.Email.Smtp.Port);
+			
+			if (_settings.Email.Smtp.Username != null)
+			{
+				client.Credentials = 
+					new System.Net.NetworkCredential(
+						_settings.Email.Smtp.Username, 
+						_settings.Email.Smtp.Password);
+			}
+
+			return client;
 		}
 	}
 }

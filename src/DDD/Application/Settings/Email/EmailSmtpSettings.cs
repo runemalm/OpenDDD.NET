@@ -1,4 +1,5 @@
 ﻿using System;
+using DDD.NETCore.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace DDD.Application.Settings.Email
@@ -7,17 +8,17 @@ namespace DDD.Application.Settings.Email
 	{
 		public string Host { get; }
 		public int Port { get; }
+		public string Username { get; }
+		public string Password { get; }
 		
 		public EmailSmtpSettings() { }
 
 		public EmailSmtpSettings(IOptions<Options> options)
 		{
-			var host = options.Value.EMAIL_SMTP_HOST;
-			int port;
-			Int32.TryParse(options.Value.EMAIL_SMTP_PORT, out port);
-
-			Host = host;
-			Port = port;
+			Host = options.Value.EMAIL_SMTP_HOST;
+			Port = options.Value.EMAIL_SMTP_PORT.IntValue();
+			Username = options.Value.EMAIL_SMTP_USERNAME;
+			Password = options.Value.EMAIL_SMTP_PASSWORD;
 		}
 	}
 }
