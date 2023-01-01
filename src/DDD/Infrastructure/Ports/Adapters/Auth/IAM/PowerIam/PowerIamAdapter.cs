@@ -18,7 +18,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 		private readonly ISettings _settings;
 		private readonly ILogger _logger;
 		private readonly ICredentials _credentials;
-		private V102Api _api { get; set; }
+		private AccessApi _accessApi { get; set; }
 
 		public PowerIamAdapter(ISettings settings, ILogger logger, ICredentials credentials)
 		{
@@ -38,39 +38,39 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 			if (_credentials.JwtToken != null)
 				config.ApiKey.Add("Authorization", $"Bearer {_credentials.JwtToken.RawString}");
 			
-			_api = new V102Api(config);
+			_accessApi = new AccessApi(config);
 		}
 
 		public Task<bool> HasPermissionsInWorldAsync(
-			string domain, 
-			IEnumerable<string> permissions, 
+			IEnumerable<(string, string)> permissions, 
 			ActionId actionId, 
 			CancellationToken ct)
-			=> _api.AssurePermissionsInWorldAsync(
-				domain, 
-				permissions.ToList(), 
-				0, 
-				ct);
+			=> throw new NotImplementedException();	
+			// => _accessApi.AssurePermissionsInWorldAsync(
+			// 	domain, 
+			// 	permissions.ToList(), 
+			// 	0, 
+			// 	ct);
 
 		public Task<bool> HasPermissionsInRealmAsync(
 			string realmId,
 			string externalRealmId,
-			string domain,
-			IEnumerable<string> permissions,
+			IEnumerable<(string, string)> permissions,
 			ActionId actionId,
 			CancellationToken ct)
-			=> _api.AssurePermissionsInRealmAsync(
-				realmId, 
-				externalRealmId, 
-				domain, 
-				permissions.ToList(), 
-				0, 
-				ct);
+			=> throw new NotImplementedException();
+			// => _accessApi.AssurePermissionsInRealmAsync(
+			// 	realmId, 
+			// 	externalRealmId, 
+			// 	domain, 
+			// 	permissions.ToList(), 
+			// 	0, 
+			// 	ct);
 
 		public Task<bool> HasPermissionsInResourceGroupAsync(
 			string resourceGroupId, 
 			string domain, 
-			IEnumerable<string> permissions,
+			IEnumerable<(string, string)> permissions,
 			ActionId actionId, CancellationToken ct)
 		{
 			throw new System.NotImplementedException();
@@ -79,7 +79,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 		public Task<bool> HasPermissionsInResourceAsync(
 			string resourceId, 
 			string domain, 
-			IEnumerable<string> permissions, 
+			IEnumerable<(string, string)> permissions, 
 			ActionId actionId,
 			CancellationToken ct)
 		{

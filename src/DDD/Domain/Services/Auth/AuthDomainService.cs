@@ -30,7 +30,7 @@ namespace DDD.Domain.Services.Auth
 		}
 		
 		// Authenticated
-		
+
 		public Task AssureAuthenticatedAsync(ActionId actionId, CancellationToken ct)
 		{
 			if (!_settings.Auth.Enabled) return Task.CompletedTask;
@@ -59,10 +59,9 @@ namespace DDD.Domain.Services.Auth
 		}
 		
 		// RBAC
-
+		
 		public async Task AssurePermissionsInWorldAsync(
-			string domain, 
-			IEnumerable<string> permissions, 
+			IEnumerable<(string, string)> permissions,
 			ActionId actionId, 
 			CancellationToken ct)
 		{
@@ -72,7 +71,6 @@ namespace DDD.Domain.Services.Auth
 
 			var hasPermissions = 
 				await _iamAdapter.HasPermissionsInWorldAsync(
-					domain, 
 					permissions, 
 					actionId, 
 					ct);
@@ -84,8 +82,7 @@ namespace DDD.Domain.Services.Auth
 		public async Task AssurePermissionsInRealmAsync(
 			string realmId,
 			string externalRealmId, 
-			string domain, 
-			IEnumerable<string> permissions, 
+			IEnumerable<(string, string)> permissions, 
 			ActionId actionId, 
 			CancellationToken ct)
 		{
@@ -97,7 +94,6 @@ namespace DDD.Domain.Services.Auth
 				await _iamAdapter.HasPermissionsInRealmAsync(
 					realmId, 
 					externalRealmId, 
-					domain, 
 					permissions, 
 					actionId, 
 					ct);
@@ -109,8 +105,8 @@ namespace DDD.Domain.Services.Auth
 
 		public async Task AssurePermissionsInResourceGroupAsync(
 			string resourceGroupId,
-			string domain, 
-			IEnumerable<string> permissions, 
+			string externalResourceGroupId,
+			IEnumerable<(string, string)> permissions, 
 			ActionId actionId, 
 			CancellationToken ct)
 		{
@@ -121,7 +117,7 @@ namespace DDD.Domain.Services.Auth
 			var hasPermissions = 
 				await _iamAdapter.HasPermissionsInResourceGroupAsync(
 					resourceGroupId, 
-					domain, 
+					externalResourceGroupId,
 					permissions, 
 					actionId, 
 					ct);
@@ -131,9 +127,9 @@ namespace DDD.Domain.Services.Auth
 		}
 
 		public async Task AssurePermissionsInResourceAsync(
-			string resourceId, 
-			string domain, 
-			IEnumerable<string> permissions, 
+			string resourceId,
+			string externalResourceId,
+			IEnumerable<(string, string)> permissions,
 			ActionId actionId, 
 			CancellationToken ct)
 		{
@@ -144,13 +140,24 @@ namespace DDD.Domain.Services.Auth
 			var hasPermissions = 
 				await _iamAdapter.HasPermissionsInResourceAsync(
 					resourceId, 
-					domain, 
+					externalResourceId, 
 					permissions, 
 					actionId, 
 					ct);
 
 			if (!hasPermissions)
 				throw new ForbiddenException();
+		}
+
+		public Task<bool> HasPermissionsInWorldAsync(string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public Task<bool> HasPermissionsInRealmAsync(string realmId, string externalRealmId, string domain, IEnumerable<string> permissions,
+			ActionId actionId, CancellationToken ct)
+		{
+			throw new System.NotImplementedException();
 		}
 	}
 }
