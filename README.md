@@ -294,6 +294,11 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes:
 
+**1.0.0-alpha.7** - 2023-01-01
+
+- Add credentials support to smtp adapter.
+- Use api version 2.0.0 in poweriam adapter.
+
 **1.0.0-alpha.6** - 2023-01-01
 
 - Add base class for domain services.
