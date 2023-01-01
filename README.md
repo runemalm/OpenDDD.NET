@@ -217,8 +217,6 @@ See table below for when to increment the numbers:
 | Backward compatible new features          | Minor release | Increment the middle digit and reset last digit to zero            | 1.1.0           |
 | Changes that break backward compatibility | Major release | Increment the first digit and reset middle and last digits to zero | 2.0.0           |
 
-In addition, you can utilise `alpha`, `beta` and `rc` in your version numbers to specify pre-release, beta and release candidates.
-
 ### Contribution:
   
 If you want to contribute to the code base, create a pull request on the develop branch.
@@ -295,6 +293,11 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Administration
 
 ### Release Notes:
+
+**1.0.0-alpha.6** - 2023-01-01
+
+- Add base class for domain services.
+- Use new permissions string format: "\<domain\>:\<permission\>". (**breaking**)
 
 **1.0.0-alpha.5** - 2022-12-26
 
