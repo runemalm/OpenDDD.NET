@@ -1,27 +1,28 @@
 ﻿using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using DDD.Domain.Model;
+using Newtonsoft.Json;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
 {
-    public class DomainModelVersionConverter : JsonConverter<DomainModelVersion>
+    public class DomainModelVersionConverter : Converter<DomainModelVersion>
     {
-        public override bool CanConvert(Type typeToConvert)
+        public override void WriteJson(
+            JsonWriter writer, 
+            DomainModelVersion value, 
+            JsonSerializer serializer)
         {
-            return typeToConvert == typeof(DomainModelVersion) || typeToConvert == typeof(DomainModelVersion);
+            writer.WriteValue(value.ToString());
         }
 
-        public override DomainModelVersion Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options) =>
-            new DomainModelVersion(reader.GetString());
-
-        public override void Write(
-            Utf8JsonWriter writer,
-            DomainModelVersion domainModelVersionValue,
-            JsonSerializerOptions options) =>
-            writer.WriteStringValue(domainModelVersionValue.ToString());
+        public override DomainModelVersion ReadJson(
+            JsonReader reader, 
+            Type objectType, 
+            DomainModelVersion existingValue,
+            bool hasExistingValue, 
+            JsonSerializer serializer)
+        {
+            string s = (string)reader.Value;
+            return new DomainModelVersion(s);
+        }
     }
 }

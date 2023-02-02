@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Data;
-using System.Text.Json;
 using System.Threading.Tasks;
-using DDD.Application.Exceptions;
+using Newtonsoft.Json;
 using Npgsql;
+using DDD.Application.Exceptions;
 
 namespace DDD.Infrastructure.Services.Persistence.Postgres
 {
@@ -85,7 +85,7 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
             {
                 while (await reader.ReadAsync())
                 {
-                    var aggregate = JsonSerializer.Deserialize<T>(reader.GetFieldValue<string>(1));
+                    var aggregate = JsonConvert.DeserializeObject<T>(reader.GetFieldValue<string>(1));
                     aggregates.Add(aggregate);
                 }
             }

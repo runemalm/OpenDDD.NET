@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -18,7 +16,6 @@ using DDD.Domain.Model.Auth.Exceptions;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Domain.Model.Validation;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.NewtonSoft;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Infrastructure.Services.Persistence;
 using DDD.NETCore.Middleware;
@@ -88,56 +85,18 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder AddJsonConverterPolicy(this IApplicationBuilder app, ISettings settings)
 		{
-			// System.Text.Json
-			
-			// This is a work-around to be able to set default serializer options
-			// See: https://stackoverflow.com/a/58959198
-			var opts = ((JsonSerializerOptions)typeof(JsonSerializerOptions)
-				.GetField("s_defaultOptions",
-					System.Reflection.BindingFlags.Static |
-					System.Reflection.BindingFlags.NonPublic)
-				?.GetValue(null));
-
-			if (opts != null)
-			{
-				// Don't do it twice, because then an exception will be thrown.
-				if (opts.Converters.Count == 0)
-				{
-					opts.PropertyNameCaseInsensitive = true;
-					opts.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-					opts.Converters.Add(new JsonStringEnumConverter());
-					opts.Converters.Add(new ActionIdConverter());
-					opts.Converters.Add(new EventIdConverter());
-					opts.Converters.Add(new EntityIdConverter());
-					opts.Converters.Add(new DomainModelVersionConverter());
-				}
-			}
-			else
-			{
-				throw new DddException("Couldn't configure json converters.");
-			}
-
-			// Newtonsoft
-			
-			// We use Newtonsoft for OutboxEvents serialization only.
-			// This is because System.Text.Json (that we use everywhere else),
-			// doesn't support polymorphic serialization.
-			//
-			// The goal is to use System.Text.Json everywhere in the future.
-
 			JsonConvert.DefaultSettings = () => new JsonSerializerSettings
 			{
 				ContractResolver = new CamelCasePropertyNamesContractResolver(),
 				Converters = new List<JsonConverter>()
 				{
 					new StringEnumConverter(),
-					new ActionIdNewtonsoftConverter(),
-					new EventIdNewtonsoftConverter(),
-					new EntityIdNewtonsoftConverter(),
-					new DomainModelVersionNewtonsoftConverter()
+					new ActionIdConverter(),
+					new EventIdConverter(),
+					new EntityIdConverter(),
+					new DomainModelVersionConverter()
 				}
 			};
-			
 			return app;
 		}
 

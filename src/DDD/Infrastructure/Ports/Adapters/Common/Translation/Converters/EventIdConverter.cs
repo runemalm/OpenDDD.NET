@@ -1,27 +1,28 @@
 ﻿using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using DDD.Domain.Model.BuildingBlocks.Event;
+using Newtonsoft.Json;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
 {
-    public class EventIdConverter : JsonConverter<EventId>
+    public class EventIdConverter : Converter<EventId>
     {
-        public override bool CanConvert(Type typeToConvert)
+        public override void WriteJson(
+            JsonWriter writer, 
+            EventId value, 
+            JsonSerializer serializer)
         {
-            return typeToConvert == typeof(EventId);
+            writer.WriteValue(value.ToString());
         }
-        
-        public override EventId Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options) =>
-            new EventId() { Value = reader.GetString() };
 
-        public override void Write(
-            Utf8JsonWriter writer,
-            EventId eventIdValue,
-            JsonSerializerOptions options) =>
-            writer.WriteStringValue(eventIdValue.Value);
+        public override EventId ReadJson(
+            JsonReader reader, 
+            Type objectType, 
+            EventId existingValue,
+            bool hasExistingValue, 
+            JsonSerializer serializer)
+        {
+            string s = (string)reader.Value;
+            return new EventId() { Value = s };
+        }
     }
 }

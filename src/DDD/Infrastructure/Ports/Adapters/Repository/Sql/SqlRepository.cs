@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
@@ -12,7 +13,7 @@ using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
 using DDD.Infrastructure.Ports.Repository;
 using DDD.Infrastructure.Services.Persistence;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+using Newtonsoft.Json;
 
 namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 {
@@ -149,7 +150,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			
 			var parameters = new Dictionary<string, object>();
 			parameters.Add("@id", aggregate.Id.ToString());
-			parameters.Add("@data", JsonSerializer.SerializeToDocument(aggregate));
+			parameters.Add("@data", JsonDocument.Parse(JsonConvert.SerializeObject(aggregate)));
 			await conn.ExecuteNonQueryAsync(stmt, parameters);
 		}
 
