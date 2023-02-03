@@ -25,8 +25,3 @@ class Utils(object):
 	def is_http_version_string(cls, string):
 		pattern = re.compile(r'([0-9])\.([0-9])\.([0-9])')
 		return pattern.match(string)
-
-	@classmethod
-	def is_wildcard_http_version_string(cls, string):
-		pattern = re.compile(r'([0-9])\.([0-9])\.X')
-		return pattern.match(string)
