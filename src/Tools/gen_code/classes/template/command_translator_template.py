@@ -28,6 +28,6 @@ class CommandTranslatorTemplate(Template):
 	def _param_expressions(self, command_definition):
 		param_expressions = []
 		for param in command_definition.params:
-			expr = f"// {param.name} = command_vX_X_X.{param.name}"
+			expr = f"// {param.name} = commandVX.{param.name}"
 			param_expressions.append(expr)
 		return ",\n                ".join(param_expressions)
