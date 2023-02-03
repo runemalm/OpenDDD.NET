@@ -14,7 +14,7 @@ class EndpointTemplate(Template):
 		filename = f"HttpAdapter.cs"
 		path = (
 			f"{self.src_path}/Infrastructure/Ports/Adapters/Http/"
-			f"{Utils.dot_version_to_api_version(definition.version)}/"
+			f"{Utils.Utils.dot_version_to_vx(definition.version)}/"
 			f"{filename}")
 		code = super().render(
 			"http_endpoint",
@@ -35,8 +35,7 @@ class EndpointTemplate(Template):
 				'action_param_var_name': self._action_param_var_name(definition),
 				'command_translator_param_var_name': self._command_translator_param_var_name(definition),
 				'path': self._header_path(definition),
-				'api_version': Utils.dot_version_to_api_version(definition.version),
-				'Vx': f"V{Utils.dot_version_to_major_version(definition.version)}"
+				'Vx': Utils.dot_version_to_Vx(definition.version)
 			},
 			filename,
 			path)

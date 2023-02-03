@@ -9,8 +9,17 @@ class Utils(object):
 		string = re.sub('([a-z0-9])([A-Z])', r'\1-\2', string)
 		return string.lower() 
 
+	# Deprecated: Please use to_vx or to_Vx instead.
 	@classmethod
 	def dot_version_to_api_version(cls, string):
+		return Utils.dot_version_to_Vx(string)
+
+	@classmethod
+	def dot_version_to_vx(cls, string):
+		return f"v{Utils.dot_version_to_major_version(string)}"
+
+	@classmethod
+	def dot_version_to_Vx(cls, string):
 		return f"V{Utils.dot_version_to_major_version(string)}"
 
 	@classmethod

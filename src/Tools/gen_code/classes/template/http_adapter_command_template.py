@@ -11,15 +11,15 @@ class HttpAdapterCommandTemplate(Template):
 		super().__init__(templates_path)
 
 	def render(self, definition):
-		api_version = Utils.dot_version_to_api_version(definition.version)
-		vx = Utils.dot_version_to_api_version(definition.version).lower()
-		filename = f"{definition.name}Command{api_version}.cs"
-		path = f"{self.src_path}/Infrastructure/Ports/Adapters/Http/{api_version}/Model/Commands/{filename}"
+		vx = Utils.dot_version_to_vx(definition.version)
+		Vx = Utils.dot_version_to_Vx(definition.version)
+		filename = f"{definition.name}Command{Vx}.cs"
+		path = f"{self.src_path}/Infrastructure/Ports/Adapters/Http/{vx}/Model/Commands/{filename}"
 		code = super().render(
 			"http_command", 
 			f"http_adapter_command.cs", 
 			{
-				'class_name': f"{definition.name}Command{api_version}",
+				'class_name': f"{definition.name}Command{Vx}",
 				'vx': vx,
 				'param_expressions': self._param_expressions(definition)
 			},
