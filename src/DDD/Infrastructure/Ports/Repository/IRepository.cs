@@ -11,6 +11,8 @@ namespace DDD.Infrastructure.Ports.Repository
 {
 	public interface IRepository<T> where T : IAggregate
 	{
+		Task StartAsync(CancellationToken ct);
+		Task StopAsync(CancellationToken ct);
 		Task DeleteAllAsync(ActionId actionId, CancellationToken ct);
 		Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
 		Task<IEnumerable<T>> GetAllAsync(ActionId actionId, CancellationToken ct);

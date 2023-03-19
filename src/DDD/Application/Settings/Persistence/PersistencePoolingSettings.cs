@@ -14,8 +14,8 @@ namespace DDD.Application.Settings.Persistence
 		public PersistencePoolingSettings(IOptions<Options> options)
 		{
 			Enabled = options.Value.PERSISTENCE_POOLING_ENABLED.IsTrue();
-			MinSize = options.Value.CFG_PERSISTENCE_POOLING_MIN_SIZE.IntValue();
-			MaxSize = options.Value.CFG_PERSISTENCE_POOLING_MAX_SIZE.IntValue();
+			MinSize = options.Value.PERSISTENCE_POOLING_MIN_SIZE.IntValue();
+			MaxSize = options.Value.PERSISTENCE_POOLING_MAX_SIZE.IntValue();
 		}
 	}
 }

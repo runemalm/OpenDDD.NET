@@ -7,6 +7,7 @@ using DDD.Logging;
 using DDD.Application.Settings;
 using DDD.Domain.Model.Auth;
 using DDD.Domain.Model.Auth.Exceptions;
+using DDD.Domain.Model.Error;
 
 namespace DDD.NETCore.Middleware
 {
@@ -51,10 +52,10 @@ namespace DDD.NETCore.Middleware
                 raw = tokens.FirstOrDefault()?.Substring(start.Length);
             } 
             else
-			{
+            {
                 throw new SettingsException(
-                    $"Unsupported jwt token location setting: {_settings.Auth.JwtToken.Location}");
-			}
+                    DomainError.UnsupportedJwtTokenLocationSetting(_settings.Auth.JwtToken.Location));
+            }
 
             if (raw != null)
             {

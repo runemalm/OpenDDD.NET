@@ -25,5 +25,8 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
 
 		public override async Task StopAsync()
 			=> await base.StopAsync();
+
+		public override Task EnsureDatabaseAsync()
+			=> Task.CompletedTask;
 	}
 }

@@ -12,8 +12,8 @@ namespace DDD.Infrastructure.Services.Persistence
         Task<IEnumerable<T>> ExecuteQueryAsync<T>(string stmt);
         Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object> parameters);
 
-        Task Open();
-        Task Close();
+        Task OpenAsync();
+        Task CloseAsync();
         Task StartTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();

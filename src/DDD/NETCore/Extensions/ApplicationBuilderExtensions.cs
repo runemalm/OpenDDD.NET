@@ -217,7 +217,7 @@ namespace DDD.NETCore.Extensions
 			var persistenceService =
 				app.ApplicationServices.GetService<IPersistenceService>();
 		
-			persistenceService.StartAsync().Wait();
+			persistenceService.StartAsync().GetAwaiter().GetResult();
 		
 			return app;
 		}

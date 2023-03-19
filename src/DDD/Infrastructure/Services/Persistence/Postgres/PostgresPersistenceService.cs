@@ -1,8 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Npgsql;
 using DDD.Application.Settings;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Logging;
-using Npgsql;
+using PostgresException = DDD.Infrastructure.Ports.Adapters.Common.Exceptions.PostgresException;
 
 namespace DDD.Infrastructure.Services.Persistence.Postgres
 {
@@ -32,6 +34,33 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
 
 		public override async Task StopAsync()
 			=> await base.StopAsync();
+
+		public override async Task EnsureDatabaseAsync()
+		{
+			var builder = new NpgsqlConnectionStringBuilder(_connString);
+			var dbName = builder.Database;
+			
+			if (dbName == null)
+				throw new PostgresException("Can't create database. The database was not specified in settings.");
+
+			builder.Database = "postgres";
+			using (var conn = new PostgresConnection(builder.ConnectionString, _serializerSettings))
+			{
+				await conn.OpenAsync();
+				
+				var stmt = $"CREATE DATABASE \"{dbName}\"";
+
+				try
+				{
+					await conn.ExecuteNonQueryAsync(stmt);
+				}
+				catch (Exception e)
+				{
+					if (!e.Message.Contains("already exists"))
+						throw;
+				}
+			}
+		}
 
 		public override async Task<IConnection> OpenConnectionAsync()
 		{

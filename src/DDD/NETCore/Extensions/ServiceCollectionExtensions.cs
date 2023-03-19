@@ -80,11 +80,11 @@ namespace DDD.NETCore.Extensions
 		{
 			if (settings.Email.Provider == EmailProvider.Smtp)
 			{
-				services.AddTransient<IEmailPort, SmtpEmailAdapter>();
+				services.AddSingleton<IEmailPort, SmtpEmailAdapter>();
 			}
 			else if (settings.Email.Provider == EmailProvider.Memory)
 			{
-				services.AddTransient<IEmailPort, MemoryEmailAdapter>();
+				services.AddSingleton<IEmailPort, MemoryEmailAdapter>();
 			}
 			else
 			{

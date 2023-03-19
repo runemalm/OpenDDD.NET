@@ -23,7 +23,7 @@ namespace DDD.Infrastructure.Services.Persistence
 			_connections = new ConcurrentDictionary<ActionId, IConnection>();
 		}
 		
-		private IConnection GetExistingConnectionAsync(ActionId actionId)
+		private IConnection GetExistingConnection(ActionId actionId)
 		{
 			foreach (KeyValuePair<ActionId, IConnection> kvp in _connections)
 				if (kvp.Key == actionId)
@@ -51,7 +51,7 @@ namespace DDD.Infrastructure.Services.Persistence
 
 		public async Task<IConnection> GetConnectionAsync(ActionId actionId)
 		{
-			var conn = GetExistingConnectionAsync(actionId);
+			var conn = GetExistingConnection(actionId);
 			if (conn == null)
 			{
 				conn = await OpenConnectionAsync();
@@ -62,30 +62,31 @@ namespace DDD.Infrastructure.Services.Persistence
 			return conn;
 		}
 		
-		public Task ReleaseConnectionAsync(ActionId actionId)
+		public async Task ReleaseConnectionAsync(ActionId actionId)
 		{
-			var conn = GetExistingConnectionAsync(actionId);
+			var conn = GetExistingConnection(actionId);
 			if (conn == null)
 				_logger.Log(
 					$"Can't release connection for action ID: {actionId}. None exists.", 
 					LogLevel.Warning);
 			else
 			{
-				conn.Close();
+				await conn.CloseAsync();
 				IConnection removedConn;
 				var success = _connections.TryRemove(actionId, out removedConn);
 				if (!success)
 					throw new DddException("Couldn't remove connection from collection.");
 			}
-			return Task.CompletedTask;
 		}
 
 		public abstract Task<IConnection> OpenConnectionAsync();
 
 		public virtual Task StartAsync()
-			=> Task.CompletedTask;
+			=> EnsureDatabaseAsync();
 
 		public virtual Task StopAsync()
 			=> ReleaseConnectionAsync(ActionId.BootId());
+
+		public abstract Task EnsureDatabaseAsync();
 	}
 }

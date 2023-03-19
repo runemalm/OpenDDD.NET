@@ -19,6 +19,9 @@ namespace DDD.NETCore.Extensions
 		// Public API
 		
 		public static IWebHostBuilder AddEnvFile(this IWebHostBuilder webHostBuilder, string envFileVariableName, string prefix = "", string defaultEnvFileVariableValue = "", bool overwriteExisting = true)
+			=> webHostBuilder.ConfigureUsingEnvFile(envFileVariableName: envFileVariableName, prefix: prefix, defaultEnvFileVariableValue: defaultEnvFileVariableValue, overwriteExisting: overwriteExisting);
+
+		private static IWebHostBuilder ConfigureUsingEnvFile(this IWebHostBuilder webHostBuilder, string envFileVariableName, string prefix = "", string defaultEnvFileVariableValue = "", bool overwriteExisting = true)
 		{
 			return webHostBuilder.ConfigureAppConfiguration((context, config) =>
 			{

@@ -14,7 +14,7 @@ class EndpointTemplate(Template):
 		filename = f"HttpAdapter.cs"
 		path = (
 			f"{self.src_path}/Infrastructure/Ports/Adapters/Http/"
-			f"{Utils.Utils.dot_version_to_vx(definition.version)}/"
+			f"{Utils.dot_version_to_vx(definition.version)}/"
 			f"{filename}")
 		code = super().render(
 			"http_endpoint",
