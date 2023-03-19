@@ -4,9 +4,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
@@ -27,12 +24,12 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             _serializerSettings = serializerSettings;
         }
 		
-        public async Task StartAsync()
+        public async Task StartAsync(CancellationToken ct)
         {
             await AssertTables();
         }
 
-        public Task StopAsync()
+        public Task StopAsync(CancellationToken ct)
         {
             return Task.CompletedTask;
         }
@@ -78,9 +75,9 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             await conn.ExecuteNonQueryAsync(stmt, parameters);
         }
         
-        public async Task<OutboxEvent> GetNextAsync(CancellationToken ct)
+        public async Task<OutboxEvent?> GetNextAsync(CancellationToken ct)
         {
-            OutboxEvent outboxEvent = null;
+            OutboxEvent? outboxEvent = null;
             using (var conn = await _persistenceService.OpenConnectionAsync())
             {
                 var stmt = 

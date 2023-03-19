@@ -207,6 +207,7 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder StartSecondaryAdapters(this IApplicationBuilder app)
 		{
+			app.StartOutbox();
 			return app;
 		}
 		
@@ -219,7 +220,15 @@ namespace DDD.NETCore.Extensions
 		
 			return app;
 		}
-
+		
+		private static IApplicationBuilder StartOutbox(this IApplicationBuilder app)
+		{
+			var outbox = app.ApplicationServices.GetService<IOutbox>();
+			outbox.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+		
+			return app;
+		}
+		
 		private static IApplicationBuilder StartListeners(this IApplicationBuilder app)
 		{
 			foreach (var listener in app.ApplicationServices.GetServices<IEventListener>())

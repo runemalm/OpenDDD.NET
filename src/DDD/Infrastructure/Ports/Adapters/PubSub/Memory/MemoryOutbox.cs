@@ -21,6 +21,16 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			_serializerSettings = serializerSettings;
 		}
 		
+		public Task StartAsync(CancellationToken ct)
+		{
+			return Task.CompletedTask;
+		}
+
+		public Task StopAsync(CancellationToken ct)
+		{
+			return Task.CompletedTask;
+		}
+		
 		public async Task AddAsync(ActionId actionId, IEvent theEvent, CancellationToken ct)
 			=> AddAllAsync(actionId, new List<IEvent>{theEvent}, ct);
 
@@ -37,7 +47,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			}
 		}
 		
-		public async Task<OutboxEvent> GetNextAsync(CancellationToken ct)
+		public Task<OutboxEvent?> GetNextAsync(CancellationToken ct)
 		{
 			lock (_events)
 			{
@@ -56,7 +66,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 				if (next != null)
 					next.IsPublishing = true;
 
-				return next;
+				return Task.FromResult(next);
 			}
 		}
 
