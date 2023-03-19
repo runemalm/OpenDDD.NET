@@ -202,11 +202,22 @@ namespace DDD.NETCore.Extensions
 			return app;
 		}
 		
-		private static void StartContext(this IApplicationBuilder app)
+		public static IApplicationBuilder StartContext(this IApplicationBuilder app)
 		{
 			app.StartCommonAdapters();
 			app.StartSecondaryAdapters();
+			app.OnBeforePrimaryAdaptersStarted();
 			app.StartPrimaryAdapters();
+			return app;
+		}
+		
+		public static IApplicationBuilder OnBeforePrimaryAdaptersStarted(this IApplicationBuilder app)
+		{
+			var serviceProvider = app.ApplicationServices;
+			var hooks = serviceProvider.GetServices<IOnBeforePrimaryAdaptersStartedHook>();
+			foreach (var hook in hooks)
+				hook.ExecuteAsync(app).GetAwaiter().GetResult();
+			return app;
 		}
 		
 		private static IApplicationBuilder StartCommonAdapters(this IApplicationBuilder app)
