@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
 using DDD.Logging;
 
@@ -13,19 +10,25 @@ namespace DDD.Infrastructure.Ports.PubSub
 	{
 		private IEventAdapter _eventAdapter;
 		private ILogger _logger;
+		private bool _enabled;
 
 		public Publisher(IEventAdapter eventAdapter, ILogger logger)
 		{
 			_eventAdapter = eventAdapter;
 			_logger = logger;
+			_enabled = true;
 		}
 
 		public async Task PublishAsync(IEvent theEvent)
 		{
+			if (!_enabled)
+				return;
+
 			_logger.Log(
 				$"Publishing {theEvent.Header.Name} ({theEvent.Header.DomainModelVersion}) to " +
                 $"{_eventAdapter.GetContext()}.",
 				LogLevel.Information);
+
 			await _eventAdapter.PublishAsync(theEvent);
 		}
 
@@ -40,6 +43,11 @@ namespace DDD.Infrastructure.Ports.PubSub
 				LogLevel.Debug);
 			
 			await _eventAdapter.FlushAsync(outboxEvent);
+		}
+
+		public void SetEnabled(bool enabled)
+		{
+			_enabled = enabled;
 		}
 
 		public bool HasPublished(IEvent theEvent)
