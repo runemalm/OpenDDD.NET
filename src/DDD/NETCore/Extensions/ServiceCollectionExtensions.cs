@@ -41,14 +41,9 @@ namespace DDD.NETCore.Extensions
 	{
 		// Public API
 
-		// public List<Type> RegisteredRepositoryTypes = new List<Type>();
-
 		public static IServiceCollection AddListener<TImplementation>(this IServiceCollection services)
 			where TImplementation : class, IEventListener
 		{
-			// TODO: Don't register twice. We do it now as work-around to be
-			//		 able to get all services registered as IEventListener,
-			//		 and to get each individual service as XXXEventListener.
 			services.AddTransient(typeof(IEventListener), typeof(TImplementation));
 			services.AddTransient<TImplementation>();
 			return services;
@@ -188,14 +183,13 @@ namespace DDD.NETCore.Extensions
 		}
 		
 		public static IServiceCollection AddRepository<TPort, TAdapter>(this IServiceCollection services)
-			where TAdapter : class
+			where TAdapter : class, IStartableRepository
 		{
-			// var tracker = services.Get
-			// RegisteredRepositoryTypes.Add(typeof(TPort));
-			return services.AddSingleton(typeof(TPort), typeof(TAdapter));
-			// return services.AddTransient(typeof(IEventListener), typeof(TImplementation));
+			services.AddSingleton<IStartableRepository, TAdapter>();
+			services.AddSingleton(typeof(TPort), typeof(TAdapter));
+			return services;
 		}
-
+		
 		// Private API
 
 		private static IServiceCollection AddCorsPolicy(this IServiceCollection services, ISettings settings)

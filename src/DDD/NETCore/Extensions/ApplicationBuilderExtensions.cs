@@ -208,6 +208,7 @@ namespace DDD.NETCore.Extensions
 		private static IApplicationBuilder StartSecondaryAdapters(this IApplicationBuilder app)
 		{
 			app.StartOutbox();
+			app.StartRepositories();
 			return app;
 		}
 		
@@ -229,10 +230,17 @@ namespace DDD.NETCore.Extensions
 			return app;
 		}
 		
+		private static IApplicationBuilder StartRepositories(this IApplicationBuilder app)
+		{
+			foreach (var repository in app.ApplicationServices.GetServices<IStartableRepository>())
+				repository.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+			return app;
+		}
+
 		private static IApplicationBuilder StartListeners(this IApplicationBuilder app)
 		{
 			foreach (var listener in app.ApplicationServices.GetServices<IEventListener>())
-				listener.StartAsync().Wait();
+				listener.StartAsync().GetAwaiter().GetResult();
 			return app;
 		}
 
@@ -273,6 +281,8 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder StopSecondaryAdapters(this IApplicationBuilder app)
 		{
+			app.StopOutbox();
+			app.StopRepositories();
 			return app;
 		}
 		
@@ -298,6 +308,21 @@ namespace DDD.NETCore.Extensions
 		
 			persistenceService.StopAsync().Wait();
 		
+			return app;
+		}
+		
+		private static IApplicationBuilder StopOutbox(this IApplicationBuilder app)
+		{
+			var outbox = app.ApplicationServices.GetService<IOutbox>();
+			outbox.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
+		
+			return app;
+		}
+		
+		private static IApplicationBuilder StopRepositories(this IApplicationBuilder app)
+		{
+			foreach (var repository in app.ApplicationServices.GetServices<IStartableRepository>())
+				repository.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
 			return app;
 		}
 

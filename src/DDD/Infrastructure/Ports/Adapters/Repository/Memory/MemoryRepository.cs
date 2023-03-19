@@ -5,17 +5,27 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Namotion.Reflection;
 using DDD.Application;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Infrastructure.Ports.Repository;
-using Namotion.Reflection;
 
 namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 {
-	public abstract class MemoryRepository<T> : Repository<T>, IRepository<T> where T : IAggregate
+	public abstract class MemoryRepository<T> : Repository<T>, IRepository<T>, IStartableRepository where T : IAggregate
 	{
 		protected BlockingCollection<T> Items = new BlockingCollection<T>();
+		
+		public override Task StartAsync(CancellationToken ct)
+		{
+			return Task.CompletedTask;
+		}
+
+		public override Task StopAsync(CancellationToken ct)
+		{
+			return Task.CompletedTask;
+		}
 
 		public override Task DeleteAllAsync(ActionId actionId, CancellationToken ct)
 			=> Task.FromResult(Items = new BlockingCollection<T>());

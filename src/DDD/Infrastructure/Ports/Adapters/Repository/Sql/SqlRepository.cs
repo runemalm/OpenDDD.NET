@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using DDD.Application;
-using DDD.Application.Exceptions;
+using DDD.Application.Error;
 using DDD.Application.Settings;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
@@ -18,7 +18,7 @@ using DDD.Infrastructure.Services.Persistence;
 
 namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 {
-	public abstract class SqlRepository<T, TId> : Repository<T>, IRepository<T> where T : IAggregate where TId : EntityId
+	public abstract class SqlRepository<T, TId> : Repository<T>, IRepository<T>, IStartableRepository where T : IAggregate where TId : EntityId
 	{
 		private readonly ISettings _settings;
 		private readonly string _tableName;
@@ -35,12 +35,12 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			_serializerSettings = serializerSettings;
 		}
 		
-		public async Task StartAsync()
+		public override async Task StartAsync(CancellationToken ct)
 		{
 			await AssertTables();
 		}
 
-		public Task StopAsync()
+		public override Task StopAsync(CancellationToken ct)
 		{
 			return Task.CompletedTask;
 		}
@@ -60,6 +60,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
 			var stmt = $"DELETE FROM {_tableName}";
 			await conn.ExecuteNonQueryAsync(stmt);
+			await _persistenceService.ReleaseConnectionAsync(actionId);
 		}
 		
 		public override async Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct)
@@ -117,7 +118,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 		}
 
 		public override async Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
-			=> (await GetAllAsync(actionId, ct)).ToList().Where(where.Compile()).FirstOrDefault();
+			=> (await GetAllAsync(actionId, ct)).ToList().FirstOrDefault(where.Compile());
 		
 		public override async Task<T> GetFirstOrDefaultWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{
