@@ -8,9 +8,6 @@ using Azure.Core.Pipeline;
 using DDD.Domain;
 using DDD.Tests.Helpers;
 using Xunit;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
 
@@ -23,8 +20,7 @@ namespace DDD.Tests
 	        UnsetConfigEnvironmentVariables();
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Tests");
             Environment.SetEnvironmentVariable("ENV_FILE", "env.local.test");
-            ConfigureJsonConvert();
-		}
+        }
 
         // Configuration
         
@@ -39,26 +35,7 @@ namespace DDD.Tests
 	        }
         }
 
-		private void ConfigureJsonConvert()
-		{
-			JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-			{
-				ContractResolver = new CamelCasePropertyNamesContractResolver(),
-				Converters = new List<JsonConverter>()
-				{
-					new StringEnumConverter
-					{
-						AllowIntegerValues = false,
-						NamingStrategy = new DefaultNamingStrategy()
-					}
-				},
-				DateFormatString = "yyyy-MM-dd'T'HH:mm:ss.fffK",
-				NullValueHandling = NullValueHandling.Ignore,
-				Formatting = Formatting.None
-			};
-		}
-
-		// Assertions
+        // Assertions
 
 		public void AssertObjectsEqual(object obj1, object obj2)
 		{

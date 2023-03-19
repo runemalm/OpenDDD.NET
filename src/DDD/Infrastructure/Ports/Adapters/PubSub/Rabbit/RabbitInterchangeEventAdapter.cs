@@ -1,4 +1,5 @@
 ﻿using DDD.Application.Settings;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Monitoring;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Logging;
@@ -10,7 +11,8 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 		public RabbitInterchangeEventAdapter(
 			ISettings settings,
 			ILogger logger,
-			IMonitoringPort monitoringAdapter) :
+			IMonitoringPort monitoringAdapter,
+			SerializerSettings serializerSettings) :
 			base(
 				"Interchange",
 				settings.General.Context,
@@ -19,6 +21,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 				settings.Rabbit.Port,
 				logger,
 				monitoringAdapter,
+				serializerSettings,
 				settings.Rabbit.Username,
 				settings.Rabbit.Password)
 		{

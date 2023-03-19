@@ -4,6 +4,7 @@ using DDD.Domain;
 using DDD.Domain.Model;
 using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using Newtonsoft.Json;
 
 namespace DDD.Infrastructure.Ports.PubSub
@@ -23,7 +24,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 
 		public OutboxEvent() { }
 
-		public OutboxEvent(IEvent theEvent)
+		public OutboxEvent(IEvent theEvent, SerializerSettings serializerSettings)
 		{
 			Id = Guid.NewGuid().ToString();
 			EventId = theEvent.Header.EventId;
@@ -34,7 +35,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 			AddedAt = DateTime.UtcNow;
 			IsPublishing = false;
 			NumDeliveryFailures = theEvent.Header.NumDeliveryFailures;
-			JsonPayload = JsonConvert.SerializeObject(theEvent);
+			JsonPayload = JsonConvert.SerializeObject(theEvent, serializerSettings);
 		}
 		
 		// Equality

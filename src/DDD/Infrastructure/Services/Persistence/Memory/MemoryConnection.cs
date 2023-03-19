@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DDD.Application.Exceptions;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 
 namespace DDD.Infrastructure.Services.Persistence.Memory
 {
@@ -10,17 +10,17 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
         private bool _hasConnection;
         private bool _hasTransaction;
 
-        public MemoryConnection() : base("n/a")
+        public MemoryConnection(SerializerSettings serializerSettings) : base("n/a", serializerSettings)
         {
             
         }
 
-        public override async Task Open()
+        public override async Task OpenAsync()
         {
             _hasConnection = true;
         }
         
-        public override async Task Close()
+        public override async Task CloseAsync()
         {
             _hasConnection = false;
         }
@@ -28,7 +28,7 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
         public override Task StartTransactionAsync()
         {
             if (!_hasConnection)
-                throw new DddException(
+                throw new ApplicationException(
                     "Can't start transaction, no connection has been made.");
             _hasTransaction = true;
             return Task.CompletedTask;
@@ -37,7 +37,7 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
         public override async Task CommitTransactionAsync()
         {
             if (!_hasTransaction)
-                throw new DddException(
+                throw new ApplicationException(
                     "Can't commit non-existing transaction.");
             _hasTransaction = false;
         }
@@ -45,7 +45,7 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
         public override async Task RollbackTransactionAsync()
         {
             if (!_hasTransaction)
-                throw new DddException(
+                throw new ApplicationException(
                     "Can't rollback non-existing transaction.");
             _hasTransaction = false;
         }
@@ -60,7 +60,7 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
             return await Task.FromResult(new List<T>());
         }
         
-        public override async Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object> parameters)
+        public override async Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object>? parameters)
         {
             throw new NotImplementedException();
         }

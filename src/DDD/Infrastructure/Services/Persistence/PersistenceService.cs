@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Application.Exceptions;
+using DDD.Application.Error;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Logging;
 
 namespace DDD.Infrastructure.Services.Persistence
@@ -11,12 +12,14 @@ namespace DDD.Infrastructure.Services.Persistence
 	{
 		protected readonly ILogger _logger;
 		protected readonly string _connString;
+		protected readonly SerializerSettings _serializerSettings;
 		private readonly ConcurrentDictionary<ActionId, IConnection> _connections;
 
-		public PersistenceService(string connString, ILogger logger)
+		public PersistenceService(string connString, ILogger logger, SerializerSettings serializerSettings)
 		{
 			_logger = logger;
 			_connString = connString;
+			_serializerSettings = serializerSettings;
 			_connections = new ConcurrentDictionary<ActionId, IConnection>();
 		}
 		

@@ -9,19 +9,22 @@ using DDD.Domain.Model;
 using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Infrastructure.Services.Persistence;
+using Newtonsoft.Json;
 
 namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
 {
     public class PostgresOutbox : IOutbox
     {
         private readonly IPersistenceService _persistenceService;
+        private readonly SerializerSettings _serializerSettings;
         
-        public PostgresOutbox(IPersistenceService persistenceService)
+        public PostgresOutbox(IPersistenceService persistenceService, SerializerSettings serializerSettings)
         {
             _persistenceService = persistenceService;
-            StartAsync().Wait();
+            _serializerSettings = serializerSettings;
         }
 		
         public async Task StartAsync()
@@ -61,10 +64,10 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             var count = 0;
             foreach (var theEvent in events)
             {
-                var outboxEvent = new OutboxEvent(theEvent);
+                var outboxEvent = new OutboxEvent(theEvent, _serializerSettings);
                 values.Add($"(@id_{count}, @data_{count})");
                 parameters.Add($"@id_{count}", outboxEvent.Id);
-                parameters.Add($"@data_{count}", JsonSerializer.SerializeToDocument(outboxEvent));
+                parameters.Add($"@data_{count}", JsonDocument.Parse(JsonConvert.SerializeObject(outboxEvent, _serializerSettings)));
                 count++;
             }
 

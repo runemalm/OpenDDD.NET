@@ -2,19 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
-using DDD.Domain.Model.BuildingBlocks.Event;
-using DDD.Infrastructure.Ports.Monitoring;
-using DDD.Logging;
-using KellermanSoftware.CompareNetObjects;
-using Namotion.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using Namotion.Reflection;
+using KellermanSoftware.CompareNetObjects;
+using DDD.Application;
+using DDD.Domain.Model;
+using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using DDD.Infrastructure.Ports.Monitoring;
+using DDD.Logging;
 
 namespace DDD.Infrastructure.Ports.PubSub
 {
@@ -30,6 +29,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 		public bool IsStopping = false;
 		protected ILogger _logger;
 		protected IMonitoringPort _monitoringAdapter;
+		protected SerializerSettings _serializerSettings;
 		public int MaxDeliveryRetries { get; }
 
 		public abstract Task StartAsync();
@@ -42,7 +42,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 			new JsonSerializerSettings
 			{
 				ContractResolver = new CamelCasePropertyNamesContractResolver(),
-				Converters = new List<JsonConverter>()
+				Converters = new List<JsonConverter>
 				{
 					new StringEnumConverter
 					{
@@ -60,13 +60,15 @@ namespace DDD.Infrastructure.Ports.PubSub
 			string client,
 			int maxDeliveryRetries,
 			ILogger logger,
-			IMonitoringPort monitoringAdapter)
+			IMonitoringPort monitoringAdapter,
+			SerializerSettings serializerSettings)
 		{
 			_context = context;
 			_client = client;
 			MaxDeliveryRetries = maxDeliveryRetries;
 			_logger = logger;
 			_monitoringAdapter = monitoringAdapter;
+			_serializerSettings = serializerSettings;
 		}
 
 		protected void AddSubscription(TSub subscription)
@@ -141,7 +143,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 				{
 					if (o.EventName == theEvent.Header.Name)
 					{
-						var theEventObject = (JObject)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(theEvent));
+						var theEventObject = (JObject)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(theEvent, _serializerSettings));
 						var flushedEventObject = (JObject)JsonConvert.DeserializeObject(o.JsonPayload);
 
 						((JObject)theEventObject["header"]).Remove("eventId");

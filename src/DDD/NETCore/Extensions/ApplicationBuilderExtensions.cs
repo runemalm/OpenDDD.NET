@@ -3,23 +3,17 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
-using JsonConverter = Newtonsoft.Json.JsonConverter;
-using JsonSerializer = System.Text.Json.JsonSerializer;
-using DDD.Application;
-using DDD.Application.Exceptions;
+using Microsoft.IdentityModel.Tokens;
+using DDD.Application.Error;
 using DDD.Application.Settings;
 using DDD.Domain.Model;
 using DDD.Domain.Model.Auth.Exceptions;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Domain.Model.Validation;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Infrastructure.Services.Persistence;
 using DDD.NETCore.Middleware;
-using Microsoft.IdentityModel.Tokens;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
 namespace DDD.NETCore.Extensions
@@ -55,12 +49,6 @@ namespace DDD.NETCore.Extensions
 				.AddHttpAdapterDocs(settings);
 			return app;
 		}
-		
-		public static IApplicationBuilder AddTranslation(this IApplicationBuilder app, ISettings settings)
-		{
-			app.AddJsonConverterPolicy(settings);
-			return app;
-		}
 
 		// Events
 
@@ -80,23 +68,6 @@ namespace DDD.NETCore.Extensions
 		private static IApplicationBuilder AddCorsPolicy(this IApplicationBuilder app, ISettings settings)
 		{
 			app.UseCors();
-			return app;
-		}
-
-		private static IApplicationBuilder AddJsonConverterPolicy(this IApplicationBuilder app, ISettings settings)
-		{
-			JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-			{
-				ContractResolver = new CamelCasePropertyNamesContractResolver(),
-				Converters = new List<JsonConverter>()
-				{
-					new StringEnumConverter(),
-					new ActionIdConverter(),
-					new EventIdConverter(),
-					new EntityIdConverter(),
-					new DomainModelVersionConverter()
-				}
-			};
 			return app;
 		}
 

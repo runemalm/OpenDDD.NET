@@ -1,6 +1,6 @@
 ﻿using System;
-using DDD.Domain.Model.BuildingBlocks.Entity;
 using Newtonsoft.Json;
+using DDD.Domain.Model.BuildingBlocks.Entity;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
 {
@@ -8,17 +8,16 @@ namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
     {
         public override void WriteJson(
             JsonWriter writer, 
-            EntityId value,
+            object? value,
             JsonSerializer serializer)
         {
             writer.WriteValue(value.ToString());
         }
 
-        public override EntityId ReadJson(
+        public override object ReadJson(
             JsonReader reader, 
             Type objectType, 
-            EntityId existingValue,
-            bool hasExistingValue,
+            object? existingValue,
             JsonSerializer serializer)
         {
             if (reader.Value == null)

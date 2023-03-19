@@ -3,10 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.PubSub;
 
 namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
@@ -15,10 +13,12 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 	{
 		private IDictionary<ActionId, ICollection<OutboxEvent>> _events;
 		private object _lock = new{};
+		private readonly SerializerSettings _serializerSettings;
 		
-		public MemoryOutbox()
+		public MemoryOutbox(SerializerSettings serializerSettings)
 		{
 			_events = new Dictionary<ActionId, ICollection<OutboxEvent>>();
+			_serializerSettings = serializerSettings;
 		}
 		
 		public async Task AddAsync(ActionId actionId, IEvent theEvent, CancellationToken ct)
@@ -31,7 +31,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 				if (!_events.ContainsKey(actionId))
 					_events.Add(actionId, new List<OutboxEvent>());
 				var es = _events[actionId].ToList();
-				es.AddRange(events.Select(e => new OutboxEvent(e)));
+				es.AddRange(events.Select(e => new OutboxEvent(e, _serializerSettings)));
 				_events[actionId] = es;
 				return Task.CompletedTask;
 			}

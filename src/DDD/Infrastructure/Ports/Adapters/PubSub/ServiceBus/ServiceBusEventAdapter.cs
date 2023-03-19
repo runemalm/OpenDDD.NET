@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Monitoring;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Logging;
@@ -19,13 +20,15 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.ServiceBus
 			string connString,
 			string subName,
 			ILogger logger,
-			IMonitoringPort monitoringAdapter) :
+			IMonitoringPort monitoringAdapter,
+			SerializerSettings serializerSettings) :
 			base(
 				context,
 				client,
 				maxDeliveryRetries,
 				logger,
-				monitoringAdapter)
+				monitoringAdapter,
+				serializerSettings)
 		{
 			_connString = connString;
 			_subName = subName;

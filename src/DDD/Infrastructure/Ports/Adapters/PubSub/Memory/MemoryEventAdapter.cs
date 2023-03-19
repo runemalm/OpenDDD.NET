@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Monitoring;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Logging;
@@ -13,13 +14,15 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			string client,
 			int maxDeliveryRetries,
 			ILogger logger,
-			IMonitoringPort monitoringAdapter)
+			IMonitoringPort monitoringAdapter,
+			SerializerSettings serializerSettings)
 			: base(
 				topic, 
 				client, 
 				maxDeliveryRetries,
 				logger, 
-				monitoringAdapter)
+				monitoringAdapter,
+				serializerSettings)
 		{
 			
 		}
@@ -86,7 +89,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 				}
 			}
 
-			base.FlushAsync(outboxEvent);
+			await base.FlushAsync(outboxEvent);
 		}
 	}
 }

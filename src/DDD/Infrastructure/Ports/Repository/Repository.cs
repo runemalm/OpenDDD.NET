@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DDD.Application;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -13,6 +14,8 @@ namespace DDD.Infrastructure.Ports.Repository
 {
     public abstract class Repository<T> : IRepository<T> where T : IAggregate
     {
+        public abstract Task StartAsync(CancellationToken ct);
+        public abstract Task StopAsync(CancellationToken ct);
         public abstract Task DeleteAllAsync(ActionId actionId, CancellationToken ct);
         public abstract Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetAllAsync(ActionId actionId, CancellationToken ct);
@@ -25,7 +28,7 @@ namespace DDD.Infrastructure.Ports.Repository
         public abstract Task SaveAsync(T aggregate, ActionId actionId, CancellationToken ct);
         public abstract Task<string> GetNextIdentityAsync();
         
-        protected string FormatPropertyName(string name)
+        protected string FormatPropertyName(string name, SerializerSettings serializerSettings)
         {
             /*
              * Format the property name according to the
@@ -40,8 +43,8 @@ namespace DDD.Infrastructure.Ports.Repository
                 {
                     { name, "dummyValue" }
                 };
-            var dummyJson = JsonConvert.SerializeObject(dummyDict, JsonConvert.DefaultSettings());
-            var dummyObject = JObject.FromObject(JsonConvert.DeserializeObject(dummyJson));
+            var dummyJson = JsonConvert.SerializeObject(dummyDict, serializerSettings);
+            var dummyObject = JObject.FromObject(JsonConvert.DeserializeObject(dummyJson, serializerSettings));
 
             foreach (var kvp in dummyObject)
                 formatted = kvp.Key;

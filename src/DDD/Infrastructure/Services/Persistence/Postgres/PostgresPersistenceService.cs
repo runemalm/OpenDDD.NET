@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using DDD.Application.Settings;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Logging;
 using Npgsql;
 
@@ -7,8 +8,8 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
 {
 	public class PostgresPersistenceService : PersistenceService
 	{
-		public PostgresPersistenceService(ISettings settings, ILogger logger) 
-			: base(GetConnString(settings), logger)
+		public PostgresPersistenceService(ISettings settings, ILogger logger, SerializerSettings serializerSettings) 
+			: base(GetConnString(settings), logger, serializerSettings)
 		{
 			
 		}
@@ -34,8 +35,8 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
 
 		public override async Task<IConnection> OpenConnectionAsync()
 		{
-			var conn = new PostgresConnection(_connString);
-			await conn.Open();
+			var conn = new PostgresConnection(_connString, _serializerSettings);
+			await conn.OpenAsync();
 			return conn;
 		}
 	}

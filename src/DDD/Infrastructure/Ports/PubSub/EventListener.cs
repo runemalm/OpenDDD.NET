@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using DDD.Application;
-using DDD.Domain;
 using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Logging;
 
 namespace DDD.Infrastructure.Ports.PubSub
@@ -25,6 +24,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 		private readonly IDeadLetterQueue _deadLetterQueue;
 		private readonly TAction _action;
 		private readonly ILogger _logger;
+		private readonly SerializerSettings _serializerSettings;
 
 		public EventListener(
 			Context context, 
@@ -34,7 +34,8 @@ namespace DDD.Infrastructure.Ports.PubSub
 			IEventAdapter eventAdapter,
 			IOutbox outbox,
 			IDeadLetterQueue deadLetterQueue,
-			ILogger logger)
+			ILogger logger,
+			SerializerSettings serializerSettings)
 		{
 			Context = context;
 			ListensTo = listensTo;
@@ -44,6 +45,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 			_outbox = outbox;
 			_deadLetterQueue = deadLetterQueue;
 			_logger = logger;
+			_serializerSettings = serializerSettings;
 		}
 
 		public Task StartAsync()
@@ -64,6 +66,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 			}
 			catch (Exception e)
 			{
+				_logger.Log($"Action threw exception on event: {e}", LogLevel.Debug, e);
 				var theEvent = MessageToEvent(message);
 				theEvent.AddDeliveryFailure($"The listener threw an exception when delegating to action: {e}");
 				
@@ -97,7 +100,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 				$"{_eventAdapter.GetContext()}.",
 				LogLevel.Debug);
 			
-			await _deadLetterQueue.EnqueueAsync(new DeadEvent(theEvent), CancellationToken.None);
+			await _deadLetterQueue.EnqueueAsync(new DeadEvent(theEvent, _serializerSettings), CancellationToken.None);
 		}
 
 		// React
@@ -106,12 +109,12 @@ namespace DDD.Infrastructure.Ports.PubSub
 		{
 			try
 			{
-				return JsonSerializer.Deserialize<TEvent>(message.ToString());
+				return JsonConvert.DeserializeObject<TEvent>(message.ToString(), _serializerSettings);
 			}
 			catch (Exception e)
 			{
 				throw new ListenerException(
-					$"Couldn't translate message to event, error: '{e.Message}'",
+					$"Couldn't translate message to event {typeof(TEvent)}, error: '{e.Message}', the message: '{message.ToString()}'",
 					e);
 			}
 		}

@@ -5,15 +5,16 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using DDD.Application;
 using DDD.Application.Exceptions;
 using DDD.Application.Settings;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Repository;
 using DDD.Infrastructure.Services.Persistence;
-using Newtonsoft.Json;
 
 namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 {
@@ -23,15 +24,15 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 		private readonly string _tableName;
 		private readonly IMigrator<T> _migrator;
 		private readonly IPersistenceService _persistenceService;
+		private readonly SerializerSettings _serializerSettings;
 
-		public SqlRepository(ISettings settings, string tableName, IMigrator<T> migrator, IPersistenceService persistenceService)
+		public SqlRepository(ISettings settings, string tableName, IMigrator<T> migrator, IPersistenceService persistenceService, SerializerSettings  serializerSettings)
 		{
 			_settings = settings;
 			_tableName = tableName;
 			_migrator = migrator;
 			_persistenceService = persistenceService;
-		
-			StartAsync().Wait();
+			_serializerSettings = serializerSettings;
 		}
 		
 		public async Task StartAsync()
@@ -131,7 +132,7 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 		public override async Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
-			var whereExpr = string.Join(" AND ", andWhere.Select(t => $"data->>'{FormatPropertyName(t.Item1)}' = '{t.Item2}'"));
+			var whereExpr = string.Join(" AND ", andWhere.Select(t => $"data->>'{FormatPropertyName(t.Item1, _serializerSettings)}' = '{t.Item2}'"));
 			var stmt = $"SELECT * FROM {_tableName} WHERE {whereExpr}";
 			var aggregates = await conn.ExecuteQueryAsync<T>(stmt);
 			aggregates = _migrator.Migrate(aggregates).ToList();
@@ -150,7 +151,8 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			
 			var parameters = new Dictionary<string, object>();
 			parameters.Add("@id", aggregate.Id.ToString());
-			parameters.Add("@data", JsonDocument.Parse(JsonConvert.SerializeObject(aggregate)));
+			parameters.Add("@data", JsonDocument.Parse(JsonConvert.SerializeObject(aggregate, _serializerSettings)));
+			
 			await conn.ExecuteNonQueryAsync(stmt, parameters);
 		}
 

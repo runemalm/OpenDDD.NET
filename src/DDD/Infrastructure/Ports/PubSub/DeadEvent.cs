@@ -4,6 +4,7 @@ using DDD.Domain;
 using DDD.Domain.Model;
 using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 
 namespace DDD.Infrastructure.Ports.PubSub
 {
@@ -15,11 +16,11 @@ namespace DDD.Infrastructure.Ports.PubSub
 
 		public DeadEvent() { }
 
-		public DeadEvent(IEvent theEvent)
+		public DeadEvent(IEvent theEvent, SerializerSettings serializerSettings)
 		{
 			Id = Guid.NewGuid().ToString();
 			EventId = theEvent.Header.EventId;
-			JsonPayload = JsonConvert.SerializeObject(theEvent);
+			JsonPayload = JsonConvert.SerializeObject(theEvent, serializerSettings);
 		}
 		
 		// Equality

@@ -1,6 +1,6 @@
 ﻿using System;
-using DDD.Domain.Model.BuildingBlocks.Event;
 using Newtonsoft.Json;
+using DDD.Domain.Model.BuildingBlocks.Event;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
 {
@@ -8,21 +8,22 @@ namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
     {
         public override void WriteJson(
             JsonWriter writer, 
-            EventId value, 
+            object? value,
             JsonSerializer serializer)
         {
             writer.WriteValue(value.ToString());
         }
 
-        public override EventId ReadJson(
+        public override object ReadJson(
             JsonReader reader, 
             Type objectType, 
-            EventId existingValue,
-            bool hasExistingValue, 
+            object? existingValue,
             JsonSerializer serializer)
         {
+            if (reader.Value == null)
+                return null;
             string s = (string)reader.Value;
-            return new EventId() { Value = s };
+            return new EventId { Value = s };
         }
     }
 }

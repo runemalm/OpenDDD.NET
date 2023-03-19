@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using DDD.Domain;
 using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Monitoring;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Logging;
@@ -38,6 +37,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 			int port,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter,
+			SerializerSettings serializerSettings,
 			string username = "guest",
 			string password = "guest") 
 			: base(
@@ -45,7 +45,8 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 				client, 
 				maxDeliveryRetries,
 				logger, 
-				monitoringAdapter)
+				monitoringAdapter,
+				serializerSettings)
 		{
 			_host = host;
 			_port = port;
@@ -314,7 +315,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 				"PublishEvent",
 				message);
 
-			base.FlushAsync(outboxEvent);
+			await base.FlushAsync(outboxEvent);
 		}
 		
 		// Helpers
