@@ -3,26 +3,20 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application.Settings;
-using DDD.Infrastructure.Ports.Email;
 using DDD.Logging;
 
 namespace DDD.Infrastructure.Ports.Adapters.Email.Smtp
 {
-	public class SmtpEmailAdapter : IEmailPort
+	public class SmtpEmailAdapter : EmailAdapter
 	{
-		private readonly ISettings _settings;
-		private readonly ILogger _logger;
 		private readonly SmtpClient _client;
-
-		public SmtpEmailAdapter(ISettings settings, ILogger logger)
+		
+		public SmtpEmailAdapter(ISettings settings, ILogger logger) : base(settings, logger)
 		{
-			_settings = settings;
-			_logger = logger;
 			_client = CreateClient();
 		}
 
-		public async Task SendAsync(
-			string fromEmail, string fromName, string toEmail, string toName, 
+		public override async Task SendAsync(string fromEmail, string fromName, string toEmail, string toName, 
 			string subject, string message, bool isHtml, CancellationToken ct)
 		{
 			MailAddress from = new MailAddress(fromEmail, fromName, Encoding.UTF8);
@@ -35,6 +29,8 @@ namespace DDD.Infrastructure.Ports.Adapters.Email.Smtp
 			msg.IsBodyHtml = isHtml;
 			
 			await _client.SendMailAsync(msg);
+			
+			await AddToLog(SmtpEmail.Create(toEmail, message));
 
 			msg.Dispose();
 		}
