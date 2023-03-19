@@ -4,12 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using Azure.Core.Pipeline;
-using DDD.Domain;
-using DDD.Tests.Helpers;
 using Xunit;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
+using DDD.Tests.Helpers;
 
 namespace DDD.Tests
 {
@@ -18,6 +16,7 @@ namespace DDD.Tests
         public UnitTests()
         {
 	        UnsetConfigEnvironmentVariables();
+	        Environment.SetEnvironmentVariable("_TestExplorer_TestResultMessageMaxLength_", "9000");
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Tests");
             Environment.SetEnvironmentVariable("ENV_FILE", "env.local.test");
         }
@@ -84,14 +83,50 @@ namespace DDD.Tests
 		}
 		
 		// Assertion
-
-		public void AssertResponse(object expected, object actual)
-			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
 		
+		protected void AssertTrue(bool condition)
+			=> Assert.True(condition);
+
+		protected void AssertTrue(bool condition, string userMessage)
+			=> Assert.True(condition, userMessage);
+        
+		protected void AssertTrue(bool? condition, string userMessage)
+			=> Assert.True(condition, userMessage);
+        
+		protected void AssertEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual) 
+			=> Assert.Equal<T>(expected, actual);
+
+		protected void AssertEqual<T>(
+			IEnumerable<T> expected,
+			IEnumerable<T> actual,
+			IEqualityComparer<T> comparer)
+		{
+			Assert.Equal(expected, actual, comparer);
+		}
+
+		protected void AssertNow(DateTime? actual)
+			=> AssertDateWithin200Ms(DateTime.UtcNow, actual, "The date wasn't equal or close to 'now'.");
+
+		protected void AssertDateWithinMs(DateTime expected, DateTime? actual, double ms, string? message)
+		{
+			if (actual == null && expected != null)
+				throw new Exception("TODO: Find out how to throw assert exception like the built in methods here...");
+			Assert.True((expected - actual) < TimeSpan.FromMilliseconds(ms), message ?? $"The date wasn't within {ms}ms of expected date.");
+		}
+		
+		protected void AssertDateEqualOrCloseTo(DateTime expected, DateTime? actual)
+			=> AssertDateWithin200Ms(expected, actual, "The date wasn't equal or close to expected date.");
+
+		protected void AssertDateWithin200Ms(DateTime expected, DateTime? actual, string? message)
+			=> AssertDateWithinMs(expected, actual, 200, message ?? "The date wasn't within 200ms of expected date.");
+
 		public void AssertPersisted(object expected, object actual)
 			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
 		
 		public void AssertEvent(object expected, object actual)
+			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
+		
+		public void AssertResponse(object expected, object actual)
 			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
 		
 		public void AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(object expected, object actual)
