@@ -1,8 +1,9 @@
 ﻿using System;
+using DDD.Application.Error;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Exceptions
 {
-	public class PostgresException : Exception
+	public class PostgresException : DddException
 	{
         public PostgresException()
         {

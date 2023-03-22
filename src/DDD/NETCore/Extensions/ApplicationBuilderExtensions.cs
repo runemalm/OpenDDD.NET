@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Linq;
+using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -6,12 +7,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using DDD.Application.Error;
 using DDD.Application.Settings;
-using DDD.Domain.Model;
 using DDD.Domain.Model.Auth.Exceptions;
 using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.Domain.Model.Error;
 using DDD.Domain.Model.Validation;
 using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Ports.Repository;
 using DDD.Infrastructure.Services.Persistence;
+using DDD.NETCore.Hooks;
 using DDD.NETCore.Middleware;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
@@ -81,8 +84,6 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder AddHttpAdapterErrorFormatting(this IApplicationBuilder app, ISettings settings)
 		{
-			// TODO: Add error codes..
-
 			app.UseExceptionHandler(
                 c => c.Run(async context =>
                 {
@@ -90,15 +91,20 @@ namespace DDD.NETCore.Extensions
                         .Get<IExceptionHandlerPathFeature>()
                         .Error;
 
-                    var isNotFoundException = exception.IsOrIsSubType(typeof(EntityNotFoundException<>));
+                    var isDomainException = exception.IsOrIsSubType(typeof(DomainException));
+                    var isAuthorizeException = exception.IsOrIsSubType(typeof(AuthorizeException));
+                    var isUnauthorizedException = isAuthorizeException &&
+                                                  ((AuthorizeException)exception).Errors.Any(e =>
+	                                                  e.Code == DomainError.Authorize_MissingCredentials_Code || 
+	                                                  e.Code == DomainError.Authorize_InvalidCredentials_Code);
+                    var isForbiddenException = isAuthorizeException &&
+                                               ((AuthorizeException)exception).Errors.Any(e =>
+	                                               e.Code == DomainError.Authorize_Forbidden_Code);
+                    var isNotFoundException = isDomainException &&
+                                              ((DomainException)exception).Errors.Any(e =>
+	                                              e.Code == DomainError.Domain_NotFound_Code);
                     var isInvalidCommandException = exception.IsOrIsSubType(typeof(InvalidCommandException));
-                    var isUnauthorizedException = 
-	                    exception.IsOrIsSubType(typeof(InvalidCredentialsException)) || 
-						exception.IsOrIsSubType(typeof(MissingCredentialsException));
-                    var isForbiddenException = exception.IsOrIsSubType(typeof(ForbiddenException));
-                    var isOtherAuthException = exception.IsOrIsSubType(typeof(AuthException));
                     var isInvariantException = exception.IsOrIsSubType(typeof(InvariantException));
-                    var isOtherDomainException = exception.IsOrIsSubType(typeof(DomainException));
 
                     // Prepare response
 					if (!context.Response.HasStarted)
@@ -106,28 +112,34 @@ namespace DDD.NETCore.Extensions
 
 					context.Response.ContentType = "application/json";
 
-					// Add error json
-					Failure failureResponse =
-						new Failure(
-							new List<Error>()
-							{
-								new Error("TODO", exception.Message)
-							});
+					// Create failure response
+					Failure failureResponse;
 
+					if (isDomainException)
+					{
+						failureResponse = new Failure(
+							((DomainException)exception).Errors);
+					}
+					else
+					{
+						failureResponse = new Failure(
+							DomainError.System_UnknownError(exception.Message)); }
+
+					// Set http status code
 					if (isNotFoundException)
 						context.Response.StatusCode = StatusCodes.Status404NotFound;
 					else if (isInvalidCommandException)
 						context.Response.StatusCode = StatusCodes.Status400BadRequest;
 					else if (isInvariantException)
 						context.Response.StatusCode = StatusCodes.Status400BadRequest;
-					else if (isOtherDomainException)
-						context.Response.StatusCode = StatusCodes.Status400BadRequest;
 					else if (isUnauthorizedException)
 						context.Response.StatusCode = StatusCodes.Status401Unauthorized;
 					else if (isForbiddenException)
 						context.Response.StatusCode = StatusCodes.Status403Forbidden;
-					else if (isOtherAuthException)
+					else if (isAuthorizeException)
 						context.Response.StatusCode = StatusCodes.Status403Forbidden;
+					else if (isDomainException)
+						context.Response.StatusCode = StatusCodes.Status400BadRequest;
 					else
 						context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 

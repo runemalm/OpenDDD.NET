@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -32,18 +31,15 @@ namespace DDD.Tests
     {
         protected string ActionName { get; }
         protected ActionId ActionId { get; }
-        
+
         public ActionUnitTests()
         {
             ActionName = GetType().Name.Replace("Tests", "");
             ActionId = ActionId.Create();
-            
-            Debug.WriteLine($"{DateTime.UtcNow:HH:mm:ss.fff} [{ActionName}] BaseConstructor()");
         }
-
+        
         public async ValueTask DisposeAsync()
         {
-            Debug.WriteLine($"{DateTime.UtcNow:HH:mm:ss.fff} [{ActionName}] BaseDisposeAsync()");
             await PersistenceService.ReleaseConnectionAsync(ActionId);
             await TestServer.Host.StopAsync();
         }
@@ -243,7 +239,7 @@ namespace DDD.Tests
             if (shouldBeAllowed)
                 await actionAsync();
             else
-                await Assert.ThrowsAsync<ForbiddenException>(actionAsync);
+                await Assert.ThrowsAsync<AuthorizeException>(actionAsync);
         }
 
         public async Task AssertFailure<T>(T expected, Task actionTask) where T : DomainException

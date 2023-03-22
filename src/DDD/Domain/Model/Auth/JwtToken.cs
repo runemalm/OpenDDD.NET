@@ -52,7 +52,7 @@ namespace DDD.Domain.Model.Auth
 		
 		public static JwtToken Read(
 			string jwtString, 
-			IEnumerable<string> rolesClaimsTypes, 
+			IEnumerable<string>? rolesClaimsTypes = null, 
 			AuthMethod authMethod = AuthMethod.Unknown)
 		{
 			var handler = new JwtSecurityTokenHandler();
@@ -74,7 +74,7 @@ namespace DDD.Domain.Model.Auth
 
 			if (authMethod == AuthMethod.Unknown)
 				jwtToken.ReadAuthMethod(secToken.Claims);
-			jwtToken.ReadRoles(secToken.Claims, rolesClaimsTypes);
+			jwtToken.ReadRoles(secToken.Claims, rolesClaimsTypes ?? new List<string>());
 			jwtToken.ReadUserId(secToken.Claims);
 
 			return jwtToken;
@@ -120,7 +120,7 @@ namespace DDD.Domain.Model.Auth
 				{
 					found = true;
 					if (!Enum.TryParse<AuthMethod>(claim.Value, out var authMethod))
-						throw new AuthException("Couldn't parse auth method from claim value.");
+						throw AuthorizeException.InvalidCredentials("Couldn't parse auth method from claim.");
 					AuthMethod = authMethod;
 					break;
 				}
@@ -224,9 +224,7 @@ namespace DDD.Domain.Model.Auth
 			}
 			catch (SecurityTokenInvalidSignatureException e)
 			{
-				throw new InvalidCredentialsException(
-					"The token signature was invalid.",
-					e);
+				throw AuthorizeException.InvalidCredentials("The token signature was invalid.");
 			}
 		}
 		
@@ -238,10 +236,10 @@ namespace DDD.Domain.Model.Auth
 			var periodStarted = ValidFrom < now;
 			
 			if (expired)
-				throw new InvalidCredentialsException("The token has expired.");
+				throw AuthorizeException.InvalidCredentials("The token has expired.");
 		
 			if (!periodStarted)
-				throw new InvalidCredentialsException("The token is not valid yet.");
+				throw AuthorizeException.InvalidCredentials("The token is not valid yet.");
 		}
 
 		// Equality
@@ -276,10 +274,4 @@ namespace DDD.Domain.Model.Auth
 			return !Equals(left, right);
 		}
 	}
-
-	// internal static class RolesCombinationExtensions
-	// {
-	// 	internal static bool IsSubsetOf(this IEnumerable<string> rolesCombination, IEnumerable<string> roles)
-	// 		=> rolesCombination?.All(role => roles.Any(r => r?.Equals(role, StringComparison.InvariantCultureIgnoreCase) ?? false)) ?? false;
-	// }
 }

@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Infrastructure.Services.Publisher;
 using Microsoft.Extensions.Hosting;
+using DDD.Infrastructure.Services.Publisher;
 using DDD.Logging;
 
 namespace DDD.NETCore.HostedServices

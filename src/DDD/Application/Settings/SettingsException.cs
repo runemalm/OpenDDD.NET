@@ -1,24 +1,29 @@
 ﻿using System;
-using DDD.Application.Exceptions;
+using System.Collections.Generic;
+using DDD.Domain.Model.Error;
 
 namespace DDD.Application.Settings
 {
-	public class SettingsException : DddException
+	public class SettingsException : DomainException
 	{
-        public SettingsException()
-        {
-            
-        }
+		public SettingsException(IDomainError error) : base(error)
+		{
+			
+		}
 
-        public SettingsException(string message)
-            : base(message)
-        {
+		public SettingsException(IEnumerable<IDomainError> errors) : base(errors)
+		{
+			
+		}
+		
+		public SettingsException(string message) : base(message)
+		{
             
-        }
-
-        public SettingsException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
+		}
+        
+		public SettingsException(string message, Exception inner) : base(message, inner)
+		{
+            
+		}
 	}
 }

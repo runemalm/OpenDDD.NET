@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 using DDD.NETCore.HostedServices;
-using DDD.Application.Exceptions;
 using DDD.Application.Settings;
 using DDD.Application.Settings.Auth;
 using DDD.Application.Settings.Email;
@@ -13,6 +13,7 @@ using DDD.Application.Settings.Monitoring;
 using DDD.Application.Settings.Persistence;
 using DDD.Application.Settings.PubSub;
 using DDD.Domain.Model.Auth;
+using DDD.Domain.Model.Error;
 using DDD.Domain.Services.Auth;
 using DDD.Infrastructure.Ports.Adapters.Auth.IAM.Negative;
 using DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam;
@@ -28,12 +29,12 @@ using DDD.Infrastructure.Ports.Auth;
 using DDD.Infrastructure.Ports.Monitoring;
 using DDD.Infrastructure.Ports.Email;
 using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Ports.Repository;
 using DDD.Infrastructure.Services.Persistence;
 using DDD.Infrastructure.Services.Persistence.Memory;
 using DDD.Infrastructure.Services.Persistence.Postgres;
 using DDD.Infrastructure.Services.Publisher;
 using DDD.NETCore.Extensions.Swagger;
-using Microsoft.IdentityModel.Tokens;
 
 namespace DDD.NETCore.Extensions
 {
@@ -69,7 +70,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DddException(
+				throw new DomainException(
 					$"Can't add iam adapter for unsupported " +
 					$"rbac provider: '{settings.Auth.Rbac.Provider}'.");
 			}
@@ -88,7 +89,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DddException(
+				throw new DomainException(
 					$"Can't add email for unsupported " +
 					$"email provider: '{settings.Email.Provider}'.");
 			}
@@ -118,7 +119,7 @@ namespace DDD.NETCore.Extensions
 			else if (settings.Monitoring.Provider == MonitoringProvider.AppInsights)
 				services.AddSingleton<IMonitoringPort, AppInsightsMonitoringAdapter>();
 			else
-				throw new DddException(
+				throw new DomainException(
 					$"Can't add monitoring for unsupported provider: '{settings.Monitoring.Provider}'.");
 
 			return services;
@@ -136,7 +137,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DddException(
+				throw new DomainException(
 					$"Can't add persistence for unsupported " +
 					$"persistence provider: '{settings.Persistence.Provider}'.");
 			}
@@ -242,7 +243,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DddException(
+				throw new DomainException(
 					$"Can't add outbox, unsupported persistence provider " +
 					$"in config: '{settings.Persistence.Provider}'.");
 			}
@@ -261,7 +262,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DddException(
+				throw new DomainException(
 					$"Can't add dead letter queue, unsupported persistence provider " +
 					$"in config: '{settings.Persistence.Provider}'.");
 			}

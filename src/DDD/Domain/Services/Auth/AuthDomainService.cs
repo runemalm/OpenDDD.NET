@@ -36,10 +36,10 @@ namespace DDD.Domain.Services.Auth
 			if (!_settings.Auth.Enabled) return Task.CompletedTask;
 			
 			if (_credentials.JwtToken == null)
-				throw new MissingJwtTokenException();
+				throw AuthorizeException.MissingCredentials("No JwtToken was provided.");
 			
 			if (_credentials.JwtToken.UserId == null)
-				throw new NotAuthenticatedException();
+				throw AuthorizeException.NotAuthenticated();
 			
 			return Task.CompletedTask;
 		}
@@ -76,12 +76,12 @@ namespace DDD.Domain.Services.Auth
 					ct);
 
 			if (!hasPermissions)
-				throw new ForbiddenException();
+				throw AuthorizeException.Forbidden();
 		}
 
 		public async Task AssurePermissionsInRealmAsync(
-			string realmId,
-			string externalRealmId, 
+			string? realmId,
+			string? externalRealmId, 
 			IEnumerable<(string, string)> permissions, 
 			ActionId actionId, 
 			CancellationToken ct)
@@ -92,14 +92,14 @@ namespace DDD.Domain.Services.Auth
 			
 			var hasPermissions = 
 				await _iamAdapter.HasPermissionsInRealmAsync(
-					realmId, 
+					realmId,
 					externalRealmId, 
 					permissions, 
 					actionId, 
 					ct);
 
 			if (!hasPermissions)
-				throw new ForbiddenException();
+				throw AuthorizeException.Forbidden();
 		}
 
 
@@ -123,7 +123,7 @@ namespace DDD.Domain.Services.Auth
 					ct);
 
 			if (!hasPermissions)
-				throw new ForbiddenException();
+				throw AuthorizeException.Forbidden();
 		}
 
 		public async Task AssurePermissionsInResourceAsync(
@@ -146,7 +146,7 @@ namespace DDD.Domain.Services.Auth
 					ct);
 
 			if (!hasPermissions)
-				throw new ForbiddenException();
+				throw AuthorizeException.Forbidden();
 		}
 
 		public Task<bool> HasPermissionsInWorldAsync(string domain, IEnumerable<string> permissions, ActionId actionId, CancellationToken ct)

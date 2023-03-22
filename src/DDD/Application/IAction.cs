@@ -7,5 +7,6 @@ namespace DDD.Application
 		where TCommand : ICommand
 	{
 		Task<TReturns> ExecuteAsync(TCommand command, CancellationToken ct);
+		Task<TReturns> ExecuteAsync(TCommand command, ActionId actionId, CancellationToken ct);
 	}
 }

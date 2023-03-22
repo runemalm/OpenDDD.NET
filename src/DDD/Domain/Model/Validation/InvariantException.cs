@@ -1,4 +1,5 @@
 ﻿using System;
+using DDD.Domain.Model.Error;
 
 namespace DDD.Domain.Model.Validation
 {
