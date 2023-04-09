@@ -92,7 +92,16 @@ namespace DDD.Tests
         
 		protected void AssertTrue(bool? condition, string userMessage)
 			=> Assert.True(condition, userMessage);
+		
+		protected void AssertCount(int expected, int actual)
+			=> AssertEqual(expected, actual);
+		
+		protected void AssertContains<T>(T expected, IEnumerable<T> collection)
+			=> Assert.Contains(expected, collection);
         
+		protected void AssertEqual<T>(T expected, T actual) 
+			=> Assert.Equal(expected, actual);
+		
 		protected void AssertEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual) 
 			=> Assert.Equal<T>(expected, actual);
 
