@@ -43,7 +43,7 @@ namespace DDD.Domain.Model
 		{
 			if (ReferenceEquals(null, obj)) return false;
 			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != this.GetType()) return false;
+			if (obj.GetType() != GetType() && !obj.GetType().IsSubclassOf(GetType())) return false;
 			return Equals((DomainModelVersion)obj);
 		}
 
