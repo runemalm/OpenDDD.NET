@@ -2,8 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.NETCore.Extensions;
 using Xunit;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
@@ -43,7 +46,7 @@ namespace DDD.Tests
 			compareLogic.Config.MaxMillisecondsDateDifference = 999;
 			compareLogic.Config.IgnoreCollectionOrder = true;
 			compareLogic.Config.IgnoreObjectTypes = true;
-
+			
 			ComparisonResult result = compareLogic.Compare(obj1, obj2);
 
 			Assert.True(result.AreEqual, result.DifferencesString);
@@ -96,6 +99,9 @@ namespace DDD.Tests
 		protected void AssertCount(int expected, int actual)
 			=> AssertEqual(expected, actual);
 		
+		protected void AssertCount<T>(int expected, IEnumerable<T> collection)
+			=> AssertCount(expected, collection.Count());
+		
 		protected void AssertContains<T>(T expected, IEnumerable<T> collection)
 			=> Assert.Contains(expected, collection);
         
@@ -128,6 +134,9 @@ namespace DDD.Tests
 
 		protected void AssertDateWithin200Ms(DateTime expected, DateTime? actual, string? message)
 			=> AssertDateWithinMs(expected, actual, 200, message ?? "The date wasn't within 200ms of expected date.");
+
+		public void AssertEntities(object expected, object actual)
+			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
 
 		public void AssertPersisted(object expected, object actual)
 			=> AssertDeepEqualIgnoreIdsAndDateTimeDiff1Sec(expected, actual);
