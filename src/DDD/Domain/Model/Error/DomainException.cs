@@ -19,6 +19,9 @@ namespace DDD.Domain.Model.Error
         
         public static DomainException ModelError(string reason)
             => new DomainException(DomainError.Domain_ModelError(reason));
+        
+        public static DomainException InvariantViolation(string reason)
+            => new DomainException(DomainError.Domain_InvariantViolation(reason));
 
         public DomainException(IDomainError error)
             : base($"Domain exception with error: {error.Code} ({error.Message})")

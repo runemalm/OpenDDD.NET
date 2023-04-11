@@ -104,7 +104,9 @@ namespace DDD.NETCore.Extensions
                                               ((DomainException)exception).Errors.Any(e =>
 	                                              e.Code == DomainError.Domain_NotFound_Code);
                     var isInvalidCommandException = exception.IsOrIsSubType(typeof(InvalidCommandException));
-                    var isInvariantException = exception.IsOrIsSubType(typeof(InvariantException));
+                    var isInvariantException = isDomainException &&
+                                               ((DomainException)exception).Errors.Any(e =>
+	                                               e.Code == DomainError.Domain_InvariantViolation_Code);
 
                     // Prepare response
 					if (!context.Response.HasStarted)

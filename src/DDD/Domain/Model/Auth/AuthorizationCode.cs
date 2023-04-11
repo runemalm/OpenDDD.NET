@@ -1,4 +1,5 @@
 using System.Linq;
+using DDD.Domain.Model.Error;
 using DDD.Domain.Model.Validation;
 
 namespace DDD.Domain.Model.Auth
@@ -32,7 +33,7 @@ namespace DDD.Domain.Model.Auth
   
 			if (errors.Any())
 			{
-				throw new InvariantException(
+				throw DomainException.InvariantViolation(
 					$"AuthorizationToken is invalid with errors: " +
 					$"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
 			}

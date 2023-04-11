@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using DDD.Domain.Model.Auth.Exceptions;
+using DDD.Domain.Model.Error;
 using DDD.Domain.Model.Validation;
 using DDD.NETCore.Extensions;
 using Microsoft.IdentityModel.Tokens;
@@ -199,7 +200,7 @@ namespace DDD.Domain.Model.Auth
 
 			if (errors.Any())
 			{
-				throw new InvariantException(
+				throw DomainException.InvariantViolation(
 					$"JwtToken is invalid with errors: " +
 					$"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
 			}

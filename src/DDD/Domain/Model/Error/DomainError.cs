@@ -46,8 +46,13 @@ namespace DDD.Domain.Model.Error
         public const int Domain_AlreadyExists_Code = 122;
         public const string Domain_AlreadyExists_Msg = "An {0} with {1} '{2}' already exists.";
         public const string Domain_AlreadyExists_UsrMsg = "Couldn't perform the action. An {0} with {1} '{2}' already exists. Please choose a unique value and try again.";
+        
+        public const int Domain_InvariantViolation_Code = 123;
+        public const string Domain_InvariantViolation_Msg = "Invariant violation: {0}";
+        public const string Domain_InvariantViolation_UsrMsg = "A business rule was violated: {0}";
 
         public static IDomainError Domain_ModelError(string reason) => Create(Domain_ModelError_Code, String.Format(Domain_ModelError_Msg, reason), String.Format(Domain_ModelError_UsrMsg, reason));
+        public static IDomainError Domain_InvariantViolation(string reason) => Create(Domain_InvariantViolation_Code, String.Format(Domain_InvariantViolation_Msg, reason), String.Format(Domain_InvariantViolation_UsrMsg, reason));
         public static IDomainError Domain_NotFound(string entityName, string entityId) => Create(Domain_NotFound_Code, String.Format(Domain_NotFound_Msg, entityName, entityId), String.Format(Domain_NotFound_UsrMsg, entityName, entityId));
         public static IDomainError Domain_AlreadyExists(string entityName, string propertyName, object propertyValue) => Create(Domain_AlreadyExists_Code, String.Format(Domain_AlreadyExists_Msg, entityName, propertyName, propertyValue), String.Format(Domain_AlreadyExists_UsrMsg, entityName, propertyName, propertyValue));
         
