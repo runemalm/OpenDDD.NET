@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using DDD.Application;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Infrastructure.Services.Persistence;
 
@@ -33,9 +34,9 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
                 $"CREATE TABLE IF NOT EXISTS dead_letter_queue " +
                 $"(id VARCHAR UNIQUE NOT NULL," +
                 $"data json NOT NULL)";
-
-            using (var conn = await _persistenceService.OpenConnectionAsync())
-                await conn.ExecuteNonQueryAsync(stmt);
+            
+            var conn = await _persistenceService.GetConnectionAsync(ActionId.BootId());
+            await conn.ExecuteNonQueryAsync(stmt);
         }
         
         public async Task EnqueueAsync(DeadEvent deadEvent, CancellationToken ct)

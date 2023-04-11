@@ -1,28 +1,22 @@
-﻿using System.Collections.Generic;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using System.Linq;
+using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
-using JsonConverter = Newtonsoft.Json.JsonConverter;
-using JsonSerializer = System.Text.Json.JsonSerializer;
-using DDD.Application;
-using DDD.Application.Exceptions;
+using Microsoft.IdentityModel.Tokens;
+using DDD.Application.Error;
 using DDD.Application.Settings;
-using DDD.Domain.Model;
 using DDD.Domain.Model.Auth.Exceptions;
 using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.Domain.Model.Error;
 using DDD.Domain.Model.Validation;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.NewtonSoft;
 using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Ports.Repository;
 using DDD.Infrastructure.Services.Persistence;
+using DDD.NETCore.Hooks;
 using DDD.NETCore.Middleware;
-using Microsoft.IdentityModel.Tokens;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
 namespace DDD.NETCore.Extensions
@@ -58,12 +52,6 @@ namespace DDD.NETCore.Extensions
 				.AddHttpAdapterDocs(settings);
 			return app;
 		}
-		
-		public static IApplicationBuilder AddTranslation(this IApplicationBuilder app, ISettings settings)
-		{
-			app.AddJsonConverterPolicy(settings);
-			return app;
-		}
 
 		// Events
 
@@ -86,61 +74,6 @@ namespace DDD.NETCore.Extensions
 			return app;
 		}
 
-		private static IApplicationBuilder AddJsonConverterPolicy(this IApplicationBuilder app, ISettings settings)
-		{
-			// System.Text.Json
-			
-			// This is a work-around to be able to set default serializer options
-			// See: https://stackoverflow.com/a/58959198
-			var opts = ((JsonSerializerOptions)typeof(JsonSerializerOptions)
-				.GetField("s_defaultOptions",
-					System.Reflection.BindingFlags.Static |
-					System.Reflection.BindingFlags.NonPublic)
-				?.GetValue(null));
-
-			if (opts != null)
-			{
-				// Don't do it twice, because then an exception will be thrown.
-				if (opts.Converters.Count == 0)
-				{
-					opts.PropertyNameCaseInsensitive = true;
-					opts.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-					opts.Converters.Add(new JsonStringEnumConverter());
-					opts.Converters.Add(new ActionIdConverter());
-					opts.Converters.Add(new EventIdConverter());
-					opts.Converters.Add(new EntityIdConverter());
-					opts.Converters.Add(new DomainModelVersionConverter());
-				}
-			}
-			else
-			{
-				throw new DddException("Couldn't configure json converters.");
-			}
-
-			// Newtonsoft
-			
-			// We use Newtonsoft for OutboxEvents serialization only.
-			// This is because System.Text.Json (that we use everywhere else),
-			// doesn't support polymorphic serialization.
-			//
-			// The goal is to use System.Text.Json everywhere in the future.
-
-			JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-			{
-				ContractResolver = new CamelCasePropertyNamesContractResolver(),
-				Converters = new List<JsonConverter>()
-				{
-					new StringEnumConverter(),
-					new ActionIdNewtonsoftConverter(),
-					new EventIdNewtonsoftConverter(),
-					new EntityIdNewtonsoftConverter(),
-					new DomainModelVersionNewtonsoftConverter()
-				}
-			};
-			
-			return app;
-		}
-
 		private static IApplicationBuilder AddHttpAdapterDocs(this IApplicationBuilder app, ISettings settings)
 		{
 			if (settings.Http.Docs.Enabled)
@@ -151,8 +84,6 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder AddHttpAdapterErrorFormatting(this IApplicationBuilder app, ISettings settings)
 		{
-			// TODO: Add error codes..
-
 			app.UseExceptionHandler(
                 c => c.Run(async context =>
                 {
@@ -160,15 +91,22 @@ namespace DDD.NETCore.Extensions
                         .Get<IExceptionHandlerPathFeature>()
                         .Error;
 
-                    var isNotFoundException = exception.IsOrIsSubType(typeof(EntityNotFoundException<>));
+                    var isDomainException = exception.IsOrIsSubType(typeof(DomainException));
+                    var isAuthorizeException = exception.IsOrIsSubType(typeof(AuthorizeException));
+                    var isUnauthorizedException = isAuthorizeException &&
+                                                  ((AuthorizeException)exception).Errors.Any(e =>
+	                                                  e.Code == DomainError.Authorize_MissingCredentials_Code || 
+	                                                  e.Code == DomainError.Authorize_InvalidCredentials_Code);
+                    var isForbiddenException = isAuthorizeException &&
+                                               ((AuthorizeException)exception).Errors.Any(e =>
+	                                               e.Code == DomainError.Authorize_Forbidden_Code);
+                    var isNotFoundException = isDomainException &&
+                                              ((DomainException)exception).Errors.Any(e =>
+	                                              e.Code == DomainError.Domain_NotFound_Code);
                     var isInvalidCommandException = exception.IsOrIsSubType(typeof(InvalidCommandException));
-                    var isUnauthorizedException = 
-	                    exception.IsOrIsSubType(typeof(InvalidCredentialsException)) || 
-						exception.IsOrIsSubType(typeof(MissingCredentialsException));
-                    var isForbiddenException = exception.IsOrIsSubType(typeof(ForbiddenException));
-                    var isOtherAuthException = exception.IsOrIsSubType(typeof(AuthException));
-                    var isInvariantException = exception.IsOrIsSubType(typeof(InvariantException));
-                    var isOtherDomainException = exception.IsOrIsSubType(typeof(DomainException));
+                    var isInvariantException = isDomainException &&
+                                               ((DomainException)exception).Errors.Any(e =>
+	                                               e.Code == DomainError.Domain_InvariantViolation_Code);
 
                     // Prepare response
 					if (!context.Response.HasStarted)
@@ -176,28 +114,34 @@ namespace DDD.NETCore.Extensions
 
 					context.Response.ContentType = "application/json";
 
-					// Add error json
-					Failure failureResponse =
-						new Failure(
-							new List<Error>()
-							{
-								new Error("TODO", exception.Message)
-							});
+					// Create failure response
+					Failure failureResponse;
 
+					if (isDomainException)
+					{
+						failureResponse = new Failure(
+							((DomainException)exception).Errors);
+					}
+					else
+					{
+						failureResponse = new Failure(
+							DomainError.System_UnknownError(exception.Message)); }
+
+					// Set http status code
 					if (isNotFoundException)
 						context.Response.StatusCode = StatusCodes.Status404NotFound;
 					else if (isInvalidCommandException)
 						context.Response.StatusCode = StatusCodes.Status400BadRequest;
 					else if (isInvariantException)
 						context.Response.StatusCode = StatusCodes.Status400BadRequest;
-					else if (isOtherDomainException)
-						context.Response.StatusCode = StatusCodes.Status400BadRequest;
 					else if (isUnauthorizedException)
 						context.Response.StatusCode = StatusCodes.Status401Unauthorized;
 					else if (isForbiddenException)
 						context.Response.StatusCode = StatusCodes.Status403Forbidden;
-					else if (isOtherAuthException)
+					else if (isAuthorizeException)
 						context.Response.StatusCode = StatusCodes.Status403Forbidden;
+					else if (isDomainException)
+						context.Response.StatusCode = StatusCodes.Status400BadRequest;
 					else
 						context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
@@ -243,11 +187,22 @@ namespace DDD.NETCore.Extensions
 			return app;
 		}
 		
-		private static void StartContext(this IApplicationBuilder app)
+		public static IApplicationBuilder StartContext(this IApplicationBuilder app)
 		{
 			app.StartCommonAdapters();
 			app.StartSecondaryAdapters();
+			app.OnBeforePrimaryAdaptersStarted();
 			app.StartPrimaryAdapters();
+			return app;
+		}
+		
+		public static IApplicationBuilder OnBeforePrimaryAdaptersStarted(this IApplicationBuilder app)
+		{
+			var serviceProvider = app.ApplicationServices;
+			var hooks = serviceProvider.GetServices<IOnBeforePrimaryAdaptersStartedHook>();
+			foreach (var hook in hooks)
+				hook.ExecuteAsync(app).GetAwaiter().GetResult();
+			return app;
 		}
 		
 		private static IApplicationBuilder StartCommonAdapters(this IApplicationBuilder app)
@@ -266,6 +221,8 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder StartSecondaryAdapters(this IApplicationBuilder app)
 		{
+			app.StartOutbox();
+			app.StartRepositories();
 			return app;
 		}
 		
@@ -274,15 +231,30 @@ namespace DDD.NETCore.Extensions
 			var persistenceService =
 				app.ApplicationServices.GetService<IPersistenceService>();
 		
-			persistenceService.StartAsync().Wait();
+			persistenceService.StartAsync().GetAwaiter().GetResult();
 		
+			return app;
+		}
+		
+		private static IApplicationBuilder StartOutbox(this IApplicationBuilder app)
+		{
+			var outbox = app.ApplicationServices.GetService<IOutbox>();
+			outbox.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+		
+			return app;
+		}
+		
+		private static IApplicationBuilder StartRepositories(this IApplicationBuilder app)
+		{
+			foreach (var repository in app.ApplicationServices.GetServices<IStartableRepository>())
+				repository.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
 			return app;
 		}
 
 		private static IApplicationBuilder StartListeners(this IApplicationBuilder app)
 		{
 			foreach (var listener in app.ApplicationServices.GetServices<IEventListener>())
-				listener.StartAsync().Wait();
+				listener.StartAsync().GetAwaiter().GetResult();
 			return app;
 		}
 
@@ -323,6 +295,8 @@ namespace DDD.NETCore.Extensions
 
 		private static IApplicationBuilder StopSecondaryAdapters(this IApplicationBuilder app)
 		{
+			app.StopOutbox();
+			app.StopRepositories();
 			return app;
 		}
 		
@@ -348,6 +322,21 @@ namespace DDD.NETCore.Extensions
 		
 			persistenceService.StopAsync().Wait();
 		
+			return app;
+		}
+		
+		private static IApplicationBuilder StopOutbox(this IApplicationBuilder app)
+		{
+			var outbox = app.ApplicationServices.GetService<IOutbox>();
+			outbox.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
+		
+			return app;
+		}
+		
+		private static IApplicationBuilder StopRepositories(this IApplicationBuilder app)
+		{
+			foreach (var repository in app.ApplicationServices.GetServices<IStartableRepository>())
+				repository.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
 			return app;
 		}
 

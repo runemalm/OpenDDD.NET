@@ -1,15 +1,14 @@
 ﻿using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
 using DDD.Domain.Model;
 
 namespace DDD.Infrastructure.Ports.PubSub
 {
 	public interface IEventListener
 	{
-		public abstract Context Context { get; }
-		public abstract string ListensTo { get; }
-		public abstract DomainModelVersion ListensToVersion { get; }
+		public Context Context { get; }
+		public string ListensTo { get; }
+		public DomainModelVersion ListensToVersion { get; }
 
 		Task StartAsync();
 		Task StopAsync();

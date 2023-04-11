@@ -1,6 +1,6 @@
 using DDD.Infrastructure.Ports.Adapters.Http.Common;
 using Application.Actions.Commands;
-using Infrastructure.Ports.Adapters.Http.vX_X_X.Model.Commands;
+using Infrastructure.Ports.Adapters.Http.vX.Model.Commands;
 
 namespace Infrastructure.Ports.Adapters.Http.Common.Translation.Commands
 {
@@ -13,7 +13,7 @@ namespace Infrastructure.Ports.Adapters.Http.Common.Translation.Commands
             // _dummyTranslator = dummyTranslator;
         }
 
-        public {{action_name}}Command From_vX_X_X({{action_name}}Command_vX_X_X command_vX_X_X)
+        public {{action_name}}Command FromVX({{action_name}}CommandVX commandVX)
         {
             throw new NotImplementedException();
             

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using DDD.Application.Exceptions;
+using DDD.Domain.Model.Error;
+
 
 namespace DDD.Domain.Model
 {
@@ -11,8 +12,8 @@ namespace DDD.Domain.Model
 		public DomainModelVersion(string dotString)
 		{
 			if (string.IsNullOrEmpty(dotString))
-				throw new DddException($"The dotString must be of format 'x.x.x'. Was: '{dotString}'.");
-		
+				throw DomainException.ModelError($"The domain model version string is not a valid dotstring: '{dotString}'.");
+
 			_version = new Version(dotString);
 		}
 		
@@ -42,7 +43,7 @@ namespace DDD.Domain.Model
 		{
 			if (ReferenceEquals(null, obj)) return false;
 			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != this.GetType()) return false;
+			if (obj.GetType() != GetType() && !obj.GetType().IsSubclassOf(GetType())) return false;
 			return Equals((DomainModelVersion)obj);
 		}
 

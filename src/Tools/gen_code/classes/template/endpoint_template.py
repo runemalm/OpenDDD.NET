@@ -14,7 +14,7 @@ class EndpointTemplate(Template):
 		filename = f"HttpAdapter.cs"
 		path = (
 			f"{self.src_path}/Infrastructure/Ports/Adapters/Http/"
-			f"{Utils.dot_version_to_api_version(definition.version)}/"
+			f"{Utils.dot_version_to_vx(definition.version)}/"
 			f"{filename}")
 		code = super().render(
 			"http_endpoint",
@@ -24,6 +24,7 @@ class EndpointTemplate(Template):
 				'command_name': f"{definition.name}",
 				'return_type': self._header_return_type(definition),
 				'swagger_doc_defs_attribs': self._header_swagger_doc_defs(definition),
+				'docs_section': definition.doc_section,
 				'docs_desc': definition.doc_desc,
 				'docs_returns': definition.doc_returns,
 				'method': self._header_method(definition),
@@ -34,7 +35,7 @@ class EndpointTemplate(Template):
 				'action_param_var_name': self._action_param_var_name(definition),
 				'command_translator_param_var_name': self._command_translator_param_var_name(definition),
 				'path': self._header_path(definition),
-				'api_version': Utils.dot_version_to_api_version(definition.version)
+				'Vx': Utils.dot_version_to_Vx(definition.version)
 			},
 			filename,
 			path)

@@ -1,27 +1,28 @@
 ﻿using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using DDD.Application;
 
 namespace DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
 {
-    public class ActionIdConverter : JsonConverter<ActionId>
+    public class ActionIdConverter : Converter<ActionId>
     {
-        public override bool CanConvert(Type typeToConvert)
+        public override void WriteJson(
+            JsonWriter writer, 
+            object? value,
+            JsonSerializer serializer)
         {
-            return typeToConvert == typeof(ActionId);
+            writer.WriteValue(value.ToString());
         }
-        
-        public override ActionId Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options) =>
-            new ActionId() { Value = reader.GetString() };
 
-        public override void Write(
-            Utf8JsonWriter writer,
-            ActionId actionIdValue,
-            JsonSerializerOptions options) =>
-            writer.WriteStringValue(actionIdValue.Value);
+        public override object ReadJson(
+            JsonReader reader, 
+            Type objectType, 
+            object? existingValue,
+            JsonSerializer serializer)
+        {
+            if (reader.Value == null)
+                return null;
+            return ReadJsonUsingMethod(reader, "Parse", objectType);
+        }
     }
 }

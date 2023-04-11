@@ -7,6 +7,7 @@ using DDD.Logging;
 using DDD.Application.Settings;
 using DDD.Domain.Model.Auth;
 using DDD.Domain.Model.Auth.Exceptions;
+using DDD.Domain.Model.Error;
 
 namespace DDD.NETCore.Middleware
 {
@@ -44,17 +45,16 @@ namespace DDD.NETCore.Middleware
                 var tokens = authorizationHeaders.Where(ah => ah.StartsWith(start, StringComparison.OrdinalIgnoreCase));
 
                 if (tokens.Count() > 1)
-                    throw new InvalidCredentialsException(
-                        $"There was more than one authorization " +
-						$"token in the headers.");
+                    throw AuthorizeException.InvalidCredentials(
+                        "There was more than one authorization token in the headers.");
 
                 raw = tokens.FirstOrDefault()?.Substring(start.Length);
             } 
             else
-			{
+            {
                 throw new SettingsException(
-                    $"Unsupported jwt token location setting: {_settings.Auth.JwtToken.Location}");
-			}
+                    DomainError.Settings_UnsupportedJwtTokenLocationSetting(_settings.Auth.JwtToken.Location));
+            }
 
             if (raw != null)
             {

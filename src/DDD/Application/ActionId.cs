@@ -5,10 +5,16 @@ namespace DDD.Application
 	public class ActionId : IEquatable<ActionId>
 	{
 		public string Value;
-		public ActionId() { }
+
+		public static ActionId Parse(string value)
+		{
+			var actionId = new ActionId { Value = value };
+			return actionId;
+		}
 		
 		public static ActionId Create()
 		{
+			// Use for the actions actually running in production
 			var actionId = new ActionId()
 			{
 				Value = Guid.NewGuid().ToString()
@@ -18,10 +24,8 @@ namespace DDD.Application
 
 		public static ActionId BootId()
 		{
-			var actionId = new ActionId
-			{
-				Value = "BootActionId"
-			};
+			// Use in boot sequence
+			var actionId = Parse("BootActionId");
 			return actionId;
 		}
 

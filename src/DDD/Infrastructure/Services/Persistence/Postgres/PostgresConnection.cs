@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Text.Json;
 using System.Threading.Tasks;
-using DDD.Application.Exceptions;
+using Newtonsoft.Json;
 using Npgsql;
+using DDD.Domain.Model.Error;
+using PostgresException = DDD.Infrastructure.Ports.Adapters.Common.Exceptions.PostgresException;
 
 namespace DDD.Infrastructure.Services.Persistence.Postgres
 {
@@ -11,19 +13,20 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
     {
         private NpgsqlConnection _sqlConn;
         private NpgsqlTransaction _sqlTrx;
-        
-        public PostgresConnection(string connString) : base(connString)
+
+        public PostgresConnection(string connString, JsonSerializerSettings serializerSettings) 
+            : base(connString, serializerSettings)
         {
             
         }
 
-        public override async Task Open()
+        public override async Task OpenAsync()
         {
             _sqlConn = new NpgsqlConnection(_connString);
             await _sqlConn.OpenAsync();
         }
         
-        public override async Task Close()
+        public override async Task CloseAsync()
         {
             await _sqlConn.CloseAsync();
         }
@@ -31,11 +34,11 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
         public override Task StartTransactionAsync()
         {
             if (_sqlConn == null)
-                throw new DddException(
+                throw new DomainException(
                     "Can't start transaction, no connection has been made.");
             else if (_sqlConn.State != ConnectionState.Open)
-                throw new DddException(
-                    "Can't start transaction, the connection is not in open state.");
+                throw new DomainException(
+                    "Can't start transaction, the connection is not in an open state.");
             _sqlTrx = _sqlConn.BeginTransaction();
             return Task.CompletedTask;
         }
@@ -43,7 +46,7 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
         public override async Task CommitTransactionAsync()
         {
             if (_sqlTrx == null)
-                throw new DddException(
+                throw new DomainException(
                     "Can't commit non-existing transaction.");
             await _sqlTrx.CommitAsync();
             _sqlTrx.Dispose();
@@ -53,7 +56,7 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
         public override async Task RollbackTransactionAsync()
         {
             if (_sqlTrx == null)
-                throw new DddException(
+                throw new DomainException(
                     "Can't rollback non-existing transaction.");
             await _sqlTrx.RollbackAsync();
             _sqlTrx.Dispose();
@@ -85,7 +88,7 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
             {
                 while (await reader.ReadAsync())
                 {
-                    var aggregate = JsonSerializer.Deserialize<T>(reader.GetFieldValue<string>(1));
+                    var aggregate = JsonConvert.DeserializeObject<T>(reader.GetFieldValue<string>(1), _serializerSettings);
                     aggregates.Add(aggregate);
                 }
             }
@@ -93,7 +96,7 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
             return aggregates;
         }
         
-        public override async Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object> parameters)
+        public override async Task<T> ExecuteScalarAsync<T>(string stmt, IDictionary<string, object>? parameters)
         {
             var cmd = new NpgsqlCommand(stmt, _sqlConn, _sqlTrx);
 
@@ -101,9 +104,9 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
                 foreach (KeyValuePair<string, object> kvp in parameters)
                     cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
 
-            T scalar = (T)await cmd.ExecuteScalarAsync();
+            var result = await cmd.ExecuteScalarAsync();
 
-            return scalar;
+            return result != null ? (T)result : default(T);
         }
     }
 }

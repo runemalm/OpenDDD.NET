@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DDD.Domain.Model.Validation;
 
-namespace DDD.Application.Exceptions
+namespace DDD.Application.Error
 {
 	public class InvalidCommandException : Exception
 	{

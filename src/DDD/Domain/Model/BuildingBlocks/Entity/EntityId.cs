@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using DDD.Domain.Model.Error;
 using DDD.Domain.Model.Validation;
 
 namespace DDD.Domain.Model.BuildingBlocks.Entity
@@ -26,7 +27,7 @@ namespace DDD.Domain.Model.BuildingBlocks.Entity
 
 			if (errors.Any())
 			{
-				throw new InvariantException(
+				throw DomainException.InvariantViolation(
 					$"{entityTypeName} is invalid with errors: " +
 					$"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
 			}

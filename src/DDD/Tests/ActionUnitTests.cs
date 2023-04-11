@@ -1,39 +1,134 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application.Settings;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.Auth.Exceptions;
-using DDD.Domain.Model.BuildingBlocks;
-using DDD.Domain.Model.BuildingBlocks.Event;
-using DDD.Infrastructure.Ports;
-using DDD.Infrastructure.Ports.PubSub;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using WireMock.Server;
 using Xunit;
+using WireMock.Server;
+using dotenv.net;
+using Newtonsoft.Json;
+using NJsonSchema.Infrastructure;
+using DDD.Application;
+using DDD.Application.Settings;
+using DDD.Domain.Model.Auth.Exceptions;
+using DDD.Domain.Model.BuildingBlocks.Event;
+using DDD.Domain.Model.Error;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using DDD.Infrastructure.Ports.Email;
+using DDD.Infrastructure.Ports.PubSub;
+using DDD.Infrastructure.Services.Persistence;
+using DDD.Logging;
 
 namespace DDD.Tests
 {
-    [Collection("Sequential")]
-    public abstract class ActionUnitTests : UnitTests
+    public abstract class ActionUnitTests : UnitTests, IAsyncDisposable, IDisposable
     {
-        public ActionUnitTests(bool emptyRepositoriesBeforeTests = true)
+        protected string ActionName { get; }
+        protected ActionId ActionId { get; }
+
+        public ActionUnitTests()
         {
-            if (emptyRepositoriesBeforeTests)
-            {
-                EmptyRepositories().Wait();
-                EmptyDeadLetterQueue().Wait();
-            }
+            ActionName = GetType().Name.Replace("Tests", "");
+            ActionId = ActionId.Create();
+        }
+        
+        public async ValueTask DisposeAsync()
+        {
+            await PersistenceService.ReleaseConnectionAsync(ActionId);
+            await TestServer.Host.StopAsync();
+        }
+        
+        public void Dispose()
+        {
+            PersistenceService.ReleaseConnectionAsync(ActionId).GetAwaiter().GetResult();
+            TestServer.Host.StopAsync().GetAwaiter().GetResult();
         }
 
         // Configuration
         
-        public void SetConfigPersistenceProvider(string value)
-            => Environment.SetEnvironmentVariable("CFG_PERSISTENCE_PROVIDER", value);
+        public void Configure()
+            => Environment.SetEnvironmentVariable($"ENV_FILE_{ActionName}", CreateEnvFileJson());
+
+        private string CreateEnvFileJson()
+        {
+            var envFileName = "env.test";
+            
+            var opts = 
+                DotEnv.Fluent()
+                    .WithExceptions()
+                    .WithEnvFiles(GetEnvFilePath(envFileName))
+                    .WithTrimValues();
+
+            var values = opts.Read()
+                .Select(kvp => new KeyValuePair<string, string>(Regex.Replace(kvp.Key, "CFG_", $"CFG_{ActionName}_"), kvp.Value))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            var existing = 
+                Environment.GetEnvironmentVariables()
+                    .Cast<DictionaryEntry>()
+                    .Where(kvp => kvp.Key.ToString().StartsWith($"CFG_{ActionName}_"))
+                    .Select(entry => new KeyValuePair<string, string>(entry.Key.ToString(), entry.Value.ToString()));
+
+            values[$"CFG_{ActionName}_POSTGRES_CONN_STR"] = Regex.Replace(
+                values[$"CFG_{ActionName}_POSTGRES_CONN_STR"], 
+                "Database=([^;]*)", 
+                $"Database=$1_{ActionName}");
+
+            foreach (var e in existing)
+                values[e.Key] = e.Value;
+
+            var jsonResolver = new PropertyRenameAndIgnoreSerializerContractResolver();
+            
+            var serializerSettings = new JsonSerializerSettings();
+            serializerSettings.ContractResolver = jsonResolver;
+            
+            var jsonString = JsonConvert.SerializeObject(values, serializerSettings);
+
+            return jsonString;
+        }
         
+        private string GetEnvFilePath(string filename)
+        {
+            var pathRoot = Path.GetPathRoot(Directory.GetCurrentDirectory());
+
+            var dir = Directory.GetCurrentDirectory();
+            var path = $"{dir}/{filename}";
+            bool found = File.Exists(path);
+
+            while (!found && dir != pathRoot)
+            {
+                dir = Directory.GetParent(dir).ToString();
+                path = dir != "/" ? $"{dir}/{filename}" : $"/{filename}";
+                found = File.Exists(path);
+            }
+
+            return path;
+        }
+
+        public void SetConfig(string name, string value)
+            => Environment.SetEnvironmentVariable($"CFG_{ActionName}_{name}", value);
+        
+        public string? GetConfig(string name)
+            => Environment.GetEnvironmentVariable($"CFG_{ActionName}_{name}");
+
+        public void SetFrontendConfig(string name, string value)
+            => SetConfig($"FRONTEND_{name}", value);
+
+        public void SetConfigPersistenceProvider(string value)
+            => SetConfig("PERSISTENCE_PROVIDER", value);
+        
+        public void SetConfigPostgresConnStr(string value)
+            => SetConfig("POSTGRES_CONN_STR", value);
+
+        public string? GetConfigPostgresConnStr()
+            => GetConfig("POSTGRES_CONN_STR");
+
         // Mock API
         
         private WireMockServer _mockApi;
@@ -53,6 +148,11 @@ namespace DDD.Tests
         public IDomainPublisher DomainPublisher => TestServer.Host.Services.GetRequiredService<IDomainPublisher>();
         public IInterchangePublisher InterchangePublisher => TestServer.Host.Services.GetRequiredService<IInterchangePublisher>();
         
+        protected void EnableDomainEvents() => DomainPublisher.SetEnabled(true);
+        protected void DisableDomainEvents() => DomainPublisher.SetEnabled(false);
+        protected void EnableIntegrationEvents() => InterchangePublisher.SetEnabled(true);
+        protected void DisableIntegrationEvents() => InterchangePublisher.SetEnabled(false);
+
         // Repositories
         
         public IOutbox Outbox => TestServer.Host.Services.GetRequiredService<IOutbox>();
@@ -61,6 +161,10 @@ namespace DDD.Tests
         // Settings
         
         public ISettings Settings => TestServer.Host.Services.GetRequiredService<ISettings>();
+        
+        // Logging
+        
+        public ILogger Logger => TestServer.Host.Services.GetRequiredService<ILogger>();
         
         // Test server
         
@@ -80,20 +184,47 @@ namespace DDD.Tests
 
         protected abstract IWebHostBuilder CreateWebHostBuilder();
 
+        // Translation
+        
+        public SerializerSettings SerializerSettings => TestServer.Host.Services.GetRequiredService<SerializerSettings>();
+
         // Persistence
+        
+        protected IPersistenceService PersistenceService => TestServer.Host.Services.GetRequiredService<IPersistenceService>();
+        
+        protected async Task EmptyDb()
+        {
+            await EmptyRepositories();
+            await EmptyEmailPorts();
+            await EmptyDeadLetterQueue();
+            await EmptyOutbox();
+        }
         
         protected async Task EmptyRepositories()
         {
-            await Outbox.EmptyAsync(CancellationToken.None);
             await EmptyAggregateRepositories(CancellationToken.None);
+        }
+        
+        protected async Task EmptyEmailPorts()
+        {
+            await EmailAdapter.EmptyAsync(CancellationToken.None);
         }
         
         protected async Task EmptyDeadLetterQueue()
         {
             await DeadLetterQueue.EmptyAsync(CancellationToken.None);
         }
+
+        protected async Task EmptyOutbox()
+        {
+            await Outbox.EmptyAsync(CancellationToken.None);
+        }
         
         protected abstract Task EmptyAggregateRepositories(CancellationToken ct);
+
+        // Email
+        
+        public IEmailPort EmailAdapter => TestServer.Host.Services.GetRequiredService<IEmailPort>();
 
         // Assertions
         
@@ -108,7 +239,13 @@ namespace DDD.Tests
             if (shouldBeAllowed)
                 await actionAsync();
             else
-                Assert.ThrowsAsync<ForbiddenException>(actionAsync);
+                await Assert.ThrowsAsync<AuthorizeException>(actionAsync);
+        }
+
+        public async Task AssertFailure<T>(T expected, Task actionTask) where T : DomainException
+        {
+            var actual = await Assert.ThrowsAsync<T>(async () => await actionTask);
+            Assert.Equal(expected, actual);
         }
     }
 }

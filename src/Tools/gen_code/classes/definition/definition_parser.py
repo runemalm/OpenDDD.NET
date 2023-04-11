@@ -32,7 +32,7 @@ class DefinitionParser:
         definitions.add(self._parse_command(cd, action.name))
 
       for key, vd in yml['Adapters']['Http'].items():
-        if Utils.is_wildcard_http_version_string(key):
+        if Utils.is_http_version_string(key):
           version = key
           for d in vd['Endpoints']:
             endpoint = self._parse_http_endpoint(d, version)
@@ -132,6 +132,7 @@ class DefinitionParser:
     definition.name = d['Name']
     definition.version = version
     definition.swagger_doc_defs = d['SwaggerDocDefs']
+    definition.doc_section = d['DocSection']
     definition.doc_desc = d['DocDesc']
     definition.doc_returns = d['DocReturns']
     definition.method = d['Method']

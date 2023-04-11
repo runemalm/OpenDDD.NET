@@ -10,23 +10,11 @@ using Application.Actions.Commands;
 
 namespace Application.Actions
 {
-    public class {{class_name}} : DDD.Application.Action<{{command_name}}, {{return_class_name}}>
+    public class {{class_name}} : Action<{{command_name}}, bool>
     {
-        private readonly ISettings _settings;
-        private readonly ILogger _logger;
-
-        public {{class_name}}(
-            IAuthDomainService authDomainService,
-            ISettings settings,
-            ILogger logger,
-            IDomainPublisher domainPublisher,
-            IInterchangePublisher interchangePublisher,
-            IOutbox outbox,
-            IPersistenceService persistenceService)
-            : base(authDomainService, domainPublisher, interchangePublisher, outbox, persistenceService)
+        public {{class_name}}(ActionDependencies deps) : base(deps)
         {
-            _settings = settings;
-            _logger = logger;
+            
         }
 
         public override async Task<{{return_class_name}}> ExecuteAsync(

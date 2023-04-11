@@ -2,9 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
 
 namespace DDD.Infrastructure.Ports.PubSub
@@ -13,11 +10,13 @@ namespace DDD.Infrastructure.Ports.PubSub
 	{
 		Task AddAsync(ActionId actionId, IEvent theEvent, CancellationToken ct);
 		Task AddAllAsync(ActionId actionId, IEnumerable<IEvent> events, CancellationToken ct);
-		Task<OutboxEvent> GetNextAsync(CancellationToken ct);
+		Task<OutboxEvent?> GetNextAsync(CancellationToken ct);
 		Task MarkAsNotPublishingAsync(string id, CancellationToken ct);
 		Task<IEnumerable<OutboxEvent>> GetAllAsync(ActionId actionId, CancellationToken ct);
 		Task RemoveAsync(string id, ActionId actionId, CancellationToken ct);
 		Task RemoveAsync(string id, CancellationToken ct);
 		Task EmptyAsync(CancellationToken ct);
+		Task StartAsync(CancellationToken ct);
+		Task StopAsync(CancellationToken ct);
 	}
 }

@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
 using DDD.Application.Settings;
 using DDD.Logging;
-using DDD.Application.Exceptions;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using LogLevel = DDD.Logging.LogLevel;
 using DddSettings = DDD.Application.Settings.Settings;
@@ -19,6 +18,9 @@ namespace DDD.NETCore.Extensions
 		// Public API
 		
 		public static IWebHostBuilder AddEnvFile(this IWebHostBuilder webHostBuilder, string envFileVariableName, string prefix = "", string defaultEnvFileVariableValue = "", bool overwriteExisting = true)
+			=> webHostBuilder.ConfigureUsingEnvFile(envFileVariableName: envFileVariableName, prefix: prefix, defaultEnvFileVariableValue: defaultEnvFileVariableValue, overwriteExisting: overwriteExisting);
+
+		private static IWebHostBuilder ConfigureUsingEnvFile(this IWebHostBuilder webHostBuilder, string envFileVariableName, string prefix = "", string defaultEnvFileVariableValue = "", bool overwriteExisting = true)
 		{
 			return webHostBuilder.ConfigureAppConfiguration((context, config) =>
 			{
@@ -100,7 +102,7 @@ namespace DDD.NETCore.Extensions
 			var success = Enum.TryParse<LogLevel>(value, true, out var logLevel);
 
 			if (!success)
-				throw new DddException(
+				throw new ApplicationException(
 				$"Couldn't get log level for config key '{cfgKey}', " +
 				$"invalid value: '{value}'.");
 
@@ -112,7 +114,7 @@ namespace DDD.NETCore.Extensions
 			var success = Enum.TryParse<MsLogLevel>(logLevel.ToString(), true, out var msLogLevel);
 
 			if (!success)
-				throw new DddException(
+				throw new ApplicationException(
 					$"Couldn't convert log level '{logLevel}' to microsoft log level.");
 
 			return msLogLevel;

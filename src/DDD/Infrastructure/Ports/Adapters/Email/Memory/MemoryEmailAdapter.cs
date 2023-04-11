@@ -1,28 +1,23 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application.Settings;
-using DDD.Infrastructure.Ports.Email;
 using DDD.Logging;
 
 namespace DDD.Infrastructure.Ports.Adapters.Email.Memory
 {
-	public class MemoryEmailAdapter : IEmailPort
+	public class MemoryEmailAdapter : EmailAdapter
 	{
-		private readonly ISettings _settings;
-		private readonly ILogger _logger;
-		private int SentCount = 0;
-
-		public MemoryEmailAdapter(ISettings settings, ILogger logger)
+		public MemoryEmailAdapter(ISettings settings, ILogger logger) : base(settings, logger)
 		{
-			_settings = settings;
-			_logger = logger;
+			
 		}
 
-		public async Task SendAsync(
+		public override Task SendAsync(
 			string fromEmail, string fromName, string toEmail, string toName, 
 			string subject, string message, bool isHtml, CancellationToken ct)
 		{
-			SentCount++;
+			AddToLog(MemoryEmail.Create(toEmail, message));
+			return Task.CompletedTask;
 		}
 	}
 }

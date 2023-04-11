@@ -35,8 +35,8 @@
 
 		public string PERSISTENCE_PROVIDER { get; set; }
 		public string PERSISTENCE_POOLING_ENABLED { get; set; }
-		public string CFG_PERSISTENCE_POOLING_MIN_SIZE { get; set; }
-		public string CFG_PERSISTENCE_POOLING_MAX_SIZE { get; set; }
+		public string PERSISTENCE_POOLING_MIN_SIZE { get; set; }
+		public string PERSISTENCE_POOLING_MAX_SIZE { get; set; }
 		
 		public string POSTGRES_CONN_STR { get; set; }
 		

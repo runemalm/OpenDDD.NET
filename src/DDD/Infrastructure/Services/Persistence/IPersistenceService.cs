@@ -13,5 +13,6 @@ namespace DDD.Infrastructure.Services.Persistence
         Task<IConnection> OpenConnectionAsync();
         Task StartAsync();
         Task StopAsync();
+        Task EnsureDatabaseAsync();
     }
 }

@@ -1,6 +1,6 @@
 using DDD.Infrastructure.Ports.Adapters.Http.Common;
 
-namespace Infrastructure.Ports.Adapters.Http.{{api_version}}.Model.Commands
+namespace Infrastructure.Ports.Adapters.Http.{{vx}}.Model.Commands
 {
     public class {{class_name}} : Command
     {

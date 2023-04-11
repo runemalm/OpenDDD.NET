@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
 using DDD.Infrastructure.Ports.PubSub;
 using DDD.Infrastructure.Services.Persistence;
@@ -15,12 +12,12 @@ namespace DDD.Infrastructure.Services.Publisher
     public class PublisherService : IPublisherService
     {
         private readonly ILogger _logger;
-        protected readonly IDomainPublisher _domainPublisher;
-        protected readonly IInterchangePublisher _interchangePublisher;
+        private readonly IDomainPublisher _domainPublisher;
+        private readonly IInterchangePublisher _interchangePublisher;
         private readonly IOutbox _outbox;
         private readonly IPersistenceService _persistenceService;
         private bool _isStarted;
-        public CancellationTokenSource _waitCancellationTokenSource;
+        private readonly CancellationTokenSource _waitCancellationTokenSource;
 
         public PublisherService(
             ILogger logger, 
@@ -40,9 +37,23 @@ namespace DDD.Infrastructure.Services.Publisher
 
         public async Task WorkOutboxAsync(CancellationToken stoppingToken)
         {
-            _isStarted = true;
+            while (!stoppingToken.IsCancellationRequested && 
+                   !_waitCancellationTokenSource.Token.IsCancellationRequested &&
+                   !_isStarted)
+            {
+                try
+                {
+                    await Task.Delay(500, _waitCancellationTokenSource.Token);
+                }
+                catch (TaskCanceledException e)
+                {
+                    _logger.Log("Wait cancellationtoken was canceled while publisherservice was waiting to be started.", LogLevel.Debug);
+                }
+            }
 
-            while (!stoppingToken.IsCancellationRequested && _isStarted)
+            while (!stoppingToken.IsCancellationRequested && 
+                   !_waitCancellationTokenSource.Token.IsCancellationRequested &&
+                   _isStarted)
             {
                 var outboxEvent = await GetNextAsync();
 
@@ -68,7 +79,16 @@ namespace DDD.Infrastructure.Services.Publisher
                 }
 
                 if (outboxEvent == null)
-                    await Task.Delay(1000, _waitCancellationTokenSource.Token);
+                {
+                    try
+                    {
+                        await Task.Delay(1000, _waitCancellationTokenSource.Token);
+                    }
+                    catch (TaskCanceledException e)
+                    {
+                        _logger.Log("Wait cancellationtoken was canceled while publisherservice was waiting for next work cycle in started mode.", LogLevel.Debug);
+                    }
+                }
             }
         }
 
@@ -84,7 +104,7 @@ namespace DDD.Infrastructure.Services.Publisher
         private Task<OutboxEvent> GetNextAsync()
             => _outbox.GetNextAsync(CancellationToken.None);
 
-        private async Task MarkAsNotPublishingAsync(OutboxEvent outboxEvent)
+        private Task MarkAsNotPublishingAsync(OutboxEvent outboxEvent)
             => _outbox.MarkAsNotPublishingAsync(outboxEvent.Id, CancellationToken.None);
 
         private async Task PublishAsync(OutboxEvent outboxEvent)

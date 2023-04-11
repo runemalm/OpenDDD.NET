@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace DDD.Application.Exceptions
+namespace DDD.Application.Error
 {
-	public class DddException : Exception
-	{
+    public class DddException : Exception
+    {
         public DddException()
         {
         }
@@ -18,5 +18,5 @@ namespace DDD.Application.Exceptions
             : base(message, inner)
         {
         }
-	}
+    }
 }

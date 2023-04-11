@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Application.Exceptions;
+using DDD.Application.Error;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Logging;
 
 namespace DDD.Infrastructure.Services.Persistence
@@ -11,16 +12,18 @@ namespace DDD.Infrastructure.Services.Persistence
 	{
 		protected readonly ILogger _logger;
 		protected readonly string _connString;
+		protected readonly SerializerSettings _serializerSettings;
 		private readonly ConcurrentDictionary<ActionId, IConnection> _connections;
 
-		public PersistenceService(string connString, ILogger logger)
+		public PersistenceService(string connString, ILogger logger, SerializerSettings serializerSettings)
 		{
 			_logger = logger;
 			_connString = connString;
+			_serializerSettings = serializerSettings;
 			_connections = new ConcurrentDictionary<ActionId, IConnection>();
 		}
 		
-		private IConnection GetExistingConnectionAsync(ActionId actionId)
+		private IConnection GetExistingConnection(ActionId actionId)
 		{
 			foreach (KeyValuePair<ActionId, IConnection> kvp in _connections)
 				if (kvp.Key == actionId)
@@ -48,7 +51,7 @@ namespace DDD.Infrastructure.Services.Persistence
 
 		public async Task<IConnection> GetConnectionAsync(ActionId actionId)
 		{
-			var conn = GetExistingConnectionAsync(actionId);
+			var conn = GetExistingConnection(actionId);
 			if (conn == null)
 			{
 				conn = await OpenConnectionAsync();
@@ -59,30 +62,31 @@ namespace DDD.Infrastructure.Services.Persistence
 			return conn;
 		}
 		
-		public Task ReleaseConnectionAsync(ActionId actionId)
+		public async Task ReleaseConnectionAsync(ActionId actionId)
 		{
-			var conn = GetExistingConnectionAsync(actionId);
+			var conn = GetExistingConnection(actionId);
 			if (conn == null)
 				_logger.Log(
 					$"Can't release connection for action ID: {actionId}. None exists.", 
 					LogLevel.Warning);
 			else
 			{
-				conn.Close();
+				await conn.CloseAsync();
 				IConnection removedConn;
 				var success = _connections.TryRemove(actionId, out removedConn);
 				if (!success)
 					throw new DddException("Couldn't remove connection from collection.");
 			}
-			return Task.CompletedTask;
 		}
 
 		public abstract Task<IConnection> OpenConnectionAsync();
 
 		public virtual Task StartAsync()
-			=> Task.CompletedTask;
+			=> EnsureDatabaseAsync();
 
 		public virtual Task StopAsync()
 			=> ReleaseConnectionAsync(ActionId.BootId());
+
+		public abstract Task EnsureDatabaseAsync();
 	}
 }
