@@ -294,6 +294,19 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes:
 
+**1.0.0-alpha.8** - 2023-04-11
+
+- Add support for context hooks.
+- Add error codes support. (**breaking**)
+- Fix database connections leak.
+- Add support for enabling/disabling publishers in tests.
+- Add assertion methods.
+- Fix issues with running tests in parallell.
+- Use newtonsoft json everywhere. (**breaking**)
+- Add base email adapter. (**breaking**)
+- Properly start & stop outbox. (**breaking**)
+- Properly start & stop repositories. (**breaking**)
+
 **1.0.0-alpha.7** - 2023-01-01
 
 - Add credentials support to smtp adapter.
