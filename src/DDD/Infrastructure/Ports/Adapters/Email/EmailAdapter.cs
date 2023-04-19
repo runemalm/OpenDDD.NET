@@ -24,11 +24,11 @@ namespace DDD.Infrastructure.Ports.Adapters.Email
 			string fromEmail, string fromName, string toEmail, string toName, string subject,
 			string message, bool isHtml, CancellationToken ct);
 
-		public Task<bool> HasSent(string toEmail)
+		public bool HasSent(string toEmail)
 			=> HasSent(toEmail, null);
 
-		public Task<bool> HasSent(string toEmail, string? msgContains)
-			=> Task.FromResult(_sent.Any(s => s.ToEmail == toEmail && (msgContains == null || s.Message.Contains(msgContains))));
+		public bool HasSent(string toEmail, string? msgContains)
+			=> _sent.Any(s => s.ToEmail == toEmail && (msgContains == null || s.Message.Contains(msgContains)));
 
 		public Task EmptyAsync(CancellationToken ct)
 		{

@@ -10,7 +10,9 @@ namespace DDD.Infrastructure.Ports.PubSub
 		public string ListensTo { get; }
 		public DomainModelVersion ListensToVersion { get; }
 
+		void Start();
 		Task StartAsync();
+		void Stop();
 		Task StopAsync();
 		Task<bool> React(IPubSubMessage message);
 		Task Handle(IPubSubMessage message);

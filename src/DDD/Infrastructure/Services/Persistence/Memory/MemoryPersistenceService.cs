@@ -12,7 +12,14 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
 		{
 			
 		}
-
+		
+		public override IConnection OpenConnection()
+		{
+			var conn = new MemoryConnection(_serializerSettings);
+			conn.Open();
+			return conn;
+		}
+		
 		public override async Task<IConnection> OpenConnectionAsync()
 		{
 			var conn = new MemoryConnection(_serializerSettings);
@@ -25,6 +32,11 @@ namespace DDD.Infrastructure.Services.Persistence.Memory
 
 		public override async Task StopAsync()
 			=> await base.StopAsync();
+
+		public override void EnsureDatabase()
+		{
+			
+		}
 
 		public override Task EnsureDatabaseAsync()
 			=> Task.CompletedTask;

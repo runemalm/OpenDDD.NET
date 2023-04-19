@@ -36,21 +36,34 @@ namespace DDD.Tests
         {
             ActionName = GetType().Name.Replace("Tests", "");
             ActionId = ActionId.Create();
+            UnsetConfigEnvironmentVariables();
         }
         
         public async ValueTask DisposeAsync()
         {
             await PersistenceService.ReleaseConnectionAsync(ActionId);
-            await TestServer.Host.StopAsync();
+            TestServer.Dispose();
         }
         
         public void Dispose()
         {
-            PersistenceService.ReleaseConnectionAsync(ActionId).GetAwaiter().GetResult();
-            TestServer.Host.StopAsync().GetAwaiter().GetResult();
+            // We move the blocking TestServer Dispose method outside of the xUnit synchronization context.
+            PersistenceService.ReleaseConnection(ActionId);
+            Task.Run(() => TestServer.Dispose()).GetAwaiter().GetResult();
         }
 
         // Configuration
+        
+        public void UnsetConfigEnvironmentVariables()
+        {
+            foreach(DictionaryEntry e in Environment.GetEnvironmentVariables())
+            {
+                if (e.Key.ToString().StartsWith($"CFG_{ActionName}_"))
+                {
+                    Environment.SetEnvironmentVariable(e.Key.ToString(), null);
+                }
+            }
+        }
         
         public void Configure()
             => Environment.SetEnvironmentVariable($"ENV_FILE_{ActionName}", CreateEnvFileJson());
@@ -175,8 +188,9 @@ namespace DDD.Tests
             {
                 if (_testServer == null)
                 {
+                    // We move the blocking TestServer constructor outside of the xUnit synchronization context.
                     var builder = CreateWebHostBuilder();
-                    _testServer = new TestServer(builder);
+                    Task.Run(() => _testServer = new TestServer(builder)).GetAwaiter().GetResult();
                 }
                 return _testServer;
             }

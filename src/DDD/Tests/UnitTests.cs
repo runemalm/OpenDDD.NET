@@ -18,23 +18,8 @@ namespace DDD.Tests
     {
         public UnitTests()
         {
-	        UnsetConfigEnvironmentVariables();
 	        Environment.SetEnvironmentVariable("_TestExplorer_TestResultMessageMaxLength_", "9000");
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Tests");
-            Environment.SetEnvironmentVariable("ENV_FILE", "env.local.test");
-        }
-
-        // Configuration
-        
-        public void UnsetConfigEnvironmentVariables()
-        {
-	        foreach(DictionaryEntry e in Environment.GetEnvironmentVariables())
-	        {
-		        if (e.Key.ToString().StartsWith("CFG_"))
-		        {
-			        Environment.SetEnvironmentVariable(e.Key.ToString(), null);
-		        }
-	        }
         }
 
         // Assertions

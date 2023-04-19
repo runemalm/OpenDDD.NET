@@ -16,7 +16,9 @@ namespace DDD.Infrastructure.Ports.PubSub
 		Task RemoveAsync(string id, ActionId actionId, CancellationToken ct);
 		Task RemoveAsync(string id, CancellationToken ct);
 		Task EmptyAsync(CancellationToken ct);
+		void Start(CancellationToken ct);
 		Task StartAsync(CancellationToken ct);
+		void Stop(CancellationToken ct);
 		Task StopAsync(CancellationToken ct);
 	}
 }

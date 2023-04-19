@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using DDD.Infrastructure.Ports.Adapters.Common.Exceptions;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using DDD.Infrastructure.Ports.Monitoring;
@@ -27,32 +28,51 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			
 		}
 
-		public override async Task StartAsync()
+		public override void Start()
 		{
 			IsStarted = true;
-			await Task.Yield();
+		}
+		
+		public override Task StartAsync()
+		{
+			IsStarted = true;
+			return Task.CompletedTask;
 		}
 
-		public override async Task StopAsync()
+		public override void Stop()
 		{
 			IsStarted = false;
-			await Task.Yield();
 		}
 
-		public override Task<Subscription> SubscribeAsync(IEventListener listener)
+		public override Task StopAsync()
+		{
+			Stop();
+			return Task.CompletedTask;
+		}
+
+		public override Subscription Subscribe(IEventListener listener)
 		{
 			var subscription = new Subscription(listener);
 			AddSubscription(subscription);
-			return Task.FromResult(subscription);
+			return subscription;
 		}
-		
-		public override async Task UnsubscribeAsync(IEventListener listener)
+
+		public override Task<Subscription> SubscribeAsync(IEventListener listener)
+			=> Task.FromResult(Subscribe(listener));
+
+		public override void Unsubscribe(IEventListener listener)
 		{
 			var subscription = GetSubscription(listener);
 			RemoveSubscription(subscription);
 		}
 
-		public override async Task AckAsync(IPubSubMessage message)
+		public override Task UnsubscribeAsync(IEventListener listener)
+		{
+			Unsubscribe(listener);
+			return Task.CompletedTask;
+		}
+
+		public override Task AckAsync(IPubSubMessage message)
 		{
 			if (!(message is MemoryMessage))
 			{
@@ -60,14 +80,12 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 					"Expected IPubSubMessage to be a MemoryMessage. " +
 					"Something must be wrong with the implementation.");
 			}
-			else
-			{
-				var memoryMessage = (MemoryMessage)message;
-				
-				// Need no ack here since memory based event adapter will always succeed with delivery..
-				
-				await Task.Yield();
-			}
+
+			var memoryMessage = (MemoryMessage)message;
+			
+			// Need no ack here since memory based event adapter will always succeed with delivery..
+
+			return Task.CompletedTask;
 		}
 
 		public override async Task FlushAsync(OutboxEvent outboxEvent)
