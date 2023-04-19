@@ -32,9 +32,13 @@ namespace DDD.Infrastructure.Ports.PubSub
 		protected SerializerSettings _serializerSettings;
 		public int MaxDeliveryRetries { get; }
 
+		public abstract void Start();
 		public abstract Task StartAsync();
+		public abstract void Stop();
 		public abstract Task StopAsync();
+		public abstract Subscription Subscribe(IEventListener listener);
 		public abstract Task<Subscription> SubscribeAsync(IEventListener listener);
+		public abstract void Unsubscribe(IEventListener listener);
 		public abstract Task UnsubscribeAsync(IEventListener listener);
 		public abstract Task AckAsync(IPubSubMessage message);
 

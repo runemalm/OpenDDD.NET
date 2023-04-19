@@ -18,7 +18,7 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := ddddotnetcore
-BUILD_VERSION := 1.0.0-alpha.8
+BUILD_VERSION := 1.0.0-alpha.9
 
 SRC_DIR := $(PWD)/src
 DDD_DIR := $(SRC_DIR)/DDD

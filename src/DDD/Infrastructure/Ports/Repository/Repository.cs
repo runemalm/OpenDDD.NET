@@ -3,29 +3,38 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using DDD.Application;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
 using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace DDD.Infrastructure.Ports.Repository
 {
     public abstract class Repository<T> : IRepository<T> where T : IAggregate
     {
+        public abstract void Start(CancellationToken ct);
         public abstract Task StartAsync(CancellationToken ct);
+        public abstract void Stop(CancellationToken ct);
         public abstract Task StopAsync(CancellationToken ct);
         public abstract Task DeleteAllAsync(ActionId actionId, CancellationToken ct);
         public abstract Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
+        public abstract IEnumerable<T> GetAll(ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetAllAsync(ActionId actionId, CancellationToken ct);
         public abstract Task<T> GetAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetAsync(IEnumerable<EntityId> entityIds, ActionId actionId, CancellationToken ct);
+        public abstract T GetFirstOrDefaultWith(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct);
         public abstract Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct);
+        public abstract T GetFirstOrDefaultWith(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct);
         public abstract Task<T> GetFirstOrDefaultWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct);
+        public abstract IEnumerable<T> GetWith(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct);
+        public abstract IEnumerable<T> GetWith(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct);
+        public abstract void Save(T aggregate, ActionId actionId, CancellationToken ct);
         public abstract Task SaveAsync(T aggregate, ActionId actionId, CancellationToken ct);
+        public abstract string GetNextIdentity();
         public abstract Task<string> GetNextIdentityAsync();
         
         protected string FormatPropertyName(string name, SerializerSettings serializerSettings)

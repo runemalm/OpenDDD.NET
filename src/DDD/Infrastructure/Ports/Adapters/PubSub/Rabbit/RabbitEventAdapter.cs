@@ -58,17 +58,20 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 			_isReconnecting = false;
 		}
 
-		public override async Task StartAsync()
+		public override void Start()
 		{
 			Connect();
 			ConsumeAll();
-
 			IsStarted = true;
-
+		}
+		
+		public override async Task StartAsync()
+		{
+			Start();
 			await Task.CompletedTask;
 		}
-
-		public override async Task StopAsync()
+		
+		public override void Stop()
 		{
 			IsStopping = true;
 
@@ -79,7 +82,11 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 
 			IsStarted = false;
 			IsStopping = false;
+		}
 
+		public override async Task StopAsync()
+		{
+			Stop();
 			await Task.CompletedTask;
 		}
 
@@ -164,7 +171,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 			}
 		}
 
-		public override async Task<Subscription> SubscribeAsync(IEventListener listener)
+		public override Subscription Subscribe(IEventListener listener)
 		{
 			/*
 			 * Subscribe a listener to an event.
@@ -192,8 +199,11 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 
 			return subscription;
 		}
-		
-		public override async Task UnsubscribeAsync(IEventListener listener)
+
+		public override Task<Subscription> SubscribeAsync(IEventListener listener)
+			=> Task.FromResult(Subscribe(listener));
+
+		public override void Unsubscribe(IEventListener listener)
 		{
 			var subscription = GetSubscription(listener);
 
@@ -201,6 +211,12 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 				StopConsuming(subscription);
 
 			RemoveSubscription(subscription);
+		}
+		
+		public override Task UnsubscribeAsync(IEventListener listener)
+		{
+			Unsubscribe(listener);
+			return Task.CompletedTask;
 		}
 		
 		private RabbitSubscription CreateSubscription(IEventListener listener)
@@ -274,8 +290,6 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 			if (!_isConnected)
 				throw new RabbitException("Can't flush event, rabbit event adapter is not connected.");
 
-			// AssertPublishedBeforeFlushAsync(outboxEvent);
-			
 			var message = outboxEvent.JsonPayload;
 
 			var body = Encoding.UTF8.GetBytes(message);
@@ -437,7 +451,7 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 		private string QueueName(string eventName, DomainModelVersion domainModelVersion)
 			=> TopicSubscriptionForEvent(eventName, domainModelVersion);
 
-		public async override Task AckAsync(IPubSubMessage message)
+		public override Task AckAsync(IPubSubMessage message)
 		{
 			if (!(message is RabbitMessage))
 			{
@@ -445,12 +459,11 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 					"Expected IPubSubMessage to be a RabbitMessage. " +
 					"Something must be wrong with the implementation.");
 			}
-			else
-			{
-				var rabbitMessage = (RabbitMessage)message;
-				rabbitMessage.Channel.BasicAck(rabbitMessage.EventArgs.DeliveryTag, false);
-				await Task.Yield();
-			}
+			
+			var rabbitMessage = (RabbitMessage)message;
+			rabbitMessage.Channel.BasicAck(rabbitMessage.EventArgs.DeliveryTag, false);
+			
+			return Task.CompletedTask;
 		}
 	}
 }

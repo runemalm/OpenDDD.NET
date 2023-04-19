@@ -48,9 +48,15 @@ namespace DDD.Infrastructure.Ports.PubSub
 			_serializerSettings = serializerSettings;
 		}
 
+		public void Start()
+			=> _eventAdapter.Subscribe(this);
+
 		public Task StartAsync()
 			=> _eventAdapter.SubscribeAsync(this);
 		
+		public void Stop()
+			=> _eventAdapter.Unsubscribe(this);
+
 		public Task StopAsync()
 			=> _eventAdapter.UnsubscribeAsync(this);
 		

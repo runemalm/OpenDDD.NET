@@ -35,9 +35,19 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			_serializerSettings = serializerSettings;
 		}
 		
+		public override void Start(CancellationToken ct)
+		{
+			AssertTables();
+		}
+
 		public override async Task StartAsync(CancellationToken ct)
 		{
-			await AssertTables();
+			await AssertTablesAsync();
+		}
+
+		public override void Stop(CancellationToken ct)
+		{
+			
 		}
 
 		public override Task StopAsync(CancellationToken ct)
@@ -45,14 +55,26 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			return Task.CompletedTask;
 		}
 
-		private async Task AssertTables()
+		private void AssertTables()
+		{
+			var stmt = BuildAssertTablesQuery();
+			var conn = _persistenceService.GetConnection(ActionId.BootId());
+			conn.ExecuteNonQuery(stmt);
+		}
+
+		private async Task AssertTablesAsync()
+		{
+			var stmt = BuildAssertTablesQuery();
+			var conn = await _persistenceService.GetConnectionAsync(ActionId.BootId());
+			await conn.ExecuteNonQueryAsync(stmt);
+		}
+		
+		private string BuildAssertTablesQuery()
 		{
 			var stmt =
 				$"CREATE TABLE IF NOT EXISTS {_tableName} " +
-				$"(id VARCHAR UNIQUE NOT NULL,data json NOT NULL)";
-
-			var conn = await _persistenceService.GetConnectionAsync(ActionId.BootId());
-			await conn.ExecuteNonQueryAsync(stmt);
+				$"(id VARCHAR UNIQUE NOT NULL, data json NOT NULL)";
+			return stmt;
 		}
 
 		public override async Task DeleteAllAsync(ActionId actionId, CancellationToken ct)
@@ -74,6 +96,15 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 				throw new PostgresException($"Couldn't delete aggregate, none found with ID '{entityId}'.");
 		}
 		
+		public override IEnumerable<T> GetAll(ActionId actionId, CancellationToken ct)
+		{
+			var conn = _persistenceService.GetConnection(actionId);
+			var stmt = $"SELECT * FROM {_tableName}";
+			var aggregates = conn.ExecuteQuery<T>(stmt);
+			aggregates = _migrator.Migrate(aggregates).ToList();
+			return aggregates;
+		}
+
 		public override async Task<IEnumerable<T>> GetAllAsync(ActionId actionId, CancellationToken ct)
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
@@ -117,9 +148,19 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			return aggregates;
 		}
 
+		public override T GetFirstOrDefaultWith(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
+			=> GetAll(actionId, ct).ToList().FirstOrDefault(where.Compile());
+
 		public override async Task<T> GetFirstOrDefaultWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
 			=> (await GetAllAsync(actionId, ct)).ToList().FirstOrDefault(where.Compile());
 		
+		public override T GetFirstOrDefaultWith(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
+		{
+			var aggregates = GetWith(andWhere, actionId, ct);
+			aggregates = _migrator.Migrate(aggregates);
+			return aggregates.FirstOrDefault();
+		}
+
 		public override async Task<T> GetFirstOrDefaultWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{
 			var aggregates = await GetWithAsync(andWhere, actionId, ct);
@@ -127,9 +168,22 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			return aggregates.FirstOrDefault();
 		}
 
+		public override IEnumerable<T> GetWith(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
+			=> GetAll(actionId, ct).ToList().Where(where.Compile());
+
 		public override async Task<IEnumerable<T>> GetWithAsync(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct)
 			=> (await GetAllAsync(actionId, ct)).ToList().Where(where.Compile());
 		
+		public override IEnumerable<T> GetWith(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
+		{
+			var conn = _persistenceService.GetConnection(actionId);
+			var whereExpr = string.Join(" AND ", andWhere.Select(t => $"data->>'{FormatPropertyName(t.Item1, _serializerSettings)}' = '{t.Item2}'"));
+			var stmt = $"SELECT * FROM {_tableName} WHERE {whereExpr}";
+			var aggregates = conn.ExecuteQuery<T>(stmt);
+			aggregates = _migrator.Migrate(aggregates).ToList();
+			return aggregates;
+		}
+
 		public override async Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
@@ -140,11 +194,23 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			return aggregates;
 		}
 		
+		public override void Save(T aggregate, ActionId actionId, CancellationToken ct)
+		{
+			var conn = _persistenceService.GetConnection(actionId);
+			var (query, parameters) = BuildSaveQueryAndParameters(aggregate, actionId, ct);
+			conn.ExecuteNonQuery(query, parameters);
+		}
+
 		public override async Task SaveAsync(T aggregate, ActionId actionId, CancellationToken ct)
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
-				
-			var stmt =
+			var (query, parameters) = BuildSaveQueryAndParameters(aggregate, actionId, ct);
+			await conn.ExecuteNonQueryAsync(query, parameters);
+		}
+
+		private (string, IDictionary<string, object>) BuildSaveQueryAndParameters(T aggregate, ActionId actionId, CancellationToken ct)
+		{
+			var query =
 				$"INSERT INTO {_tableName} (id, data) VALUES (@id, @data) ON CONFLICT (id) " +
 				$"DO " +
 				$"UPDATE " +
@@ -153,11 +219,14 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			var parameters = new Dictionary<string, object>();
 			parameters.Add("@id", aggregate.Id.ToString());
 			parameters.Add("@data", JsonDocument.Parse(JsonConvert.SerializeObject(aggregate, _serializerSettings)));
-			
-			await conn.ExecuteNonQueryAsync(stmt, parameters);
+
+			return (query, parameters);
 		}
 
+		public override string GetNextIdentity()
+			=> Guid.NewGuid().ToString();
+
 		public override Task<string> GetNextIdentityAsync()
-			=> Task.FromResult(Guid.NewGuid().ToString());
+			=> Task.FromResult(GetNextIdentity());
 	}
 }

@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using DDD.Application;
-using DDD.Domain;
-using DDD.Domain.Model;
-using DDD.Domain.Model.BuildingBlocks;
 using DDD.Domain.Model.BuildingBlocks.Event;
 
 namespace DDD.Infrastructure.Ports.PubSub
@@ -12,9 +9,13 @@ namespace DDD.Infrastructure.Ports.PubSub
 	{
 		public int MaxDeliveryRetries { get; }
 
+		void Start();
 		Task StartAsync();
+		void Stop();
 		Task StopAsync();
+		Subscription Subscribe(IEventListener listener);
 		Task<Subscription> SubscribeAsync(IEventListener listener);
+		void Unsubscribe(IEventListener listener);
 		Task UnsubscribeAsync(IEventListener listener);
 		Task PublishAsync(IEvent theEvent);
 		Task FlushAsync(OutboxEvent outboxEvent);

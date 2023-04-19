@@ -24,9 +24,19 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             _serializerSettings = serializerSettings;
         }
 		
+        public void Start(CancellationToken ct)
+        {
+            AssertTables();
+        }
+
         public async Task StartAsync(CancellationToken ct)
         {
-            await AssertTables();
+            await AssertTablesAsync();
+        }
+
+        public void Stop(CancellationToken ct)
+        {
+			
         }
 
         public Task StopAsync(CancellationToken ct)
@@ -34,15 +44,26 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             return Task.CompletedTask;
         }
 
-        private async Task AssertTables()
+        private void AssertTables()
+        {
+            var stmt = BuildAssertTablesQuery();
+            using var conn = _persistenceService.OpenConnection();
+            conn.ExecuteNonQuery(stmt);
+        }
+
+        private async Task AssertTablesAsync()
+        {
+            var stmt = BuildAssertTablesQuery();
+            using var conn = await _persistenceService.OpenConnectionAsync();
+            await conn.ExecuteNonQueryAsync(stmt);
+        }
+
+        private string BuildAssertTablesQuery()
         {
             var stmt =
-                $"CREATE TABLE IF NOT EXISTS outbox " +
-                $"(id VARCHAR UNIQUE NOT NULL," +
-                $"data jsonb NOT NULL)";
-
-            using (var conn = await _persistenceService.OpenConnectionAsync())
-                await conn.ExecuteNonQueryAsync(stmt);
+                "CREATE TABLE IF NOT EXISTS outbox " +
+                "(id VARCHAR UNIQUE NOT NULL, data jsonb NOT NULL)";
+            return stmt;
         }
 
         public async Task AddAsync(ActionId actionId, IEvent theEvent, CancellationToken ct)

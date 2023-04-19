@@ -34,17 +34,27 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.ServiceBus
 			_subName = subName;
 		}
 
+		public override void Start()
+		{
+			throw new NotImplementedException();
+		}
+
 		public override Task StartAsync()
 		{
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
+		}
+
+		public override void Stop()
+		{
+			throw new NotImplementedException();
 		}
 
 		public override Task StopAsync()
 		{
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
-		public override async Task<Subscription> SubscribeAsync(IEventListener listener)
+		public override Subscription Subscribe(IEventListener listener)
 		{
 			var subscription = new Subscription(listener);
 			AddSubscription(subscription);
@@ -52,14 +62,21 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.ServiceBus
 			// TODO: Start listening for event..
 
 			throw new NotImplementedException();
-
-			// return Task.FromResult(subscription);
 		}
+
+		public override Task<Subscription> SubscribeAsync(IEventListener listener)
+			=> Task.FromResult(Subscribe(listener));
 		
-		public override async Task UnsubscribeAsync(IEventListener listener)
+		public override void Unsubscribe(IEventListener listener)
 		{
 			var subscription = GetSubscription(listener);
 			RemoveSubscription(subscription);
+		}
+		
+		public override Task UnsubscribeAsync(IEventListener listener)
+		{
+			Unsubscribe(listener);
+			return Task.CompletedTask;
 		}
 
 		public override Task AckAsync(IPubSubMessage message)

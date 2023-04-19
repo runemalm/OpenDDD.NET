@@ -21,9 +21,19 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			_serializerSettings = serializerSettings;
 		}
 		
+		public void Start(CancellationToken ct)
+		{
+			
+		}
+
 		public Task StartAsync(CancellationToken ct)
 		{
 			return Task.CompletedTask;
+		}
+
+		public void Stop(CancellationToken ct)
+		{
+			
 		}
 
 		public Task StopAsync(CancellationToken ct)
