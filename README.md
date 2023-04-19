@@ -294,6 +294,10 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes:
 
+**1.0.0-alpha.9** - 2023-04-19
+
+- Add synchronous versions of methods. (**breaking**)
+
 **1.0.0-alpha.8** - 2023-04-11
 
 - Add support for context hooks.
