@@ -123,7 +123,7 @@ namespace DDD.NETCore.Extensions
 					else
 					{
 						failureResponse = new Failure(
-							DomainError.System_UnknownError(exception.Message)); }
+							ApplicationError.System_UnknownError(exception.Message)); }
 
 					// Set http status code
 					if (isNotFoundException)

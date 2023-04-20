@@ -1,7 +1,6 @@
-﻿using DDD.Domain.Model.Error;
-using DDD.NETCore.Extensions;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using DDD.NETCore.Extensions;
 
 namespace DDD.Application.Settings.Auth
 {
@@ -25,7 +24,7 @@ namespace DDD.Application.Settings.Auth
 
 			// Validate
 			if (Enabled && JwtToken.PrivateKey.IsNullOrEmpty())
-				throw new SettingsException(DomainError.AuthEnabledButNoPrivateKey());
+				throw SettingsException.AuthEnabledButNoPrivateKey();
 		}
 	}
 }

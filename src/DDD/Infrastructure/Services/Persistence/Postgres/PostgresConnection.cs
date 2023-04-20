@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Npgsql;
 using DDD.Domain.Model.Error;
+using PostgresException = DDD.Infrastructure.Ports.Adapters.Common.Exceptions.PostgresException;
 
 namespace DDD.Infrastructure.Services.Persistence.Postgres
 {
@@ -43,10 +44,10 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
         public override Task StartTransactionAsync()
         {
             if (_sqlConn == null)
-                throw new DomainException(
+                throw new PostgresException(
                     "Can't start transaction, no connection has been made.");
             if (_sqlConn.State != ConnectionState.Open)
-                throw new DomainException(
+                throw new PostgresException(
                     "Can't start transaction, the connection is not in an open state.");
             _sqlTrx = _sqlConn.BeginTransaction();
             return Task.CompletedTask;
@@ -55,7 +56,7 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
         public override async Task CommitTransactionAsync()
         {
             if (_sqlTrx == null)
-                throw new DomainException(
+                throw new PostgresException(
                     "Can't commit non-existing transaction.");
             await _sqlTrx.CommitAsync();
             await _sqlTrx.DisposeAsync();
@@ -65,7 +66,7 @@ namespace DDD.Infrastructure.Services.Persistence.Postgres
         public override async Task RollbackTransactionAsync()
         {
             if (_sqlTrx == null)
-                throw new DomainException(
+                throw new PostgresException(
                     "Can't rollback non-existing transaction.");
             await _sqlTrx.RollbackAsync();
             await _sqlTrx.DisposeAsync();

@@ -49,7 +49,7 @@ namespace DDD.Application.Settings.Http
 				}
 				catch (Exception e)
 				{
-					throw new SettingsException(
+					throw SettingsException.Invalid(
 						$"Couldn't parse http docs definition selector from " +
 						$"setting string: {chunk}", e);
 				}
@@ -75,7 +75,7 @@ namespace DDD.Application.Settings.Http
 				}
 				catch (Exception e)
 				{
-					throw new SettingsException(
+					throw SettingsException.Invalid(
 						$"Couldn't parse http docs auth extra token " +
 						$"from setting string: {chunk}", e);
 				}

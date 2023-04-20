@@ -1,4 +1,5 @@
 using System;
+
 // ReSharper disable InconsistentNaming
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -20,34 +21,21 @@ namespace DDD.Domain.Model.Error
                 UserMessage = userMessage
             };
         
-        // System errors
-
-        public const int System_UnknownError_Code = 101;
-        public const string System_UnknownError_Msg = "An unknown error has occured.";
-        public const string System_UnknownError_UsrMsg = "The system experienced an unknown internal error. Sorry for the inconvenience this may have caused you. Please try again later.";
-        
-        public const int System_InternalError_Code = 102;
-        public const string System_InternalError_Msg = "Internal system error: {0}.";
-        public const string System_InternalError_UsrMsg = "The system experienced an internal error. Sorry for the inconvenience this may have caused you. Please try again later. Error details: {0}";
-        
-        public static IDomainError System_UnknownError(string message) => Create(System_UnknownError_Code, String.Format(System_UnknownError_Msg, message), String.Format(System_UnknownError_UsrMsg, message));
-        public static IDomainError System_InternalError(string spec) => Create(System_InternalError_Code, String.Format(System_InternalError_Msg, spec), String.Format(System_InternalError_UsrMsg, spec));
-        
         // Domain errors
         
-        public const int Domain_ModelError_Code = 120;
+        public const int Domain_ModelError_Code = 201;
         public const string Domain_ModelError_Msg = "Domain model error: '{0}'.";
         public const string Domain_ModelError_UsrMsg = "The system has a bug. Please try again later and if the error persists, please contact customer support. Model error: '{0}'.";
         
-        public const int Domain_NotFound_Code = 121;
+        public const int Domain_NotFound_Code = 202;
         public const string Domain_NotFound_Msg = "The {0} with ID '{1}' couldn't be found.";
         public const string Domain_NotFound_UsrMsg = "Couldn't perform the action. The {0} with ID '{1}' couldn't be found. Please try again later or contact customer support if the problem persists.";
         
-        public const int Domain_AlreadyExists_Code = 122;
+        public const int Domain_AlreadyExists_Code = 203;
         public const string Domain_AlreadyExists_Msg = "An {0} with {1} '{2}' already exists.";
         public const string Domain_AlreadyExists_UsrMsg = "Couldn't perform the action. An {0} with {1} '{2}' already exists. Please choose a unique value and try again.";
         
-        public const int Domain_InvariantViolation_Code = 123;
+        public const int Domain_InvariantViolation_Code = 204;
         public const string Domain_InvariantViolation_Msg = "Invariant violation: {0}";
         public const string Domain_InvariantViolation_UsrMsg = "A business rule was violated: {0}";
 
@@ -55,20 +43,7 @@ namespace DDD.Domain.Model.Error
         public static IDomainError Domain_InvariantViolation(string reason) => Create(Domain_InvariantViolation_Code, String.Format(Domain_InvariantViolation_Msg, reason), String.Format(Domain_InvariantViolation_UsrMsg, reason));
         public static IDomainError Domain_NotFound(string entityName, string entityId) => Create(Domain_NotFound_Code, String.Format(Domain_NotFound_Msg, entityName, entityId), String.Format(Domain_NotFound_UsrMsg, entityName, entityId));
         public static IDomainError Domain_AlreadyExists(string entityName, string propertyName, object propertyValue) => Create(Domain_AlreadyExists_Code, String.Format(Domain_AlreadyExists_Msg, entityName, propertyName, propertyValue), String.Format(Domain_AlreadyExists_UsrMsg, entityName, propertyName, propertyValue));
-        
-        // Setting errors
-		
-        public const int Settings_UnsupportedJwtTokenLocationSetting_Code = 201;
-        public const string Settings_UnsupportedJwtTokenLocationSetting_Msg = "Unsupported jwt token location setting: {0}";
-        public const string Settings_UnsupportedJwtTokenLocationSetting_UsrMsg = "The server was misconfigured. The JWT location setting is unsupported: '{0}'.";
-        
-        public const int Settings_AuthEnabledButNoPrivateKey_Code = 202;
-        public const string Settings_AuthEnabledButNoPrivateKey_Msg = "Settings auth enabled with no or empty private key is not allowed.";
-        public const string Settings_AuthEnabledButNoPrivateKey_UsrMsg = "Settings auth enabled with no or empty private key is not allowed.";
-        
-        public static IDomainError Settings_UnsupportedJwtTokenLocationSetting(string location) => Create(Settings_UnsupportedJwtTokenLocationSetting_Code, String.Format(Settings_UnsupportedJwtTokenLocationSetting_Msg, location), String.Format(Settings_UnsupportedJwtTokenLocationSetting_UsrMsg, location));
-        public static IDomainError AuthEnabledButNoPrivateKey() => Create(Settings_AuthEnabledButNoPrivateKey_Code, Settings_AuthEnabledButNoPrivateKey_Msg, Settings_AuthEnabledButNoPrivateKey_UsrMsg);
-        
+
         // Auth errors
         
         public const int Authorize_Forbidden_Code = 301;

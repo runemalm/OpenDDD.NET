@@ -1,9 +1,9 @@
-﻿namespace DDD.Domain.Model.Error
+﻿using DDD.NETCore.Exceptions;
+
+namespace DDD.Domain.Model.Error
 {
-	public interface IDomainError
+	public interface IDomainError : IError
 	{
-		int Code { get; set; }
-		string Message { get; set; }
-		string UserMessage { get; set; }
+		
 	}
 }
