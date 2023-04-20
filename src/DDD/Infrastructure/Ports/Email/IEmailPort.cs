@@ -8,6 +8,7 @@ namespace DDD.Infrastructure.Ports.Email
 		Task SendAsync(string fromEmail, string fromName, string toEmail, string toName, string subject, string message, bool isHtml, CancellationToken ct);
 		bool HasSent(string toEmail);
 		bool HasSent(string toEmail, string? msgContains);
+		void Empty(CancellationToken ct);
 		Task EmptyAsync(CancellationToken ct);
 	}
 }

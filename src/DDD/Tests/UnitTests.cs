@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using DDD.Domain.Model.BuildingBlocks.Entity;
-using DDD.NETCore.Extensions;
 using Xunit;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;

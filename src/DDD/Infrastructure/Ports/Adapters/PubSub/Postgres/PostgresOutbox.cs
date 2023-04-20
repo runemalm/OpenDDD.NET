@@ -170,11 +170,24 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             }
         }
 
+        public void Empty(CancellationToken ct)
+        {
+            using var conn = _persistenceService.OpenConnection();
+            var stmt = BuildEmptyQuery();
+            conn.ExecuteNonQuery(stmt);
+        }
+
         public async Task EmptyAsync(CancellationToken ct)
         {
+            using var conn = await _persistenceService.OpenConnectionAsync();
+            var stmt = BuildEmptyQuery();
+            await conn.ExecuteNonQueryAsync(stmt);
+        }
+
+        private string BuildEmptyQuery()
+        {
             var stmt = $"DELETE FROM outbox";
-            using (var conn = await _persistenceService.OpenConnectionAsync())
-                await conn.ExecuteNonQueryAsync(stmt);
+            return stmt;
         }
     }
 }

@@ -37,8 +37,14 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Memory
 			return Task.CompletedTask;
 		}
 
-		public override Task DeleteAllAsync(ActionId actionId, CancellationToken ct)
+		public override void DeleteAll(ActionId actionId, CancellationToken ct)
 			=> Task.FromResult(Items = new BlockingCollection<T>());
+
+		public override Task DeleteAllAsync(ActionId actionId, CancellationToken ct)
+		{
+			DeleteAll(actionId, ct);
+			return Task.CompletedTask;
+		}
 
 		public override Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct)
 		{

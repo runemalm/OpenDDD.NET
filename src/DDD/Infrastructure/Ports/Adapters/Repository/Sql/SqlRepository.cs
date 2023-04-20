@@ -77,12 +77,26 @@ namespace DDD.Infrastructure.Ports.Adapters.Repository.Sql
 			return stmt;
 		}
 
+		public override void DeleteAll(ActionId actionId, CancellationToken ct)
+		{
+			var conn = _persistenceService.GetConnection(actionId);
+			var stmt = BuildDeleteAllQuery();
+			conn.ExecuteNonQuery(stmt);
+			_persistenceService.ReleaseConnection(actionId);
+		}
+
 		public override async Task DeleteAllAsync(ActionId actionId, CancellationToken ct)
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
-			var stmt = $"DELETE FROM {_tableName}";
+			var stmt = BuildDeleteAllQuery();
 			await conn.ExecuteNonQueryAsync(stmt);
 			await _persistenceService.ReleaseConnectionAsync(actionId);
+		}
+		
+		private string BuildDeleteAllQuery()
+		{
+			var stmt = $"DELETE FROM {_tableName}";
+			return stmt;
 		}
 		
 		public override async Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct)

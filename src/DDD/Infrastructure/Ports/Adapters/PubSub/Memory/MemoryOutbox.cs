@@ -123,13 +123,18 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			return Task.CompletedTask;
 		}
 
-		public Task EmptyAsync(CancellationToken ct)
+		public void Empty(CancellationToken ct)
 		{
 			lock (_events)
 			{
 				_events = new Dictionary<ActionId, ICollection<OutboxEvent>>();
-				return Task.CompletedTask;
 			}
+		}
+
+		public Task EmptyAsync(CancellationToken ct)
+		{
+			Empty(ct);
+			return Task.CompletedTask;
 		}
 	}
 }

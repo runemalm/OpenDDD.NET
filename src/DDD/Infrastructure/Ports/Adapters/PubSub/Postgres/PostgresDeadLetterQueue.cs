@@ -52,13 +52,24 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             }
         }
 
+        public void Empty(CancellationToken ct)
+        {
+            using var conn = _persistenceService.OpenConnection();
+            var stmt = BuildEmptyQuery();
+            conn.ExecuteNonQuery(stmt);
+        }
+        
         public async Task EmptyAsync(CancellationToken ct)
         {
-            using (var conn = await _persistenceService.OpenConnectionAsync())
-            {
-                var stmt = $"DELETE FROM dead_letter_queue";
-                await conn.ExecuteNonQueryAsync(stmt);
-            }
+            using var conn = await _persistenceService.OpenConnectionAsync();
+            var stmt = BuildEmptyQuery();
+            await conn.ExecuteNonQueryAsync(stmt);
+        }
+
+        private string BuildEmptyQuery()
+        {
+            var stmt = $"DELETE FROM dead_letter_queue";
+            return stmt;
         }
     }
 }
