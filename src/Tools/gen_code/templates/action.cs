@@ -1,11 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Logging;
-using DDD.Application.Settings;
 using DDD.Application;
-using DDD.Domain.Services.Auth;
-using DDD.Infrastructure.Ports.PubSub;
-using DDD.Infrastructure.Services.Persistence;
 using Application.Actions.Commands;
 
 namespace Application.Actions

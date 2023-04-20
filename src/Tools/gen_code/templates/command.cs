@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DDD.Application;
-using DDD.Application.Exceptions;
+using DDD.Application.Error;
 using DDD.Domain.Model.Validation;
 
 namespace Application.Actions.Commands
