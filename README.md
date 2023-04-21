@@ -1,33 +1,45 @@
-## DDD.NETCore
+## OpenDDD .NET
 
-This is a framework for domain-driven design (DDD) development with C# and .NET Core.
+This is a framework for domain-driven design (DDD) using C# and .NET Core.
+Star and/or follow the project to get notifications on new releases.
 
-Star and/or follow the project to don't miss notifications of upcoming releases.
+### Purpose
 
-### Goal
+Domain-driven design is an approach to software development where focus lies on an ever-evolving and up-to-date domain model.
 
-The goal with this project is to be able to do DDD with .NET Core.
+By focusing on the domain model, the software is kept up-to-date with the business language. This in turns means that legacy code is kept to a constant minimum. The code will be kept simple and easily maintained by a small team. The production rate is kept at a high.
 
-We couldn't find an existing framework with the features that we required. We wanted to be able to autonomously refine and implement the domain model, without worrying about dependencies on frontend teams and other third-party clients.
+Of course there are challenges to domain-driven design. This framework aims to support those challenges by providing a tool crafted specifically for the purpose.
 
-Another requirement was that it should be possible to build "near-infinitely scalable" applications, based on the *Entity* pattern.
-
-We also really like the hexagonal architecture pattern and how a software system becomes easier to understand when it's used.
-
-And so this framework was born.
+If you're an avid practitioner of domain-driven design, please drop me a line if you're interested in becoming a contributor.
 
 ### Key Features
 
 - Domain model versioning.
-- Fully autonomous development.
-- Auto-generated API documentation.
-- Backwards-compatible API support.
-- On-the-fly migration.
-- Recommended workflow.
+- HTTP API SemVer2.0 support.
+- Swagger documentation auto-generation.
+- Code generation from domain yaml file.
+- Domain & integration events publishing.
+- Event listeners.
+- Migration support.
+- Clear hexagonal architecture.
+- Simple design.
+- Testing framework (xUnit).
+- Extensible architecture (ports- & adapters).
+- Full code examples.
+- Clean code.
+
+### Ports & Adapters
+
+The list of ports and the implementations implementing them are constantly growing. 
+
+Among the adapters we currently support are PostgreSQL, RabbitMQ, Azure ServiceBus & Application Insights, MailChimp, Sendgrid and more.
+
+If you find there's a specific technology you'd like to see as an adapter in the framework, please leave a recommendation, or perhaps a pull request. All ports have a clearly defined interface and the documentation contains [a section on implementing ports](...).
 
 ### Design Patterns
 
-The framework is based on the following design patterns:
+The following are the framework's foundational design patterns:
 
 - [Domain-Driven Design](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)  
 - [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
@@ -37,10 +49,10 @@ The framework is based on the following design patterns:
 - [Expand and Contract](https://martinfowler.com/bliki/ParallelChange.html)
 - [Env files](https://12factor.net/config)
 
-Credits to Eric Evans for his [seminal book on DDD](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215) and 
+Big thanks to Eric Evans for his [seminal book on DDD](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215) and 
 Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon/IDDD_Samples) of DDD in Java.
 
-### Supported versions
+### Supported .NET Versions
 
 - .NET 7 (not tested)
 - .NET 6.0
@@ -49,117 +61,46 @@ Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon
   
 ### Installation
 
-    Install-Package DDD.NETCore
+    Install-Package OpenDDD.NET
 
-### Example
+### Examples
 
-These files below are from the [WeatherForecast]() sample project.
+One of the companies that are using this framework to build their software product is [Identity & Access Cloud](https://www.identityaccess.cloud). You can check out their IAM product [source code](...) for a full example of a product implemented using OpenDDD .NET.
 
-```c#
-// Program.cs
+You can also choose to jump right in with one of the templates we provide for the different supported versions of .NET. As per convention, they implement a minimal example of a [WeatherForecast](...) project.
 
-void ConfigureServices(WebApplicationBuilder builder)  
-{  
-    var services = builder.Services;  
-  
-    // DDD.NETCore  
-    services.AddAccessControl(settings);  
-    services.AddMonitoring(settings);  
-    services.AddPersistence(settings);  
-    services.AddPubSub(settings);  
-  
-    // App  
-    AddDomainServices(services);  
-    AddApplicationService(services);  
-    AddSecondaryAdapters(services);  
-    AddPrimaryAdapters(services);  
-}
+If you're simply looking for some code snippets, see below for some example extracted from the IAM project mentioned above:
 
-# code removed in favour of brevity ...
-
-services.AddAction<PredictWeatherAction, PredictWeatherCommand>();
-services.AddListener<WeatherPredictedListener>();
-services.AddRepository<IForecastRepository, PostgresForecastRepository>();
-
-# code removed in favour of brevity ...
-```
-
-```c#
-// Forecast.cs
-
-namespace Domain.Model.Forecast  
-{  
-  public class Forecast : Aggregate, IAggregate, IEquatable<Forecast>  
-  {  
-        public ForecastId ForecastId { get; set; }  
-        EntityId IAggregate.Id => ForecastId;  
-          
-        public DateTime Date { get; set; }  
-        public int TemperatureC { get; set; }  
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);  
-        public string Summary { get; set; }  
-  
-        // Public  
-  
-        public static async Task<Forecast> PredictTomorrow(  
-            ForecastId forecastId,   
-            ActionId actionId,  
-            IDomainPublisher domainPublisher,  
-            IInterchangePublisher interchangePublisher,  
-            IIcForecastTranslator icForecastTranslator)  
-        {  
-            var forecast =  
-                new Forecast()  
-                {  
-                    DomainModelVersion = Domain.Model.DomainModelVersion.Latest(),  
-                    ForecastId = forecastId,  
-                    Date = DateTime.Now.AddDays(1),  
-                    TemperatureC = Random.Shared.Next(-20, 55),  
-                    Summary = Summaries[Random.Shared.Next(Summaries.Length)]  
-                };  
-  
-            forecast.Validate();  
-              
-            await domainPublisher.PublishAsync(new WeatherPredicted(forecast, actionId));  
-            await interchangePublisher.PublishAsync(new IcWeatherPredicted(icForecastTranslator.To(forecast), actionId));  
-  
-            return forecast;  
-        }
-
-        # code removed in favour of brevity ...
-  }
-}
-```
+#### Env file
 
 ```bash
-# env.local.vs
-
 # Logging
 CFG_LOGGING_LEVEL_DOTNET=Information
 CFG_LOGGING_LEVEL=Debug
 
 # General
-CFG_GENERAL_CONTEXT=Weather
+CFG_GENERAL_CONTEXT=MyContext
 
 # Auth
-CFG_AUTH_ENABLED=false
+CFG_AUTH_ENABLED=true
 CFG_AUTH_RBAC_PROVIDER=PowerIAM
-CFG_AUTH_RBAC_EXTERNAL_REALM_ID=some-external-id
-CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=some-fake-private-key
+CFG_AUTH_RBAC_EXTERNAL_REALM_ID=
+CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=arg8WLiCr3Y5tLXHHP01fh53bgTHnof8
 CFG_AUTH_JWT_TOKEN_NAME=Authorization
 CFG_AUTH_JWT_TOKEN_LOCATION=header
 CFG_AUTH_JWT_TOKEN_SCHEME=Bearer
 
 # Http Adapter
-CFG_HTTP_URLS=http://localhost:9000
-CFG_HTTP_CORS_ALLOWED_ORIGINS=https://localhost:5052,http://localhost:5051
-CFG_HTTP_DOCS_DEFINITIONS=Public,Public,
+CFG_HTTP_URLS=https://api.myapp.com
+CFG_HTTP_CORS_ALLOWED_ORIGINS=https://www.myapp.com:443,http://www.myapp.com:80
+CFG_HTTP_DOCS_MAJOR_VERSIONS=2
+CFG_HTTP_DOCS_DEFINITIONS=
 CFG_HTTP_DOCS_ENABLED=true
-CFG_HTTP_DOCS_HTTP_ENABLED=true
-CFG_HTTP_DOCS_HTTPS_ENABLED=false
-CFG_HTTP_DOCS_HOSTNAME=localhost:5051
+CFG_HTTP_DOCS_HTTP_ENABLED=false
+CFG_HTTP_DOCS_HTTPS_ENABLED=true
+CFG_HTTP_DOCS_HOSTNAME=https://api.myapp.com/docs
 CFG_HTTP_DOCS_AUTH_EXTRA_TOKENS=
-CFG_HTTP_DOCS_TITLE=Weather API
+CFG_HTTP_DOCS_TITLE="My App API"
 
 # Persistence
 CFG_PERSISTENCE_PROVIDER=Postgres
@@ -168,7 +109,7 @@ CFG_PERSISTENCE_POOLING_MIN_SIZE=0
 CFG_PERSISTENCE_POOLING_MAX_SIZE=100
 
 # Postgres
-CFG_POSTGRES_CONN_STR="Host=localhost:9092;Username=net60;Password=net60;Database=net60"
+CFG_POSTGRES_CONN_STR="Host=postgres.myapp.com:5432;Username=some-username;Password=some-password;Database=myapp"
 
 # PubSub
 CFG_PUBSUB_PROVIDER=Rabbit
@@ -179,36 +120,233 @@ CFG_PUBSUB_PUBLISHER_ENABLED=true
 CFG_MONITORING_PROVIDER=AppInsights
 
 # PowerIAM
-CFG_POWERIAM_URL=http://localhost:9000
+CFG_POWERIAM_URL=https://api.poweriam.com/mycompany/myapp
 
 # Service Bus
 CFG_SERVICEBUS_CONN_STR=
 CFG_SERVICEBUS_SUB_NAME=
 
 # Rabbit
-CFG_RABBIT_HOST=localhost
+CFG_RABBIT_HOST=rabbit.myapp.com
 CFG_RABBIT_PORT=5672
-CFG_RABBIT_USERNAME=guest
-CFG_RABBIT_PASSWORD=guest
+CFG_RABBIT_USERNAME=some-username
+CFG_RABBIT_PASSWORD=some-password
 
 # Email
 CFG_EMAIL_ENABLED=true
 CFG_EMAIL_PROVIDER=smtp
-CFG_EMAIL_SMTP_HOST=localhost
+CFG_EMAIL_SMTP_HOST=some.host.com
 CFG_EMAIL_SMTP_PORT=1025
+CFG_EMAIL_SMTP_USERNAME=some-username
+CFG_EMAIL_SMTP_PASSWORD=some-password
+```
+
+#### Program.cs
+
+```c#
+namespace Main
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+            => CreateWebHostBuilder(args).Build().Run();
+        
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
+                .UseKestrel()
+                .UseStartup<Startup>()
+                .AddEnvFile("ENV_FILE", "CFG_")
+                .AddSettings()
+                .AddCustomSettings()
+                .AddLogging();
+    }
+}
+```
+
+#### Startup.cs
+
+```c#
+namespace Main
+{
+    public class Startup
+    {
+        # ...
+        
+        public void ConfigureServices(IServiceCollection services)
+        {
+            // DDD.NETCore
+            services.AddAccessControl(_settings);
+            services.AddMonitoring(_settings);
+            services.AddPersistence(_settings);
+            services.AddPubSub(_settings);
+            services.AddSerialization(_settings);
+
+            // App
+            AddDomainServices(services);
+            AddApplicationService(services);
+            AddSecondaryAdapters(services);
+            AddPrimaryAdapters(services);
+            AddHooks(services);
+        }
+
+        public void Configure(
+            IApplicationBuilder app, 
+            IWebHostEnvironment env,
+            IApplicationLifetime lifetime)
+        {
+            // DDD.NETCore
+            app.AddAccessControl(_settings);
+            app.AddHttpAdapter(_settings);
+            app.AddControl(lifetime);
+        }
+
+        # ...
+    }
+}
+```
+
+#### CreateAccountAction.cs
+
+```c#
+namespace Application.Actions
+{
+    public class CreateAccountAction : Action<CreateAccountCommand, User>
+    {
+        public CreateAccountAction(ActionDependencies deps) : base(deps)
+        {
+            
+        }
+
+        public override async Task<User> ExecuteAsync(
+            CreateAccountCommand command,
+            ActionId actionId,
+            CancellationToken ct)
+        {
+            // Run
+            var existing =
+                await _userRepository.GetWithEmailAsync(
+                    command.Email,
+                    actionId,
+                    ct);
+
+            if (existing != null)
+                throw DomainException.AlreadyExists("user", "email", command.Email);
+
+            if (command.Password != command.RepeatPassword)
+                throw DomainException.InvariantViolation("The passwords don't match.");
+
+            var user =
+                User.Create(
+                    userId: UserId.Create(await _userRepository.GetNextIdentityAsync()),
+                    firstName: command.FirstName,
+                    lastName: command.LastName,
+                    email: command.Email,
+                    isSuperUser: false,
+                    actionId: actionId,
+                    ct: ct);
+
+            user.SetPassword(command.Password, actionId, ct);
+            user.RequestEmailValidation(actionId, ct);
+            
+            // Persist
+            await _userRepository.SaveAsync(user, actionId, ct);
+            
+            // Publish
+            await _domainPublisher.PublishAsync(new AccountCreated(user, actionId));
+            
+            // Return
+            return user;
+        }
+    }
+}
+```
+
+#### User.cs
+
+```c#
+namespace Domain.Model.User
+{
+    public class User : Aggregate, IAggregate, IEquatable<User>
+    {
+        public UserId UserId { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public Email Email { get; set; }
+        public DateTime? EmailVerifiedAt { get; set; }
+        
+        # ...
+
+        public static User Create(
+            UserId userId,
+            string firstName,
+            string lastName,
+            Email email,
+            bool isSuperUser,
+            ActionId actionId,
+            CancellationToken ct)
+        {
+            var user =
+                new User
+                {
+                    DomainModelVersion = IamDomainModelVersion.Latest(),
+                    UserId = userId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Email = email,
+                    EmailVerifiedAt = null,
+                    EmailVerificationRequestedAt = null,
+                    EmailVerificationCodeCreatedAt = null,
+                    EmailVerificationCode = null,
+                    IsSuperUser = isSuperUser,
+                    RealmIds = new List<RealmId>()
+                };
+            
+            user.SetPassword(Password.Generate(), actionId, ct);
+
+            user.Validate();
+
+            return user;
+        }
+
+        public bool IsEmailVerified()
+            => EmailVerifiedAt != null;
+        
+        public bool IsEmailVerificationRequested()
+            => EmailVerificationRequestedAt != null;
+        
+        public bool IsEmailVerificationCodeExpired()
+            => DateTime.UtcNow.Subtract(EmailVerificationCodeCreatedAt!.Value).TotalSeconds >= (60 * 30);
+        
+        public async Task SendEmailVerificationEmailAsync(Uri verifyEmailUrl, IEmailPort emailAdapter, ActionId actionId, CancellationToken ct)
+        {
+            if (Email == null)
+                throw DomainException.InvariantViolation("The user has no email.");
+            
+            if (IsEmailVerified())
+                throw DomainException.InvariantViolation("The email is already verified.");
+            
+            if (!IsEmailVerificationRequested())
+                throw DomainException.InvariantViolation("Email verification hasn't been requested.");
+
+            # ...
+        }
+        
+        # ...
+    }
+}
 ```
 
 ### Documentation:
   
-Documentation is coming in v1.0.0 rc.
+Documentation is coming in the release of v1.0.0-rc.1.
 
 ### Semantic versioning
 
-Your primary http adapters effectively provides an "API" for clients of the application.
+We have chosen the SemVer2.0 policy for versioning of the http api through the primary http adapters.
 
-DDD.NETCore requires you to use SemVer2.0 policy for versioning. This means that backwards *compatible* changes increments the patch- and minor versions. Backwards *incompatible* changes thus increments the major version.
+In SemVer2.0, backwards *compatible* changes increments the patch- and minor versions, whereas backwards *incompatible* changes increments the major version.
 
-See table below for when to increment the numbers:
+See the table below for examples of when to increment which version.
 
 | Code Status                               | Stage         | Rule                                                               | Example Version |
 |-------------------------------------------|---------------|--------------------------------------------------------------------|-----------------|
@@ -219,12 +357,15 @@ See table below for when to increment the numbers:
 
 ### Contribution:
   
-If you want to contribute to the code base, create a pull request on the develop branch.
+If you want to contribute to the code base, create a pull request on the develop branch. Feel very free to reach out to us by email or via social media.
 
 ### Roadmap v1.0.0:
 
 - [ ] GitHub README
 - [ ] NuGet README
+- [ ] Full Sample Project
+- [ ] Quickstart Guide
+- [ ] Full Test Coverage
 - [ ] Visual Studio Project Template .NET 7
 - [x] Visual Studio Project Template .NET 6.0
 - [ ] Visual Studio Project Template .NET 5.0
@@ -268,31 +409,26 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Roadmap Future:
 
-- [ ] Full Sample Project
-- [ ] Quickstart Guide
-- [ ] Documentation
-- [ ] Azure Monitoring Adapter.
 - [ ] Monitoring
-- [ ] Task: Migrate all aggregate roots
-- [ ] Tasks
-- [ ] All-aggregates Migration Task
+- [ ] Tasks support
+- [ ] Migration of all aggregates not up-to-date
 - [ ] Periodic Jobs
 - [ ] Interval Jobs
 - [ ] One-off Jobs
-- [ ] Jobs
-- [ ] Merge old API versions into current swagger json files.
-- [ ] CLI Operation: Create action/aggregate/event/...
+- [ ] Command Line Interface (CLI)
 - [ ] CLI Operation: Migrate
 - [ ] CLI Operation: Create Migration
 - [ ] CLI Operation: Increment Domain Model Version
-- [ ] Test Framework
-- [ ] Tests
 - [ ] Admin Dashboard
-- [ ] Admin Tool: Inspect Dead Event
-- [ ] Admin Tool: Republish Dead Event
+- [ ] Admin Tool: Inspect Dead Letter Queue
+- [ ] Admin Tool: Republish Dead Letters
 - [ ] Administration
 
 ### Release Notes:
+
+**1.0.0-alpha.10** - 2023-04-xx
+
+- Add more synchronous versions of methods used by tests.
 
 **1.0.0-alpha.9** - 2023-04-19
 
