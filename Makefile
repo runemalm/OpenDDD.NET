@@ -21,6 +21,7 @@ NETWORK := ddddotnetcore
 BUILD_VERSION := 1.0.0-alpha.9
 
 SRC_DIR := $(PWD)/src
+DOCS_DIR := $(PWD)/docs
 DDD_DIR := $(SRC_DIR)/DDD
 BUILD_DIR := $(DDD_DIR)/DDD/bin
 TESTS_DIR := $(SRC_DIR)/DDD.Tests
@@ -28,6 +29,11 @@ TOOLS_DIR := $(SRC_DIR)/Tools
 PROJECT_TEMPLATES_DIR := $(SRC_DIR)/Templates
 FEED_DIR := $(HOME)/Projects/LocalFeed
 USER_NUGET_CONFIG_DIR=$(HOME)/.config/NuGet/NuGet.Config
+SPHINXDOC_IMG := openddd.net/sphinxdoc
+
+DOCSAUTOBUILD_HOST_NAME := docsautobuild-openddd.net
+DOCSAUTOBUILD_CONTAINER_NAME := docsautobuild-openddd.net
+DOCSAUTOBUILD_PORT := 10001
 
 BLUE      := $(shell tput -Txterm setaf 4)
 GREEN     := $(shell tput -Txterm setaf 2)
@@ -126,7 +132,51 @@ push: ##@Build	 Push the nuget to the global feed
 	dotnet nuget push DDD.NETCore.$(BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
 
 ##########################################################################
-# .NET Core
+# Docs
+##########################################################################
+
+.PHONY: sphinx-buildimage
+sphinx-buildimage: ##@Docs	 Build the custom sphinxdoc image
+	docker build -t $(SPHINXDOC_IMG) $(DOCS_DIR)
+
+.PHONY: sphinx-quickstart
+sphinx-quickstart: ##@Docs	 Run the sphinx quickstart
+	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG) sphinx-quickstart
+
+.PHONY: sphinx-html
+sphinx-html: ##@Docs	 Build the sphinx html
+	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG) make html
+
+.PHONY: sphinx-epub
+sphinx-epub: ##@Docs	 Build the sphinx epub
+	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG) make epub
+
+.PHONY: sphinx-pdf
+sphinx-pdf: ##@Docs	 Build the sphinx pdf
+	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG)-latexpdf make latexpdf
+
+.PHONY: sphinx-rebuild
+sphinx-rebuild: ##@Docs	 Re-build the sphinx docs
+	rm -rf $(DOCS_DIR)/_build && make sphinx-html
+
+.PHONY: sphinx-autobuild
+sphinx-autobuild: ##@Docs	 Activate autobuild of docs
+	docker run \
+		-it \
+		--rm \
+		--name $(DOCSAUTOBUILD_CONTAINER_NAME) \
+		--hostname $(DOCSAUTOBUILD_HOST_NAME) \
+		-p "$(DOCSAUTOBUILD_PORT):8000" \
+		-v $(DOCS_DIR):/docs \
+		$(SPHINXDOC_IMG) \
+		sphinx-autobuild /docs /docs/_build/html
+
+.PHONY: sphinx-opendocs
+sphinx-opendocs: ##@Docs	 Open the docs in browser
+	open $(DOCS_DIR)/_build/html/index.html
+
+##########################################################################
+# .NET
 ##########################################################################
 .PHONY: restore
 restore: ##@Build	 restore the solution
