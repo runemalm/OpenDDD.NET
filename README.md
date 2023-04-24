@@ -1,41 +1,31 @@
 ## OpenDDD .NET
 
-This is a framework for domain-driven design (DDD) using C# and .NET Core.
+This is a framework for domain-driven design (DDD) using C# and .NET.
+
 Star and/or follow the project to get notifications on new releases.
 
 ### Purpose
 
-Domain-driven design is an approach to software development where focus lies on an ever-evolving and up-to-date domain model.
+Domain-driven design is an approach to software development where focus lies on the domain model.
 
-By focusing on the domain model, the software is kept up-to-date with the business language. This in turns means that legacy code is kept to a constant minimum. The code will be kept simple and easily maintained by a small team. The production rate is kept at a high.
-
-Of course there are challenges to domain-driven design. This framework aims to support those challenges by providing a tool crafted specifically for the purpose.
+We couldn't find a framework that was specifically crafted for the purpose of domain-driven design. That was opinionated enough so that there would be clear patterns and rules to follow. So this framework was born.
 
 If you're an avid practitioner of domain-driven design, please drop me a line if you're interested in becoming a contributor.
 
 ### Key Features
 
 - Domain model versioning.
-- HTTP API SemVer2.0 support.
-- Swagger documentation auto-generation.
-- Code generation from domain yaml file.
-- Domain & integration events publishing.
-- Event listeners.
+- SemVer2.0 support.
+- Swagger auto-generation.
+- Code generation from domain model specification file.
+- Publishing of domain & integration events.
+- Reactions through event listeners.
 - Migration support.
-- Clear hexagonal architecture.
-- Simple design.
-- Testing framework (xUnit).
-- Extensible architecture (ports- & adapters).
-- Full code examples.
-- Clean code.
-
-### Ports & Adapters
-
-The list of ports and the implementations implementing them are constantly growing. 
-
-Among the adapters we currently support are PostgreSQL, RabbitMQ, Azure ServiceBus & Application Insights, MailChimp, Sendgrid and more.
-
-If you find there's a specific technology you'd like to see as an adapter in the framework, please leave a recommendation, or perhaps a pull request. All ports have a clearly defined interface and the documentation contains [a section on implementing ports](...).
+- Hexagonal architecture.
+- Testing framework specifically crafted for this framework.
+- Extensible architecture through the *ports and adapters* pattern.
+- Code samples to quickly get started.
+- Based on standard design patterns.
 
 ### Design Patterns
 
@@ -52,6 +42,14 @@ The following are the framework's foundational design patterns:
 Big thanks to Eric Evans for his [seminal book on DDD](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215) and 
 Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon/IDDD_Samples) of DDD in Java.
 
+### Adapters
+
+The list of technologies supported through the implemented adapters are constantly growing. 
+
+Currently, we support PostgreSQL, RabbitMQ, Application Insights, MailChimp, Sendgrid and more.
+
+If you find there's a specific technology you'd like to see as an adapter in the framework, please leave a recommendation, or perhaps create a pull request. All ports have a clearly defined interface and the [documentation](...) contains a section on implementing ports.
+
 ### Supported .NET Versions
 
 - .NET 7 (not tested)
@@ -61,15 +59,17 @@ Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon
   
 ### Installation
 
-    Install-Package OpenDDD.NET
+    dotnet add package OpenDDD.NET
 
 ### Examples
 
-One of the companies that are using this framework to build their software product is [Identity & Access Cloud](https://www.identityaccess.cloud). You can check out their IAM product [source code](...) for a full example of a product implemented using OpenDDD .NET.
+You can check out the source code of identityaccess.io for a full example of a product built using this framework.
 
-You can also choose to jump right in with one of the templates we provide for the different supported versions of .NET. As per convention, they implement a minimal example of a [WeatherForecast](...) project.
+If you want to jump straight in, we provide that opportunity through the conventional [WeatherForecast](...) project templates for Visual Studio, Rider IDE, etc.
 
-If you're simply looking for some code snippets, see below for some example extracted from the IAM project mentioned above:
+If you prefer to see some code examples, simply look below to see some extracts from the IAM project referenced above. We start with the env sample file.
+
+This is a project created from the .NET Core 3.1 project template:
 
 #### Env file
 
@@ -336,15 +336,15 @@ namespace Domain.Model.User
 }
 ```
 
-### Documentation:
-  
-Documentation is coming in the release of v1.0.0-rc.1.
+### Documentation
+
+Documentation will be provided in this README and also at readthedocs.org by the time this framework has reached the release candidate stage. The final documentation will provide both a quick get started guide as well as an in-depth advanced concepts content.
 
 ### Semantic versioning
 
 We have chosen the SemVer2.0 policy for versioning of the http api through the primary http adapters.
 
-In SemVer2.0, backwards *compatible* changes increments the patch- and minor versions, whereas backwards *incompatible* changes increments the major version.
+In SemVer2.0, *backwards compatible* changes increments the patch- and minor versions, whereas *backwards incompatible* changes increments the major version.
 
 See the table below for examples of when to increment which version.
 
@@ -426,9 +426,11 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes:
 
-**1.0.0-alpha.10** - 2023-04-xx
+**1.0.0-alpha.10** - 2023-04-24
 
 - Add more synchronous versions of methods used by tests.
+- Break out application error classes.
+- Fix minor issue in code generation tool.
 
 **1.0.0-alpha.9** - 2023-04-19
 
