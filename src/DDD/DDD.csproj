@@ -13,9 +13,11 @@
     <Company></Company>
     <PackageTags>DDD,Domain-Driven-Design,Hexagonal-Architecture</PackageTags>
     <Description>A framework for building apps using DDD.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\"/>
     <PackageReference Include="CompareNETObjects" Version="4.77.0" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.26" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
