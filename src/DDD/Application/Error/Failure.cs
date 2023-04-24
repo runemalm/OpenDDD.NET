@@ -1,20 +1,20 @@
 ﻿using System.Collections.Generic;
-using DDD.Domain.Model.Error;
+using DDD.NETCore.Exceptions;
 
 namespace DDD.Application.Error
 {
 	public class Failure
 	{
-		public IEnumerable<IDomainError> Errors { get; }
+		public IEnumerable<IError> Errors { get; }
 
-		public Failure(IEnumerable<IDomainError> errors)
+		public Failure(IEnumerable<IError> errors)
 		{
 			Errors = errors;
 		}
 
-		public Failure(IDomainError error)
+		public Failure(IError error)
 		{
-			Errors = new List<IDomainError> { error };
+			Errors = new List<IError> { error };
 		}
 	}
 }

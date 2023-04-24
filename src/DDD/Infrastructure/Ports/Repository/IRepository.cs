@@ -15,6 +15,7 @@ namespace DDD.Infrastructure.Ports.Repository
 		Task StartAsync(CancellationToken ct);
 		void Stop(CancellationToken ct);
 		Task StopAsync(CancellationToken ct);
+		void DeleteAll(ActionId actionId, CancellationToken ct);
 		Task DeleteAllAsync(ActionId actionId, CancellationToken ct);
 		Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
 		IEnumerable<T> GetAll(ActionId actionId, CancellationToken ct);

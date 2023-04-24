@@ -15,6 +15,7 @@ namespace DDD.Infrastructure.Ports.PubSub
 		Task<IEnumerable<OutboxEvent>> GetAllAsync(ActionId actionId, CancellationToken ct);
 		Task RemoveAsync(string id, ActionId actionId, CancellationToken ct);
 		Task RemoveAsync(string id, CancellationToken ct);
+		void Empty(CancellationToken ct);
 		Task EmptyAsync(CancellationToken ct);
 		void Start(CancellationToken ct);
 		Task StartAsync(CancellationToken ct);

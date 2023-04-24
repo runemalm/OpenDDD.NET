@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DDD.Application.Error;
 using Microsoft.AspNetCore.Http;
 using DDD.Logging;
 using DDD.Application.Settings;
@@ -53,7 +54,7 @@ namespace DDD.NETCore.Middleware
             else
             {
                 throw new SettingsException(
-                    DomainError.Settings_UnsupportedJwtTokenLocationSetting(_settings.Auth.JwtToken.Location));
+                    ApplicationError.Settings_UnsupportedJwtTokenLocationSetting(_settings.Auth.JwtToken.Location));
             }
 
             if (raw != null)

@@ -30,9 +30,14 @@ namespace DDD.Infrastructure.Ports.Adapters.Email
 		public bool HasSent(string toEmail, string? msgContains)
 			=> _sent.Any(s => s.ToEmail == toEmail && (msgContains == null || s.Message.Contains(msgContains)));
 
-		public Task EmptyAsync(CancellationToken ct)
+		public void Empty(CancellationToken ct)
 		{
 			_sent = new List<IEmail>();
+		}
+		
+		public Task EmptyAsync(CancellationToken ct)
+		{
+			Empty(ct);
 			return Task.CompletedTask;
 		}
 

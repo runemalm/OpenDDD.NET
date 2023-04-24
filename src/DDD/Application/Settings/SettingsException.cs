@@ -1,29 +1,28 @@
 ﻿using System;
-using System.Collections.Generic;
-using DDD.Domain.Model.Error;
+using DDD.Application.Error;
+using ApplicationException = DDD.Application.Error.ApplicationException;
 
 namespace DDD.Application.Settings
 {
-	public class SettingsException : DomainException
-	{
-		public SettingsException(IDomainError error) : base(error)
-		{
-			
-		}
-
-		public SettingsException(IEnumerable<IDomainError> errors) : base(errors)
-		{
-			
-		}
-		
-		public SettingsException(string message) : base(message)
-		{
-            
-		}
+    public class SettingsException : ApplicationException
+    {
+        public static SettingsException Invalid(string spec)
+            => new SettingsException(ApplicationError.Settings_InvalidSettings(spec));
         
-		public SettingsException(string message, Exception inner) : base(message, inner)
-		{
+        public static SettingsException Invalid(string spec, Exception inner)
+            => new SettingsException(ApplicationError.Settings_InvalidSettings(spec), inner);
+        
+        public static SettingsException AuthEnabledButNoPrivateKey()
+            => new SettingsException(ApplicationError.Settings_AuthEnabledButNoPrivateKey());
+
+        public SettingsException(IApplicationError error) : base(error)
+        {
             
-		}
-	}
+        }
+        
+        public SettingsException(IApplicationError error, Exception inner) : base(error, inner)
+        {
+            
+        }
+    }
 }

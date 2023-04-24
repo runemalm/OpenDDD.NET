@@ -10,10 +10,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using WireMock.Server;
-using dotenv.net;
 using Newtonsoft.Json;
 using NJsonSchema.Infrastructure;
+using dotenv.net;
+using WireMock.Server;
 using DDD.Application;
 using DDD.Application.Settings;
 using DDD.Domain.Model.Auth.Exceptions;
@@ -64,7 +64,7 @@ namespace DDD.Tests
                 }
             }
         }
-        
+
         public void Configure()
             => Environment.SetEnvironmentVariable($"ENV_FILE_{ActionName}", CreateEnvFileJson());
 
@@ -206,35 +206,64 @@ namespace DDD.Tests
         
         protected IPersistenceService PersistenceService => TestServer.Host.Services.GetRequiredService<IPersistenceService>();
         
-        protected async Task EmptyDb()
+        protected void EmptyDb()
         {
-            await EmptyRepositories();
-            await EmptyEmailPorts();
-            await EmptyDeadLetterQueue();
-            await EmptyOutbox();
+            EmptyRepositories();
+            EmptyEmailPorts();
+            EmptyDeadLetterQueue();
+            EmptyOutbox();
+        }
+
+        protected async Task EmptyDbAsync()
+        {
+            await EmptyRepositoriesAsync();
+            await EmptyEmailPortsAsync();
+            await EmptyDeadLetterQueueAsync();
+            await EmptyOutboxAsync();
         }
         
-        protected async Task EmptyRepositories()
+        protected void EmptyRepositories()
         {
-            await EmptyAggregateRepositories(CancellationToken.None);
+            EmptyAggregateRepositories(CancellationToken.None);
         }
         
-        protected async Task EmptyEmailPorts()
+        protected async Task EmptyRepositoriesAsync()
+        {
+            await EmptyAggregateRepositoriesAsync(CancellationToken.None);
+        }
+        
+        protected void EmptyEmailPorts()
+        {
+            EmailAdapter.Empty(CancellationToken.None);
+        }
+        
+        protected async Task EmptyEmailPortsAsync()
         {
             await EmailAdapter.EmptyAsync(CancellationToken.None);
         }
         
-        protected async Task EmptyDeadLetterQueue()
+        protected void EmptyDeadLetterQueue()
+        {
+            DeadLetterQueue.Empty(CancellationToken.None);
+        }
+
+        protected async Task EmptyDeadLetterQueueAsync()
         {
             await DeadLetterQueue.EmptyAsync(CancellationToken.None);
         }
 
-        protected async Task EmptyOutbox()
+        protected void EmptyOutbox()
+        {
+            Outbox.Empty(CancellationToken.None);
+        }
+        
+        protected async Task EmptyOutboxAsync()
         {
             await Outbox.EmptyAsync(CancellationToken.None);
         }
         
-        protected abstract Task EmptyAggregateRepositories(CancellationToken ct);
+        protected abstract void EmptyAggregateRepositories(CancellationToken ct);
+        protected abstract Task EmptyAggregateRepositoriesAsync(CancellationToken ct);
 
         // Email
         

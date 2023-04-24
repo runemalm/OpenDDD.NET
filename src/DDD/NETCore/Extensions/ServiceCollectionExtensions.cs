@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using DDD.Application.Error;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using NSwag;
@@ -70,9 +71,9 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DomainException(
-					$"Can't add iam adapter for unsupported " +
-					$"rbac provider: '{settings.Auth.Rbac.Provider}'.");
+				throw StartupException.Failed(
+					$"Can't add IAM adapter for unsupported " +
+					$"RBAC provider: '{settings.Auth.Rbac.Provider}'.");
 			}
 			return services;
 		}
@@ -89,7 +90,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DomainException(
+				throw StartupException.Failed(
 					$"Can't add email for unsupported " +
 					$"email provider: '{settings.Email.Provider}'.");
 			}
@@ -119,7 +120,7 @@ namespace DDD.NETCore.Extensions
 			else if (settings.Monitoring.Provider == MonitoringProvider.AppInsights)
 				services.AddSingleton<IMonitoringPort, AppInsightsMonitoringAdapter>();
 			else
-				throw new DomainException(
+				throw StartupException.Failed(
 					$"Can't add monitoring for unsupported provider: '{settings.Monitoring.Provider}'.");
 
 			return services;
@@ -137,7 +138,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DomainException(
+				throw StartupException.Failed(
 					$"Can't add persistence for unsupported " +
 					$"persistence provider: '{settings.Persistence.Provider}'.");
 			}
@@ -243,7 +244,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DomainException(
+				throw StartupException.Failed(
 					$"Can't add outbox, unsupported persistence provider " +
 					$"in config: '{settings.Persistence.Provider}'.");
 			}
@@ -262,7 +263,7 @@ namespace DDD.NETCore.Extensions
 			}
 			else
 			{
-				throw new DomainException(
+				throw StartupException.Failed(
 					$"Can't add dead letter queue, unsupported persistence provider " +
 					$"in config: '{settings.Persistence.Provider}'.");
 			}
@@ -415,7 +416,7 @@ namespace DDD.NETCore.Extensions
 				errors.Add($"'Name' must be set.");
 
 			if (errors.Count > 0)
-				throw new SettingsException(
+				throw SettingsException.Invalid(
 					$"Auth is enabled in the settings, but there are a/some invalid JWT auth setting(s). {string.Join(" ", errors)}");
 
 			return services;
@@ -432,7 +433,7 @@ namespace DDD.NETCore.Extensions
 				case "query":
 					return OpenApiSecurityApiKeyLocation.Query;
 				default:
-					throw new SettingsException(
+					throw SettingsException.Invalid(
 						$"Unsupported 'location' in http docs auth def " +
 						$"api key: {value}");
 			}

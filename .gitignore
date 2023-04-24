@@ -7,6 +7,7 @@ scratch
 src/Templates/testing
 *.sublime-project
 *.sublime-workspace
+docs/_build
 
 # globs
 Makefile.in

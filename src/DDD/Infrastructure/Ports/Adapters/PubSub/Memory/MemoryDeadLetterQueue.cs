@@ -19,10 +19,15 @@ namespace DDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			_deadEvents.Add(deadEvent);
 			return Task.CompletedTask;
 		}
+		
+		public void Empty(CancellationToken ct)
+		{
+			_deadEvents = new List<DeadEvent>();
+		}
 
 		public Task EmptyAsync(CancellationToken ct)
 		{
-			_deadEvents = new List<DeadEvent>();
+			Empty(ct);
 			return Task.CompletedTask;
 		}
 	}

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using DDD.Application.Error;
 
 namespace DDD.Domain.Model.Error
 {
-    public class DomainException : Exception, IEquatable<DomainException>
+    public class DomainException : DddException, IEquatable<DomainException>
     {
         public IEnumerable<IDomainError> Errors;
         
@@ -34,24 +35,7 @@ namespace DDD.Domain.Model.Error
         {
             Errors = errors;
         }
-        
-        public DomainException()
-        {
-            
-        }
-        
-        public DomainException(string message)
-            : base($"Domain exception with message: {message}")
-        {
-            
-        }
-        
-        public DomainException(string message, Exception inner)
-            : base($"Domain exception with message: {message}", inner)
-        {
-            
-        }
-        
+
         // Equality
 
         public bool Equals(DomainException? other)

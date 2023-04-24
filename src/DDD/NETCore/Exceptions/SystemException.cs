@@ -1,13 +1,13 @@
-using DDD.Domain.Model.Error;
+using DDD.Application.Error;
 
 namespace DDD.NETCore.Exceptions
 {
-    public class SystemException : DomainException
+    public class SystemException : ApplicationException
     {
         public static SystemException InternalError(string spec)
-            => new SystemException(DomainError.System_InternalError(spec));
+            => new SystemException(ApplicationError.System_InternalError(spec));
 
-        public SystemException(IDomainError error) : base(error)
+        public SystemException(IApplicationError error) : base(error)
         {
             
         }
