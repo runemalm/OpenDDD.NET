@@ -20,6 +20,8 @@ PWD := $(shell pwd)
 NETWORK := ddddotnetcore
 BUILD_VERSION := 1.0.0-alpha.10
 
+TOOLS_IMAGE_NAME := runemalm/dddnetcore-tools
+
 SRC_DIR := $(PWD)/src
 DOCS_DIR := $(PWD)/docs
 DDD_DIR := $(SRC_DIR)/DDD
@@ -192,7 +194,7 @@ clear-nuget-caches: ##@Build	 clean all nuget caches
 
 .PHONY: build-tools-image
 build-tools-image: ##@Tools	Build the tools image
-	cd $(TOOLS_DIR) && docker build --progress plain -t runemalm/dddnetcore-tools .
+	cd $(TOOLS_DIR) && docker build --progress plain -t $(TOOLS_IMAGE_NAME) .
 
 .PHONY: push-tools-image
 push-tools-image: ##@Tools	Push the tools image
