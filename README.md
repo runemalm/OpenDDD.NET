@@ -57,7 +57,7 @@ If you find there's a specific technology you'd like to see as an adapter in the
   
 ### Installation
 
-    dotnet add package OpenDDD.NET
+    dotnet add package DDD.NETCore
 
 ### Examples
 
@@ -177,7 +177,6 @@ namespace Main
             services.AddMonitoring(_settings);
             services.AddPersistence(_settings);
             services.AddPubSub(_settings);
-            services.AddSerialization(_settings);
 
             // App
             AddDomainServices(services);
@@ -185,6 +184,7 @@ namespace Main
             AddSecondaryAdapters(services);
             AddPrimaryAdapters(services);
             AddHooks(services);
+            AddSerialization(settings);
         }
 
         public void Configure(
@@ -424,6 +424,12 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Administration
 
 ### Release Notes
+
+**1.0.0-alpha.11** - 2023-04-25
+
+- Add support to disable emails in tests.
+- Fix code generation templates.
+- Replace IApplicationLifetime with IHostApplicationLifetime. (**breaking**)
 
 **1.0.0-alpha.10** - 2023-04-24
 
