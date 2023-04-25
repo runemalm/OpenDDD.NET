@@ -284,6 +284,20 @@ These are examples of how your code will look like::
 
   gettingstarted
 
+.. advancedtopics-docs:
+.. toctree::
+  :maxdepth: 1
+  :caption: Advanced Topics
+
+  advancedtopics
+
+.. philosophy-docs:
+.. toctree::
+  :maxdepth: 1
+  :caption: Philosophy
+
+  philosophy
+
 .. versionhistory-docs:
 .. toctree::
   :maxdepth: 1

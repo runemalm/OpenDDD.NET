@@ -7,7 +7,7 @@ Version history
 **1.0.0-alpha.10** - 2023-04-xx
 
 - Add more synchronous versions of methods used by tests.
-- Renamed the framework to OpenDDD.NET
+- Rename the framework to OpenDDD.NET
 
 **1.0.0-alpha.9** - 2023-04-19
 
