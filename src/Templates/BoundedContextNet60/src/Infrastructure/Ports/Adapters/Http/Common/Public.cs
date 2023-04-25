@@ -1,6 +1,6 @@
-﻿using DDD.Infrastructure.Ports.Adapters.Http;
+﻿using DDD.Infrastructure.Ports.Adapters.Http.Common;
 
-namespace Infrastructure.Ports.Adapters.Http
+namespace Infrastructure.Ports.Adapters.Http.Common
 {
     /// <summary>
 	/// An attribute to denote the endpoint should be added
@@ -8,9 +8,6 @@ namespace Infrastructure.Ports.Adapters.Http
 	/// </summary>
     public class Public : DocsDefinitionAttribute
     {
-        public Public() : base()
-        {
-            
-        }
+        
     }
 }

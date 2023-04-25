@@ -1,4 +1,4 @@
-﻿using DDD.Infrastructure.Ports;
+﻿using DDD.Infrastructure.Ports.Repository;
 
 namespace Domain.Model.Forecast
 {

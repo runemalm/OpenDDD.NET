@@ -1,43 +1,52 @@
-using DDD.Domain;
-using DDD.Domain.Exceptions;
-using DDD.Domain.Validation;
-using DDD.Infrastructure.Ports;
+using DDD.Application;
+using DDD.Domain.Model.BuildingBlocks.Aggregate;
+using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.Domain.Model.Error;
+using DDD.Domain.Model.Validation;
+using DDD.Infrastructure.Ports.PubSub;
+using Domain.Model.Summary;
 using Interchange.Domain.Model.Forecast;
+using WeatherDomainModelVersion = Domain.Model.DomainModelVersion;
 
 namespace Domain.Model.Forecast
 {
     public class Forecast : Aggregate, IAggregate, IEquatable<Forecast>
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-        
         public ForecastId ForecastId { get; set; }
         EntityId IAggregate.Id => ForecastId;
         
         public DateTime Date { get; set; }
         public int TemperatureC { get; set; }
         public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-        public string Summary { get; set; }
+        public SummaryId SummaryId { get; set; }
 
         // Public
 
-        public static async Task<Forecast> PredictTomorrow(
+        public static async Task<Forecast> PredictTomorrowAsync(
             ForecastId forecastId, 
             ActionId actionId,
+            ISummaryRepository summaryRepository,
             IDomainPublisher domainPublisher,
             IInterchangePublisher interchangePublisher,
-            IIcForecastTranslator icForecastTranslator)
+            IIcForecastTranslator icForecastTranslator,
+            CancellationToken ct)
         {
+            var summaries = 
+                (await summaryRepository
+                    .GetAllAsync(actionId, ct))
+                    .ToList();
+
+            var summaryId =
+                summaries[Random.Shared.Next(summaries.Count)].SummaryId;
+            
             var forecast =
                 new Forecast()
                 {
-                    DomainModelVersion = Domain.Model.DomainModelVersion.Latest(),
+                    DomainModelVersion = WeatherDomainModelVersion.Latest(),
                     ForecastId = forecastId,
                     Date = DateTime.Now.AddDays(1),
                     TemperatureC = Random.Shared.Next(-20, 55),
-                    Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+                    SummaryId = summaryId
                 };
 
             forecast.Validate();
@@ -63,7 +72,7 @@ namespace Domain.Model.Forecast
 
             if (errors.Any())
             {
-                throw new InvariantException(
+                throw DomainException.InvariantViolation(
                     $"Forecast is invalid with errors: " +
                     $"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
             }
@@ -71,11 +80,12 @@ namespace Domain.Model.Forecast
 
         // Equality
 
+
         public bool Equals(Forecast? other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return base.Equals(other) && ForecastId.Equals(other.ForecastId) && Date.Equals(other.Date) && TemperatureC == other.TemperatureC && Summary == other.Summary;
+            return base.Equals(other) && ForecastId.Equals(other.ForecastId) && Date.Equals(other.Date) && TemperatureC == other.TemperatureC && SummaryId.Equals(other.SummaryId);
         }
 
         public override bool Equals(object? obj)
@@ -88,17 +98,7 @@ namespace Domain.Model.Forecast
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(base.GetHashCode(), ForecastId, Date, TemperatureC, Summary);
-        }
-
-        public static bool operator ==(Forecast? left, Forecast? right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(Forecast? left, Forecast? right)
-        {
-            return !Equals(left, right);
+            return HashCode.Combine(base.GetHashCode(), ForecastId, Date, TemperatureC, SummaryId);
         }
     }
 }

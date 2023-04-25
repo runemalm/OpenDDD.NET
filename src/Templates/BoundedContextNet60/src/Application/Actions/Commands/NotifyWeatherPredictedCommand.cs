@@ -1,7 +1,8 @@
 using DDD.Application;
-using DDD.Domain.Exceptions;
-using DDD.Domain.Validation;
+using DDD.Application.Error;
+using DDD.Domain.Model.Validation;
 using Domain.Model.Forecast;
+using Domain.Model.Summary;
 
 namespace Application.Actions.Commands
 {
@@ -10,7 +11,7 @@ namespace Application.Actions.Commands
         public ForecastId ForecastId { get; set; }
         public DateTime Date { get; set; }
         public int TemperatureC { get; set; }
-        public string Summary { get; set; }
+        public SummaryId SummaryId { get; set; }
 
         public override void Validate()
         {
@@ -24,7 +25,7 @@ namespace Application.Actions.Commands
         {
             var errors = new Validator<NotifyWeatherPredictedCommand>(this)
                 .NotNullOrEmpty(command => command.ForecastId.Value)
-                .NotNullOrEmpty(command => command.Summary)
+                .NotNullOrEmpty(command => command.SummaryId.Value)
                 .Errors();
 
             return errors;

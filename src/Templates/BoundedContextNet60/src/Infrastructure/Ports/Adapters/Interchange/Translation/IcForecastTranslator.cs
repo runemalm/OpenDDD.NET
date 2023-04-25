@@ -1,4 +1,5 @@
 ﻿using Domain.Model.Forecast;
+using Domain.Model.Summary;
 using Interchange.Domain.Model.Forecast;
 
 namespace Infrastructure.Ports.Adapters.Interchange.Translation
@@ -12,7 +13,7 @@ namespace Infrastructure.Ports.Adapters.Interchange.Translation
 				ForecastId = ForecastId.Create(icForecast.ForecastId),
 				Date = icForecast.Date,
 				TemperatureC = icForecast.TemperatureC,
-				Summary = icForecast.Summary
+				SummaryId = SummaryId.Create(icForecast.SummaryId)
 			};
 		}
 
@@ -23,7 +24,7 @@ namespace Infrastructure.Ports.Adapters.Interchange.Translation
 				ForecastId = forecast.ForecastId.ToString(),
 				Date = forecast.Date,
 				TemperatureC = forecast.TemperatureC,
-				Summary = forecast.Summary
+				SummaryId = forecast.SummaryId.Value
 			};
 		}
 	}

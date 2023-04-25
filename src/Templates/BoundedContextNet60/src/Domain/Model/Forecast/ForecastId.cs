@@ -1,4 +1,4 @@
-using DDD.Domain;
+using DDD.Domain.Model.BuildingBlocks.Entity;
 
 namespace Domain.Model.Forecast
 {
@@ -7,9 +7,6 @@ namespace Domain.Model.Forecast
         public ForecastId(string value) : base(value) { }
 
         public static ForecastId Create(string value)
-            => Create(DomainModelVersion.Latest(), value);
-
-        public static ForecastId Create(DomainModelVersion domainModelVersion, string value)
         {
             var forecastId = new ForecastId(value);
             forecastId.Validate(nameof(forecastId));

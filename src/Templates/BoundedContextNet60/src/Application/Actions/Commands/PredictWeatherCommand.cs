@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-using System.Linq;
 using DDD.Application;
-using DDD.Domain.Exceptions;
-using DDD.Domain.Validation;
+using DDD.Application.Error;
+using DDD.Domain.Model.Validation;
 
 namespace Application.Actions.Commands
 {
@@ -21,7 +19,6 @@ namespace Application.Actions.Commands
         public override IEnumerable<ValidationError> GetErrors()
         {
             var errors = new Validator<PredictWeatherCommand>(this)
-                // .NotNullOrEmpty(command => command.xxxId.Value)
                 .Errors();
 
             return errors;

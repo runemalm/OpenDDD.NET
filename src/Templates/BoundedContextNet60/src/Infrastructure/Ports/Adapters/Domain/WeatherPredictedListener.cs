@@ -1,10 +1,11 @@
 ﻿using Application.Actions;
 using Application.Actions.Commands;
-using DDD.Infrastructure.Ports;
 using DDD.Application;
+using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using DDD.Infrastructure.Ports.PubSub;
 using DDD.Logging;
 using Domain.Model.Forecast;
-using StudyDomainModelVersion = Domain.Model.DomainModelVersion;
+using WeatherDomainModelVersion = Domain.Model.DomainModelVersion;
 
 namespace Infrastructure.Ports.Adapters.Domain
 {
@@ -16,16 +17,18 @@ namespace Infrastructure.Ports.Adapters.Domain
 			IDomainEventAdapter eventAdapter,
 			IOutbox outbox,
 			IDeadLetterQueue deadLetterQueue,
-			ILogger logger)
+			ILogger logger,
+			SerializerSettings serializerSettings)
 			: base(
 				Context.Domain,
 				"WeatherPredicted",
-				StudyDomainModelVersion.Latest(),
+				WeatherDomainModelVersion.Latest(),
 				action,
 				eventAdapter,
 				outbox,
 				deadLetterQueue,
-				logger)
+				logger,
+				serializerSettings)
 		{
 			
 		}
@@ -38,7 +41,7 @@ namespace Infrastructure.Ports.Adapters.Domain
 					ForecastId = theEvent.ForecastId,
 					Date = theEvent.Date,
 					TemperatureC = theEvent.TemperatureC,
-					Summary = theEvent.Summary
+					SummaryId = theEvent.SummaryId
 				};
 
 			return command;

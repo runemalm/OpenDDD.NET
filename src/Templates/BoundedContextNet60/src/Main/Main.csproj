@@ -4,13 +4,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <RootNamespace>WebApplicationNet6</RootNamespace>
+    <RootNamespace>Main</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DDD.NETCore" Version="1.0.0-alpha.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../../../../DDD/DDD.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 </Project>

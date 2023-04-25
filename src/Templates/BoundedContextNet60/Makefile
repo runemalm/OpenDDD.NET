@@ -25,6 +25,8 @@ SRC_DIR := $(PROJECT_DIR)/src
 MAIN_DIR := $(SRC_DIR)/Main
 TESTS_DIR := $(SRC_DIR)/Tests
 
+TOOLS_IMAGE_NAME := runemalm/dddnetcore-tools
+
 BLUE      := $(shell tput -Txterm setaf 4)
 GREEN     := $(shell tput -Txterm setaf 2)
 TURQUOISE := $(shell tput -Txterm setaf 6)
@@ -98,20 +100,43 @@ clean: ##@Build	 clean the solution
 	find . $(SRC_DIR) -iname "bin" | xargs rm -rf
 	find . $(SRC_DIR) -iname "obj" | xargs rm -rf
 
+.PHONY: clean-and-restore
+clean-and-restore: ##@Build	 Clean and restore the project
+	make clean
+	make restore
+
+.PHONY: deep-rebuild
+deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
+	make clean
+	make clear-nuget-caches
+	make restore
+	make build
+
+##########################################################################
+# .NET Core
+##########################################################################
+.PHONY: restore
+restore: ##@Build	 restore the solution
+	cd $(SRC_DIR) && \
+	dotnet restore
+
+.PHONY: clear-nuget-caches
+clear-nuget-caches: ##@Build	 clean all nuget caches
+	nuget locals all -clear
+
 ##########################################################################
 # CODE GENERATION
 ##########################################################################
-
 .PHONY: gen-code
 gen-code: ##@Code Generation	Generate code (uses COMMAND)
 	docker run \
 		--rm \
 		-it \
 		--name gen-code \
-		-v "$(PROJECT_DIR)/code_gen/domain.yml:/tools/gen_code/domain.yml" \
+		-v "$(PROJECT_DIR)/domain.yml:/tools/gen_code/domain.yml" \
 		-v "$(SRC_DIR):/context/src" \
 		-v "/Users/david/Projects/DDD.NETCore/src/Tools/gen_code:/tools/gen_code" \
-		runemalm/dddnetcore-tools \
+		$(TOOLS_IMAGE_NAME) \
 		gen_code $(COMMAND)
 
 .PHONY: gen-action
@@ -122,6 +147,10 @@ gen-action: ##@Code Generation	Generate an action class (uses NAME)
 gen-aggregate: ##@Code Generation	Generate an aggregate class (uses NAME)
 	make gen-code COMMAND="gen aggregate $(NAME)"
 	make gen-code COMMAND="gen entity_id $(NAME)Id"
+
+.PHONY: gen-aggregate-migrator
+gen-aggregate-migrator: ##@Code Generation	Generate an aggregate migrator class (uses NAME)
+	make gen-code COMMAND="gen aggregate_migrator $(NAME)"
 
 .PHONY: gen-command
 gen-command: ##@Code Generation	Generate a command class (uses NAME)
@@ -134,6 +163,10 @@ gen-entity-id: ##@Code Generation	Generate an entity ID class (uses NAME)
 .PHONY: gen-http-command
 gen-http-command: ##@Code Generation	Generate a http adapter command class (uses NAME, VERSION)
 	make gen-code COMMAND="gen http_command $(NAME) $(VERSION)"
+
+.PHONY: gen-http-bb-translator
+gen-http-bb-translator: ##@Code Generation	Generate a http building block translator class (uses NAME)
+	make gen-code COMMAND="gen http_bb_translator $(NAME)"
 
 .PHONY: gen-http-command-translator
 gen-http-command-translator: ##@Code Generation	Generate a command translator class (uses NAME, VERSION)
@@ -151,15 +184,21 @@ gen-all-code-for-action: ##@Code Generation	Generate all code for an action (use
 	make gen-http-command-translator NAME=$(NAME) VERSION=$(HTTP_VERSION)
 	make gen-http-endpoint NAME=$(NAME)
 
+.PHONY: gen-all-code-for-aggregate
+gen-all-code-for-aggregate: ##@Code Generation	Generate all code for an aggregate (uses NAME, HTTP_VERSION)
+	make gen-aggregate NAME=$(NAME)
+	make gen-aggregate-migrator NAME=$(NAME)
+	make gen-http-bb-translator NAME=$(NAME) VERSION=$(HTTP_VERSION)
+
 ##########################################################################
 # TEMP (remove before creating project template)
 ##########################################################################
-.PHONY: use-ddd-project
-use-ddd-project: ##@Build	 Switch to using local ddd project reference
+.PHONY: use-projects
+use-projects: ##@Build	 Switch to using local project references
 	cd src && \
 	dnt switch-to-projects
 
-.PHONY: use-ddd-nuget
-use-ddd-nuget: ##@Build	 Switch to using ddd nuget
+.PHONY: use-nugets
+use-nugets: ##@Build	 Switch to using nugets
 	cd src && \
 	dnt switch-to-packages

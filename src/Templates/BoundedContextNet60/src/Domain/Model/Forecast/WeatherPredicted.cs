@@ -1,4 +1,6 @@
-﻿using DDD.Domain;
+﻿using DDD.Application;
+using DDD.Domain.Model.BuildingBlocks.Event;
+using Domain.Model.Summary;
 
 namespace Domain.Model.Forecast
 {
@@ -7,7 +9,7 @@ namespace Domain.Model.Forecast
 		public ForecastId ForecastId { get; set; }
 		public DateTime Date { get; set; }
 		public int TemperatureC { get; set; }
-		public string Summary { get; set; }
+		public SummaryId SummaryId { get; set; }
 
 		public WeatherPredicted() : base("WeatherPredicted", DomainModelVersion.Latest(), "Weather", ActionId.Create()) { }
 
@@ -17,17 +19,16 @@ namespace Domain.Model.Forecast
 			ForecastId = forecast.ForecastId;
 			Date = forecast.Date;
 			TemperatureC = forecast.TemperatureC;
-			Summary = forecast.Summary;
+			SummaryId = forecast.SummaryId;
 		}
 
 		// Equality
-
-
+		
 		public bool Equals(WeatherPredicted? other)
 		{
 			if (ReferenceEquals(null, other)) return false;
 			if (ReferenceEquals(this, other)) return true;
-			return base.Equals(other) && ForecastId.Equals(other.ForecastId) && Date.Equals(other.Date) && TemperatureC == other.TemperatureC && Summary == other.Summary;
+			return base.Equals(other) && ForecastId.Equals(other.ForecastId) && Date.Equals(other.Date) && TemperatureC == other.TemperatureC && SummaryId.Equals(other.SummaryId);
 		}
 
 		public override bool Equals(object? obj)
@@ -40,17 +41,7 @@ namespace Domain.Model.Forecast
 
 		public override int GetHashCode()
 		{
-			return HashCode.Combine(base.GetHashCode(), ForecastId, Date, TemperatureC, Summary);
-		}
-
-		public static bool operator ==(WeatherPredicted? left, WeatherPredicted? right)
-		{
-			return Equals(left, right);
-		}
-
-		public static bool operator !=(WeatherPredicted? left, WeatherPredicted? right)
-		{
-			return !Equals(left, right);
+			return HashCode.Combine(base.GetHashCode(), ForecastId, Date, TemperatureC, SummaryId);
 		}
 	}
 }

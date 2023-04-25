@@ -5,9 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../../../DDD/DDD.csproj" />
     <ProjectReference Include="..\Domain\Domain.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="DDD.NETCore" Version="1.0.0-alpha.1" />
   </ItemGroup>
 </Project>

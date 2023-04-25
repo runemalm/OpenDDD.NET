@@ -1,13 +1,14 @@
 ﻿namespace Domain.Model
 {
-	public class DomainModelVersion : DDD.Domain.DomainModelVersion
+	public class DomainModelVersion : DDD.Domain.Model.DomainModelVersion
 	{
+		public const string LatestString = "1.0.0";
+
 		public DomainModelVersion(string dotString) : base(dotString) { }
-		public DomainModelVersion(int major, int minor, int build) : base(major, minor, build) { }
 
 		public static DomainModelVersion Latest()
 		{
-			return new DomainModelVersion("1.0.0");
+			return new DomainModelVersion(LatestString);
 		}
 	}
 }

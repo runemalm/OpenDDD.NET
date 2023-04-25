@@ -1,4 +1,5 @@
-﻿using DDD.Domain;
+﻿using DDD.Application;
+using DDD.Domain.Model.BuildingBlocks.Event;
 using IcDomainModelVersion = Interchange.Domain.Model.DomainModelVersion;
 
 namespace Interchange.Domain.Model.Forecast
@@ -8,7 +9,7 @@ namespace Interchange.Domain.Model.Forecast
         public string ForecastId { get; set; }
         public DateTime Date { get; set; }
         public int TemperatureC { get; set; }
-        public string Summary { get; set; }
+        public string SummaryId { get; set; }
         
         public IcWeatherPredicted() { }
 
@@ -20,7 +21,7 @@ namespace Interchange.Domain.Model.Forecast
             ForecastId = forecast.ForecastId;
             Date = forecast.Date;
             TemperatureC = forecast.TemperatureC;
-            Summary = forecast.Summary;
+            SummaryId = forecast.SummaryId;
         }
 
         // Equality
@@ -29,7 +30,7 @@ namespace Interchange.Domain.Model.Forecast
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return base.Equals(other) && ForecastId == other.ForecastId && Date.Equals(other.Date) && TemperatureC == other.TemperatureC && Summary == other.Summary;
+            return base.Equals(other) && ForecastId == other.ForecastId && Date.Equals(other.Date) && TemperatureC == other.TemperatureC && SummaryId == other.SummaryId;
         }
 
         public override bool Equals(object? obj)
@@ -42,17 +43,7 @@ namespace Interchange.Domain.Model.Forecast
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(base.GetHashCode(), ForecastId, Date, TemperatureC, Summary);
-        }
-
-        public static bool operator ==(IcWeatherPredicted? left, IcWeatherPredicted? right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(IcWeatherPredicted? left, IcWeatherPredicted? right)
-        {
-            return !Equals(left, right);
+            return HashCode.Combine(base.GetHashCode(), ForecastId, Date, TemperatureC, SummaryId);
         }
     }
 }

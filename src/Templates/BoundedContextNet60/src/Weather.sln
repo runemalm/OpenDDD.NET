@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interchange", "Interchange\Interchange.csproj", "{D6EDAD0E-8050-48F3-AE83-64242091FE07}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDD", "..\..\..\DDD\DDD.csproj", "{AD376727-1848-4C8E-88DA-9CDE6D8FEA4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,5 +45,9 @@ Global
 		{D6EDAD0E-8050-48F3-AE83-64242091FE07}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6EDAD0E-8050-48F3-AE83-64242091FE07}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6EDAD0E-8050-48F3-AE83-64242091FE07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD376727-1848-4C8E-88DA-9CDE6D8FEA4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD376727-1848-4C8E-88DA-9CDE6D8FEA4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD376727-1848-4C8E-88DA-9CDE6D8FEA4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD376727-1848-4C8E-88DA-9CDE6D8FEA4F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

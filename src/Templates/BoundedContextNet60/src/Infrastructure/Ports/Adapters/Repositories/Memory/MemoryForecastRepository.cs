@@ -1,4 +1,4 @@
-﻿using DDD.Infrastructure.Ports.Adapters.Memory;
+﻿using DDD.Infrastructure.Ports.Adapters.Repository.Memory;
 using Domain.Model.Forecast;
 
 namespace Infrastructure.Ports.Adapters.Repositories.Memory
