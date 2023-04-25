@@ -14,6 +14,7 @@ using DDD.Infrastructure.Ports.Repository;
 using DDD.Infrastructure.Services.Persistence;
 using DDD.NETCore.Hooks;
 using DDD.NETCore.Middleware;
+using Microsoft.Extensions.Hosting;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
@@ -29,7 +30,7 @@ namespace DDD.NETCore.Extensions
 			return app;
 		}
 		
-		public static IApplicationBuilder AddControl(this IApplicationBuilder app, IApplicationLifetime lifetime)
+		public static IApplicationBuilder AddControl(this IApplicationBuilder app, IHostApplicationLifetime lifetime)
 		{
 			lifetime.ApplicationStarted.Register(app.OnAppStarted);
 			lifetime.ApplicationStopping.Register(app.OnAppStopping);
