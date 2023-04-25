@@ -10,5 +10,6 @@ namespace DDD.Infrastructure.Ports.Email
 		bool HasSent(string toEmail, string? msgContains);
 		void Empty(CancellationToken ct);
 		Task EmptyAsync(CancellationToken ct);
+		void SetEnabled(bool enabled);
 	}
 }

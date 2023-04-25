@@ -268,6 +268,16 @@ namespace DDD.Tests
         // Email
         
         public IEmailPort EmailAdapter => TestServer.Host.Services.GetRequiredService<IEmailPort>();
+        
+        protected async Task DoWithEmailDisabled(Func<Task> actionsAsync)
+        {
+            DisableEmails();
+            await actionsAsync();
+            EnableEmails();
+        }
+        
+        protected void EnableEmails() => EmailAdapter.SetEnabled(true);
+        protected void DisableEmails() => EmailAdapter.SetEnabled(false);
 
         // Assertions
         

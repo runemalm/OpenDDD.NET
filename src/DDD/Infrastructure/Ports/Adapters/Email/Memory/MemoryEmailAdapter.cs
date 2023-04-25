@@ -16,6 +16,9 @@ namespace DDD.Infrastructure.Ports.Adapters.Email.Memory
 			string fromEmail, string fromName, string toEmail, string toName, 
 			string subject, string message, bool isHtml, CancellationToken ct)
 		{
+			if (!_enabled)
+				return Task.CompletedTask;
+
 			AddToLog(MemoryEmail.Create(toEmail, message));
 			return Task.CompletedTask;
 		}

@@ -13,11 +13,13 @@ namespace DDD.Infrastructure.Ports.Adapters.Email
 		protected readonly ISettings _settings;
 		protected readonly ILogger _logger;
 		private List<IEmail> _sent = new List<IEmail>();
+		protected bool _enabled;
 
 		public EmailAdapter(ISettings settings, ILogger logger)
 		{
 			_settings = settings;
 			_logger = logger;
+			_enabled = true;
 		}
 		
 		public abstract Task SendAsync(
@@ -45,6 +47,11 @@ namespace DDD.Infrastructure.Ports.Adapters.Email
 		{
 			_sent.Add(email);
 			return Task.CompletedTask;
+		}
+
+		public void SetEnabled(bool enabled)
+		{
+			_enabled = enabled;
 		}
 	}
 }
