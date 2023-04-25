@@ -1,9 +1,7 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using DDD.Application;
 using DDD.Domain.Model.BuildingBlocks.Aggregate;
 using DDD.Domain.Model.BuildingBlocks.Entity;
+using DDD.Domain.Model.Error;
 using DDD.Domain.Model.Validation;
 using XxxDomainModelVersion = Domain.Model.DomainModelVersion;
 
@@ -15,8 +13,6 @@ namespace Domain.Model.{{ class_name }}
         EntityId IAggregate.Id => {{ class_name }}Id;
         
         {{ property_expressions }}
-
-        public {{ class_name }}() {}
 
         // Public
 
@@ -53,7 +49,7 @@ namespace Domain.Model.{{ class_name }}
 
             if (errors.Any())
             {
-                throw new InvariantException(
+                throw DomainException.InvariantViolation(
                     $"{{ class_name }} is invalid with errors: " +
                     $"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
             }

@@ -1,4 +1,4 @@
-## OpenDDD .NET
+## DDD.NETCore
 
 This is a framework for domain-driven design (DDD) using C# and .NET.
 
@@ -52,14 +52,12 @@ If you find there's a specific technology you'd like to see as an adapter in the
 
 ### Supported .NET Versions
 
-- .NET 7 (not tested)
-- .NET 6.0
-- .NET 5.0 (not tested)
+- .NET 5 (not tested)
 - .NET Core 3.1
   
 ### Installation
 
-    dotnet add package OpenDDD.NET
+    dotnet add package DDD.NETCore
 
 ### Examples
 
@@ -179,7 +177,6 @@ namespace Main
             services.AddMonitoring(_settings);
             services.AddPersistence(_settings);
             services.AddPubSub(_settings);
-            services.AddSerialization(_settings);
 
             // App
             AddDomainServices(services);
@@ -187,6 +184,7 @@ namespace Main
             AddSecondaryAdapters(services);
             AddPrimaryAdapters(services);
             AddHooks(services);
+            AddSerialization(settings);
         }
 
         public void Configure(
@@ -355,21 +353,20 @@ See the table below for examples of when to increment which version.
 | Backward compatible new features          | Minor release | Increment the middle digit and reset last digit to zero            | 1.1.0           |
 | Changes that break backward compatibility | Major release | Increment the first digit and reset middle and last digits to zero | 2.0.0           |
 
-### Contribution:
+### Contribution
   
 If you want to contribute to the code base, create a pull request on the develop branch. Feel very free to reach out to us by email or via social media.
 
-### Roadmap v1.0.0:
+### Roadmap v1.0.0
 
 - [ ] GitHub README
 - [ ] NuGet README
 - [ ] Full Sample Project
 - [ ] Quickstart Guide
 - [ ] Full Test Coverage
-- [ ] Visual Studio Project Template .NET 7
-- [x] Visual Studio Project Template .NET 6.0
-- [ ] Visual Studio Project Template .NET 5.0
-- [ ] Visual Studio Project Template .NET Core 3.1
+- [ ] Visual Studio Project Templates
+- [ ] .NET 5 Support
+- [x] .NET Core 3.1 Support
 - [x] Start Context
 - [x] Stop Context
 - [x] Control
@@ -407,8 +404,10 @@ If you want to contribute to the code base, create a pull request on the develop
 - [x] Postgres Repository
 - [x] Memory Repository
 
-### Roadmap Future:
+### Roadmap Future
 
+- [ ] .NET 7 Support
+- [ ] .NET 6 Support
 - [ ] Monitoring
 - [ ] Tasks support
 - [ ] Migration of all aggregates not up-to-date
@@ -424,7 +423,13 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Admin Tool: Republish Dead Letters
 - [ ] Administration
 
-### Release Notes:
+### Release Notes
+
+**1.0.0-alpha.11** - 2023-04-25
+
+- Add support to disable emails in tests.
+- Fix code generation templates.
+- Replace IApplicationLifetime with IHostApplicationLifetime. (**breaking**)
 
 **1.0.0-alpha.10** - 2023-04-24
 

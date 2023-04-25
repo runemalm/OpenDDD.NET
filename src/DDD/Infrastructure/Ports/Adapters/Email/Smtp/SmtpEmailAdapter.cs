@@ -19,6 +19,9 @@ namespace DDD.Infrastructure.Ports.Adapters.Email.Smtp
 		public override async Task SendAsync(string fromEmail, string fromName, string toEmail, string toName, 
 			string subject, string message, bool isHtml, CancellationToken ct)
 		{
+			if (!_enabled)
+				return;
+
 			MailAddress from = new MailAddress(fromEmail, fromName, Encoding.UTF8);
 			MailAddress to = new MailAddress(toEmail, toName, Encoding.UTF8);
 			MailMessage msg = new MailMessage(from, to);
