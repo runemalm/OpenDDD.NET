@@ -359,13 +359,13 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Roadmap v1.0.0
 
-- [ ] GitHub README
-- [ ] NuGet README
+- [x] GitHub README
+- [x] NuGet README
 - [ ] Full Sample Project
 - [ ] Quickstart Guide
 - [ ] Full Test Coverage
 - [ ] Visual Studio Project Templates
-- [ ] .NET 5 Support
+- [x] .NET 5 Support
 - [x] .NET Core 3.1 Support
 - [x] Start Context
 - [x] Stop Context
@@ -422,8 +422,14 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Admin Tool: Inspect Dead Letter Queue
 - [ ] Admin Tool: Republish Dead Letters
 - [ ] Administration
+- [ ] And more...
 
 ### Release Notes
+
+**1.0.0-alpha.12** - 2023-04-XX
+
+- Add project template for .NET Core 3.1.
+- Add project template for .NET 5.
 
 **1.0.0-alpha.11** - 2023-04-25
 
