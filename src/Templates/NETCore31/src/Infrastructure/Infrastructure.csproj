@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <LangVersion>8</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\Interchange\Interchange.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DDD.NETCore" Version="1.0.0-alpha.11" />
+  </ItemGroup>
+</Project>

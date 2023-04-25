@@ -1,0 +1,61 @@
+---
+Actions:
+  - Name: GetAverageTemperature
+    Command:
+      Params: {}
+    Returns: int
+  - Name: PredictWeather
+    Command:
+      Params: {}
+    Returns: Forecast
+  - Name: NotifyWeatherPredicted
+    Command:
+      Params:
+        ForecastId: ForecastId
+        Date: DateTime
+        TemperatureC: int
+        SummaryId: SummaryId
+    Returns: null
+Adapters:
+  Http:
+    1.0.0:
+      Endpoints:
+        - Name: GetAverageTemperature
+          Command:
+            Params: {}
+          SwaggerDocDefs:
+            - Public
+            - Protected
+          DocSection: Forecasting
+          DocDesc: Get the average temperatures of all predictions.
+          DocReturns: Returns the average temperature.
+          Method: Get
+          Returns: int
+        - Name: PredictWeather
+          Command:
+            Params: {}
+          SwaggerDocDefs:
+            - Public
+          DocSection: Forecasting
+          DocDesc: Predict the weather for tomorrow.
+          DocReturns: Returns the forecast of tomorrow.
+          Method: Get
+          Returns: ForecastV1
+    CommandTranslators:
+      - Name: GetAverageTemperature
+      - Name: PredictWeather
+    BuildingBlockTranslators:
+      - Name: Forecast
+      - Name: Summary
+Aggregates:
+  - Name: Forecast
+    Properties:
+      ForecastId: ForecastId
+      Date: DateTime
+      TemperatureC: int
+      TemperatureF: int
+      SummaryId: SummaryId
+  - Name: Summary
+    Properties:
+      SummaryId: SummaryId
+      Value: string
