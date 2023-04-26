@@ -136,3 +136,10 @@ Describe how:
 - How it's separated into "host" and "application".
 - How it's booted.
 - How this relates to OpenDDD startup sequence.
+
+
+###################
+Interchange Context
+###################
+
+Describe this...

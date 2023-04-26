@@ -2,7 +2,9 @@
 Version history
 ###############
 
-.. note:: We are still in alpha stage. Subscribe to the github repository to get notifications when we move into beta and release candidate phases.
+.. note:: We are still in alpha stage.
+
+.. tip:: Subscribe to the github repository to get notifications when we move into beta and rc phases!
 
 **1.0.0-alpha.10** - 2023-04-xx
 
