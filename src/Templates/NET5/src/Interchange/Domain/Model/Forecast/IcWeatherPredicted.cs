@@ -1,7 +1,7 @@
 ﻿using System;
 using DDD.Application;
 using DDD.Domain.Model.BuildingBlocks.Event;
-using IcDomainModelVersion = Interchange.Domain.Model.DomainModelVersion;
+using ContextDomainModelVersion = Interchange.Domain.Model.DomainModelVersion;
 
 namespace Interchange.Domain.Model.Forecast
 {
@@ -14,10 +14,10 @@ namespace Interchange.Domain.Model.Forecast
         
         public IcWeatherPredicted() { }
 
-        public IcWeatherPredicted(ActionId actionId) : base("WeatherPredicted", IcDomainModelVersion.Latest(), "Weather", actionId) { }
+        public IcWeatherPredicted(ActionId actionId) : base("WeatherPredicted", ContextDomainModelVersion.Latest(), "Weather", actionId) { }
 
         public IcWeatherPredicted(IcForecast forecast, ActionId actionId) 
-            : base("WeatherPredicted", IcDomainModelVersion.Latest(), "Interchange", actionId)
+            : base("WeatherPredicted", ContextDomainModelVersion.Latest(), "Interchange", actionId)
         {
             ForecastId = forecast.ForecastId;
             Date = forecast.Date;
@@ -27,14 +27,14 @@ namespace Interchange.Domain.Model.Forecast
 
         // Equality
 
-        public bool Equals(IcWeatherPredicted? other)
+        public bool Equals(IcWeatherPredicted other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return base.Equals(other) && ForecastId == other.ForecastId && Date.Equals(other.Date) && TemperatureC == other.TemperatureC && SummaryId == other.SummaryId;
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
