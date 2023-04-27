@@ -16,6 +16,7 @@ using DDD.Application.Settings.Persistence;
 using DDD.Application.Settings.PubSub;
 using DDD.Domain.Model.Auth;
 using DDD.Domain.Model.Error;
+using DDD.Domain.Services;
 using DDD.Domain.Services.Auth;
 using DDD.Infrastructure.Ports.Adapters.Auth.IAM.Negative;
 using DDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam;
@@ -49,6 +50,13 @@ namespace DDD.NETCore.Extensions
 		{
 			services.AddTransient(typeof(IEventListener), typeof(TImplementation));
 			services.AddTransient<TImplementation>();
+			return services;
+		}
+		
+		public static IServiceCollection AddDomainService<TPort, TAdapter>(this IServiceCollection services)
+			where TAdapter : class, IDomainService
+		{
+			services.AddTransient(typeof(TPort), typeof(TAdapter));
 			return services;
 		}
 		
