@@ -1,32 +1,18 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
-using DDD.Domain.Services.Auth;
-using DDD.Infrastructure.Ports.PubSub;
-using DDD.Infrastructure.Services.Persistence;
+using DDD.Application.Error;
 
 namespace DDD.Application
 {
 	public abstract class Action<TCommand, TReturns> : IAction<TCommand, TReturns>
 		where TCommand : ICommand
 	{
-		protected readonly IAuthDomainService _authDomainService;
-		protected readonly IDomainPublisher _domainPublisher;
-		protected readonly IInterchangePublisher _interchangePublisher;
-		private readonly IOutbox _outbox;
-		private readonly IPersistenceService _persistenceService;
+		private readonly ITransactionalDependencies _trxDeps;
 
-		public Action(
-			IAuthDomainService authDomainService,
-			IDomainPublisher domainPublisher,
-			IInterchangePublisher interchangePublisher,
-			IOutbox outbox,
-			IPersistenceService persistenceService)
+		public Action(ITransactionalDependencies transactionalDependencies)
 		{
-			_authDomainService = authDomainService;
-			_domainPublisher = domainPublisher;
-			_interchangePublisher = interchangePublisher;
-			_outbox = outbox;
-			_persistenceService = persistenceService;
+			_trxDeps = transactionalDependencies;
 		}
 
 		public async Task<TReturns> ExecuteAsync(
@@ -39,16 +25,22 @@ namespace DDD.Application
 
 			try
 			{
-				await _persistenceService.StartTransactionAsync(actionId);
+				await _trxDeps.PersistenceService.StartTransactionAsync(actionId);
 				var result = await ExecuteAsync(command, actionId, ct);
 				await SaveOutboxAsync(actionId, ct);
-				await _persistenceService.CommitTransactionAsync(actionId);
+				await _trxDeps.PersistenceService.CommitTransactionAsync(actionId);
 				return result;
+			}
+			catch (Exception e)
+			{
+				if (_trxDeps == null)
+					throw TransactionalException.NotRegistered(e);
+				throw;
 			}
 			finally
 			{
 				// Always release connection
-				await _persistenceService.ReleaseConnectionAsync(actionId);
+				await _trxDeps.PersistenceService.ReleaseConnectionAsync(actionId);
 			}
 		}
 		
@@ -58,10 +50,10 @@ namespace DDD.Application
 
 		private async Task SaveOutboxAsync(ActionId actionId, CancellationToken ct)
 		{
-			var domainEvents = await _domainPublisher.GetPublishedAsync(actionId);
-			var integrationEvents = await _interchangePublisher.GetPublishedAsync(actionId);
-			await _outbox.AddAllAsync(actionId, domainEvents, ct);
-			await _outbox.AddAllAsync(actionId, integrationEvents, ct);
+			var domainEvents = await _trxDeps.DomainPublisher.GetPublishedAsync(actionId);
+			var integrationEvents = await _trxDeps.InterchangePublisher.GetPublishedAsync(actionId);
+			await _trxDeps.Outbox.AddAllAsync(actionId, domainEvents, ct);
+			await _trxDeps.Outbox.AddAllAsync(actionId, integrationEvents, ct);
 		}
 
 		// Validation

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using DDD.Application;
 using DDD.Application.Error;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -156,6 +157,12 @@ namespace DDD.NETCore.Extensions
 				services.AddTransient<IPublisherService, PublisherService>();
 				services.AddHostedService<PublisherHostedService>();
 			}
+			return services;
+		}
+		
+		public static IServiceCollection AddTransactional(this IServiceCollection services, ISettings settings)
+		{
+			services.AddTransient<ITransactionalDependencies, TransactionalDependencies>();
 			return services;
 		}
 

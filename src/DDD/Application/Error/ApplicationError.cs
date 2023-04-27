@@ -42,6 +42,19 @@ namespace DDD.Application.Error
         
         public static IApplicationError Startup_Failed(string reason) => Create(Startup_Failed_Code, String.Format(Startup_Failed_Msg, reason), String.Format(Startup_Failed_UsrMsg, reason));
         
+        // Transactional errors
+        
+        public const int Transactional_Failed_Code = 151;
+        public const string Transactional_Failed_Msg = "Transactional failed with error: '{0}'.";
+        public const string Transactional_Failed_UsrMsg = "The system has a bug. Application failed to perform action transactionally with error: '{0}'.";
+        
+        public const int Transactional_NotRegistered_Code = 152;
+        public const string Transactional_NotRegistered_Msg = "Transactional failed because the ITransactional hasn't been registered.";
+        public const string Transactional_NotRegistered_UsrMsg = "The system has a bug. Application failed to perform action because it hasn't been configured with transactional correctly.";
+        
+        public static IApplicationError Transactional_Failed(string reason) => Create(Transactional_Failed_Code, String.Format(Transactional_Failed_Msg, reason), String.Format(Transactional_Failed_UsrMsg, reason));
+        public static IApplicationError Transactional_NotRegistered() => Create(Transactional_NotRegistered_Code, String.Format(Transactional_NotRegistered_Msg), String.Format(Transactional_NotRegistered_UsrMsg));
+        
         // Settings errors
 		
         public const int Settings_Invalid_Code = 171;
