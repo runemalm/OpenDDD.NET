@@ -40,8 +40,6 @@ We will now cover all the ``building blocks`` of the framework:
 * :ref:`Converters`
 * :ref:`Migrators`
 * :ref:`Unit Tests`
-* :ref:`The Action base class`
-* :ref:`The ActionDependencies class`
 
 
 Env files
@@ -166,13 +164,328 @@ You register your domain model version with the DI container like this::
 Program.cs
 ----------
 
-Describe this..
+Use the ``AddXxx()`` extension methods of the framework to properly configure the .NET host and application.
+
+An example Program.cs file::
+
+    using Microsoft.AspNetCore;
+    using Microsoft.AspNetCore.Hosting;
+    using DDD.NETCore.Extensions;
+    using Main.Extensions;
+
+    namespace Main
+    {
+        public class Program
+        {
+            public static void Main(string[] args)
+                => CreateWebHostBuilder(args).Build().Run();
+            
+            public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+                WebHost.CreateDefaultBuilder(args)
+                    .UseKestrel()
+                    .UseStartup<Startup>()
+                    .AddEnvFile("ENV_FILE", "CFG_")
+                    .AddSettings()
+                    .AddCustomSettings()
+                    .AddLogging();
+        }
+    }
 
 
 Startup.cs
 ----------
 
-Describe this..
+Since part of the design philosophy behind this framwork is to follow the hexagonal architecture, and to make this intent clear through the structure of the code, the ``Startup.cs`` file is written according to a specific convention.
+
+See the example below and create your Startup.cs file.
+
+An example Startup.cs file::
+
+    using System.Reflection;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.AspNetCore.Builder;
+    using Microsoft.AspNetCore.Hosting;
+    using DDD.Application.Settings;
+    using DDD.Logging;
+    using DDD.Application.Settings.Persistence;
+    using DDD.NETCore.Extensions;
+    using DDD.Domain.Model.Auth;
+    using DDD.Domain.Services.Auth;
+    using DDD.NETCore.Hooks;
+    using Main.Extensions;
+    using Main.NETCore.Hooks;
+    using Application.Actions;
+    using Application.Actions.Commands;
+    using Application.Settings;
+    using Domain.Model.Assignment;
+    using Domain.Model.Domain;
+    using Domain.Model.Permission;
+    using Domain.Model.Realm;
+    using Domain.Model.Role;
+    using Domain.Model.User;
+    using Infrastructure.Ports.Adapters.Domain;
+    using Infrastructure.Ports.Adapters.Http.v2;
+    using Infrastructure.Ports.Adapters.Repository.Memory;
+    using Infrastructure.Ports.Adapters.Repository.Migration;
+    using Infrastructure.Ports.Adapters.Repository.Postgres;
+    using Microsoft.Extensions.Hosting;
+    using AuthDomainService = Domain.Model.Auth.AuthDomainService;
+    using HttpCommonTranslation = Infrastructure.Ports.Adapters.Http.Common.Translation;
+
+    namespace Main
+    {
+        public class Startup
+        {
+            private ISettings _settings;
+            private ICustomSettings _customSettings;
+            private ILogger _logger;
+            
+            public Startup(
+                ISettings settings,
+                ICustomSettings customSettings,
+                ILogger logger)
+            {
+                _settings = settings;
+                _customSettings = customSettings;
+                _logger = logger;
+            }
+            
+            public void ConfigureServices(IServiceCollection services)
+            {
+                // DDD.NETCore
+                services.AddMonitoring(_settings);
+                services.AddPersistence(_settings);
+                services.AddPubSub(_settings);
+
+                // App
+                AddDomainServices(services);
+                AddApplicationService(services);
+                AddSecondaryAdapters(services);
+                AddPrimaryAdapters(services);
+                AddSerialization(services);
+                AddHooks(services);
+            }
+
+            public void Configure(
+                IApplicationBuilder app, 
+                IWebHostEnvironment env,
+                IHostApplicationLifetime lifetime)
+            {
+                // DDD.NETCore
+                app.AddAccessControl(_settings);
+                app.AddHttpAdapter(_settings);
+                app.AddControl(lifetime);
+            }
+
+            // App
+            
+            private void AddDomainServices(IServiceCollection services)
+            {
+                services.AddScoped<ICredentials, Credentials>();
+                services.AddTransient<IAssignmentDomainService, AssignmentDomainService>();
+                services.AddTransient<IAuthDomainService, AuthDomainService>();
+                services.AddTransient<IRealmDomainService, RealmDomainService>();
+                services.AddTransient<IRoleDomainService, RoleDomainService>();
+            }
+
+            private void AddApplicationService(IServiceCollection services)
+            {
+                AddActions(services);
+            }
+            
+            private void AddSecondaryAdapters(IServiceCollection services)
+            {
+                services.AddIdpAdapters();
+                services.AddEmailAdapter(_settings);
+                AddRepositories(services);
+            }
+
+            private void AddPrimaryAdapters(IServiceCollection services)
+            {
+                AddHttpAdapters(services);
+                AddInterchangeEventAdapters(services);
+                AddDomainEventAdapters(services);
+            }
+
+            private void AddHooks(IServiceCollection services)
+            {
+                services.AddTransient<IOnBeforePrimaryAdaptersStartedHook, OnBeforePrimaryAdaptersStartedHook>();
+            }
+
+            private void AddSerialization(IServiceCollection services)
+            {
+                services.AddSerialization(_settings);
+            }
+
+            private void AddActions(IServiceCollection services)
+            {
+                services.AddTransient<ActionDependencies>();
+                
+                services.AddAction<AddPermissionToRoleAction, AddPermissionToRoleCommand>();
+                services.AddAction<AddUserToRealmAction, AddUserToRealmCommand>();
+                services.AddAction<AssignRoleAction, AssignRoleCommand>();
+                services.AddAction<AuthenticateAction, AuthenticateCommand>();
+                services.AddAction<CreateAccessTokenAction, CreateAccessTokenCommand>();
+                services.AddAction<CreateAccountAction, CreateAccountCommand>();
+                services.AddAction<CreateDomainAction, CreateDomainCommand>();
+                services.AddAction<CreatePermissionAction, CreatePermissionCommand>();
+                services.AddAction<CreateRealmAction, CreateRealmCommand>();
+                services.AddAction<CreateRoleAction, CreateRoleCommand>();
+                services.AddAction<DeleteDomainAction, DeleteDomainCommand>();
+                services.AddAction<DeletePermissionAction, DeletePermissionCommand>();
+                services.AddAction<DeleteRealmAction, DeleteRealmCommand>();
+                services.AddAction<DeleteRoleAction, DeleteRoleCommand>();
+                services.AddAction<EditDomainAction, EditDomainCommand>();
+                services.AddAction<EditPermissionAction, EditPermissionCommand>();
+                services.AddAction<EditRealmAction, EditRealmCommand>();
+                services.AddAction<EditRoleAction, EditRoleCommand>();
+                services.AddAction<EndSessionAction, EndSessionCommand>();
+                services.AddAction<ForgetPasswordAction, ForgetPasswordCommand>();
+                services.AddAction<GetAuthenticationMethodsAction, GetAuthenticationMethodsCommand>();
+                services.AddAction<GetDomainAction, GetDomainCommand>();
+                services.AddAction<GetDomainsAction, GetDomainsCommand>();
+                services.AddAction<GetPermissionAction, GetPermissionCommand>();
+                services.AddAction<GetPermissionsAction, GetPermissionsCommand>();
+                services.AddAction<GetPermissionsGrantedAction, GetPermissionsGrantedCommand>();
+                services.AddAction<GetRealmAction, GetRealmCommand>();
+                services.AddAction<GetRealmsAction, GetRealmsCommand>();
+                services.AddAction<GetRoleAction, GetRoleCommand>();
+                services.AddAction<GetRolesAction, GetRolesCommand>();
+                services.AddAction<GetUserAction, GetUserCommand>();
+                services.AddAction<GetRoleAssignmentsAction, GetRoleAssignmentsCommand>();
+                services.AddAction<GetUsersAction, GetUsersCommand>();
+                services.AddAction<AssurePermissionsAction, AssurePermissionsCommand>();
+                services.AddAction<RefreshAccessTokenAction, RefreshAccessTokenCommand>();
+                services.AddAction<RemovePermissionFromRoleAction, RemovePermissionFromRoleCommand>();
+                services.AddAction<RemoveUserFromRealmAction, RemoveUserFromRealmCommand>();
+                services.AddAction<ResetPasswordAction, ResetPasswordCommand>();
+                services.AddAction<SendEmailVerificationEmailAction, SendEmailVerificationEmailCommand>();
+                services.AddAction<SetRolePermissionsAction, SetRolePermissionsCommand>();
+                services.AddAction<UnassignRoleAction, UnassignRoleCommand>();
+                services.AddAction<VerifyEmailAction, VerifyEmailCommand>();
+            }
+
+            private void AddHttpAdapters(IServiceCollection services)
+            {
+                var mvcCoreBuilder = services.AddHttpAdapter(_settings);
+                AddHttpAdapterCommon(services);
+                AddHttpAdapterV2(services, mvcCoreBuilder);
+            }
+
+            private void AddHttpAdapterV2(IServiceCollection services, IMvcCoreBuilder mvcCoreBuilder)
+            {
+                mvcCoreBuilder.AddApplicationPart(Assembly.GetAssembly(typeof(HttpAdapter)));
+            }
+            
+            private void AddHttpAdapterCommon(IServiceCollection services)
+            {
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AddPermissionToRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AddUserToRealmCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AssignRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AuthenticateCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateAccessTokenCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateAccountCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateDomainCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreatePermissionCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateRealmCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeleteDomainCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeletePermissionCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeleteRealmCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeleteRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditDomainCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditPermissionCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditRealmCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EndSessionCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.ForgetPasswordCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetAuthenticationMethodsCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetDomainCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetDomainsCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetPermissionCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetPermissionsCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetPermissionsGrantedCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRealmCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRealmsCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRolesCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetUserCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRoleAssignmentsCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetUsersCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AssurePermissionsCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.RefreshAccessTokenCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.RemovePermissionFromRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.RemoveUserFromRealmCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.ResetPasswordCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.SetRolePermissionsCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.UnassignRoleCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.VerifyEmailCommandTranslator>();
+
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AccessTokenTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AssignmentTypeTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AuthenticationMethodsTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AuthMethodTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AuthorizationCodeTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AssignmentIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AssignmentTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.EmailTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.OidcMethodTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.OidcResponseModeTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.DomainIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.DomainTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.EmailVerificationCodeTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.PermissionIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.PermissionTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RealmIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RealmTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ResourceIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ResourceGroupIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RoleIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RoleTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.UserIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.UserTranslator>();
+            }
+            
+            private void AddInterchangeEventAdapters(IServiceCollection services)
+            {
+                
+            }
+            
+            private void AddDomainEventAdapters(IServiceCollection services)
+            {
+                services.AddListener<AccountCreatedListener>();
+            }
+            
+            private void AddRepositories(IServiceCollection services)
+            {
+                if (_settings.Persistence.Provider == PersistenceProvider.Memory)
+                {
+                    services.AddRepository<IAssignmentRepository, MemoryAssignmentRepository>();
+                    services.AddRepository<IDomainRepository, MemoryDomainRepository>();
+                    services.AddRepository<IPermissionRepository, MemoryPermissionRepository>();
+                    services.AddRepository<IRealmRepository, MemoryRealmRepository>();
+                    services.AddRepository<IRoleRepository, MemoryRoleRepository>();
+                    services.AddRepository<IUserRepository, MemoryUserRepository>();
+                }
+                else if (_settings.Persistence.Provider == PersistenceProvider.Postgres)
+                {
+                    services.AddRepository<IAssignmentRepository, PostgresAssignmentRepository>();
+                    services.AddRepository<IDomainRepository, PostgresDomainRepository>();
+                    services.AddRepository<IPermissionRepository, PostgresPermissionRepository>();
+                    services.AddRepository<IRealmRepository, PostgresRealmRepository>();
+                    services.AddRepository<IRoleRepository, PostgresRoleRepository>();
+                    services.AddRepository<IUserRepository, PostgresUserRepository>();
+                }
+
+                services.AddMigrator<AssignmentMigrator>();
+                services.AddMigrator<DomainMigrator>();
+                services.AddMigrator<PermissionMigrator>();
+                services.AddMigrator<RealmMigrator>();
+                services.AddMigrator<RoleMigrator>();
+                services.AddMigrator<UserMigrator>();
+            }
+        }
+    }
 
 
 Commands
@@ -1104,6 +1417,10 @@ Whenver you bump your domain model version, you need to create a migration for a
 
 Subclass the ``Migrator`` base class and implement the ``FromVX_X_X()`` method for all your entities affected by the change.
 
+Domain model versioning is a first-class citizen in this DDD framework. Thus, migration should be as easy as possible so that the domain model can be evolved continuously with minimal effort.
+
+.. note:: Entities will migrate on-the-fly next time they are fetched and saved by the repositories.
+
 An example migrator::
 
     using System.Collections.Generic;
@@ -1156,19 +1473,541 @@ You register your migrator classes with the DI container like this::
 Unit Tests
 ----------
 
-Describe this..
+To achieve full test coverage of your bounded context, you need to implement a full suite of unit tests for each of your domain model actions.
+
+.. note:: You need to create your own action unit tests base class. See the :ref:`section below <The ActionUnitTests class>` on how to do this.
+
+Subclass ``ActionUnitTests`` for each of your action unit test suites. Then add your test methods to cover all paths.
+
+The test methods are based on the standard ``xUnit`` testing model, so you will be familiar with the ``Arrange``, ``Act`` and ``Assert`` sections.
+
+.. warning:: Remember that the unit tests need to reflect the domain model and ubiquitous language.
+
+An example action unit tests suite::
+
+    using Xunit;
+    using Application.Actions.Commands;
+    using Domain.Model.User;
+
+    namespace Tests.Actions;
+
+    public class VerifyEmailTests : ActionUnitTests
+    {
+        public VerifyEmailTests()
+        {
+            Configure();
+            EmptyDb();
+        }
+        
+        [Fact]
+        public async Task TestSuccess_EmailVerified()
+        {
+            // Arrange
+            await EnsureRootUserAsync();
+            await EnsureIamDomainAsync();
+            await EnsureIamPermissionsAsync();
+            
+            await CreateAccount(email: "test.testsson@poweriam.com");
+            
+            // Act
+            var command = new VerifyEmailCommand { Code = User.EmailVerificationCode };
+            await VerifyEmailAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+            
+            await Refresh(User);
+            
+            // Assert
+            AssertTrue(User.IsEmailVerified());
+            AssertNow(User.EmailVerifiedAt);
+        }
+        
+        [Fact]
+        public async Task TestFail_UserHasNoEmail()
+        {
+            // Arrange
+            await EnsureRootUserAsync();
+            await EnsureIamDomainAsync();
+            await EnsureIamPermissionsAsync();
+
+            await CreateAccount(email: "test.testsson@poweriam.com");
+            
+            // ..hack
+            await Refresh(User);
+            User.Email = null;
+            await UserRepository.SaveAsync(User, ActionId, CancellationToken.None);
+
+            // Act & Assert
+            var command = new VerifyEmailCommand()
+            {
+                Code = User.EmailVerificationCode
+            };
+            
+            await AssertFailure(VerifyEmailException.UserHasNoEmail(), VerifyEmailAction.ExecuteAsync(command, ActionId, CancellationToken.None));
+        }
+        
+        [Fact]
+        public async Task TestFail_AlreadyVerified()
+        {
+            // Arrange
+            await EnsureRootUserAsync();
+            await EnsureIamDomainAsync();
+            await EnsureIamPermissionsAsync();
+
+            await CreateAccount(email: "test.testsson@poweriam.com");
+            
+            var command = new VerifyEmailCommand()
+            {
+                Code = User.EmailVerificationCode
+            };
+
+            await VerifyEmailAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+            
+            // ..hack
+            await Refresh(User);
+            User.EmailVerificationCode = command.Code;
+            await UserRepository.SaveAsync(User, ActionId, CancellationToken.None);
+
+            // Act & Assert
+            await AssertFailure(VerifyEmailException.AlreadyVerified(), VerifyEmailAction.ExecuteAsync(command, ActionId, CancellationToken.None));
+        }
+        
+        [Fact]
+        public async Task TestFail_NotRequested()
+        {
+            // Arrange
+            await EnsureRootUserAsync();
+            await EnsureIamDomainAsync();
+            await EnsureIamPermissionsAsync();
+
+            await CreateAccount(email: "test.testsson@poweriam.com");
+            
+            // ..hack
+            await Refresh(User);
+            User.EmailVerificationRequestedAt = null;
+            await UserRepository.SaveAsync(User, ActionId, CancellationToken.None);
+
+            // Act & Assert
+            var command = new VerifyEmailCommand()
+            {
+                Code = User.EmailVerificationCode
+            };
+            
+            await AssertFailure(VerifyEmailException.NotRequested(), VerifyEmailAction.ExecuteAsync(command, ActionId, CancellationToken.None));
+        }
+        
+        [Theory]
+        [InlineData(null)]
+        [InlineData("some-invalid-code")]
+        public async Task TestFail_InvalidCode(string? code)
+        {
+            // Arrange
+            await EnsureRootUserAsync();
+            await EnsureIamDomainAsync();
+            await EnsureIamPermissionsAsync();
+
+            await CreateAccount(email: "test.testsson@poweriam.com");
+
+            // Act & Assert
+            var command = new VerifyEmailCommand()
+            {
+                Code = EmailVerificationCode.Create(code)
+            };
+            
+            await AssertFailure(VerifyEmailException.InvalidCode(), VerifyEmailAction.ExecuteAsync(command, ActionId, CancellationToken.None));
+        }
+        
+        [Fact]
+        public async Task TestFail_ExpiredCode()
+        {
+            // Arrange
+            await EnsureRootUserAsync();
+            await EnsureIamDomainAsync();
+            await EnsureIamPermissionsAsync();
+
+            await CreateAccount(email: "test.testsson@poweriam.com");
+
+            User.EmailVerificationCodeCreatedAt = DateTime.MinValue;
+            await UserRepository.SaveAsync(User, ActionId, CancellationToken.None);
+
+            // Act & Assert
+            var command = new VerifyEmailCommand()
+            {
+                Code = User.EmailVerificationCode
+            };
+            
+            await AssertFailure(VerifyEmailException.CodeExpired(), VerifyEmailAction.ExecuteAsync(command, ActionId, CancellationToken.None));
+        }
+    }
 
 
-The Action base class
----------------------
+The ActionUnitTests class
+-------------------------
 
-Describe this..
+The purpose of your ``ActionUnitTests`` class is to provide a set of convenience methods and properties for your action unit tests to use.
 
+The design philosophy of this framework states that the unit tests should be easy to read, understand and maintain. Furthermore they need to reflect and express the domain model in a clear manner.
 
-The ActionDependencies class
-----------------------------
+To achive all of the above, your subclass will contain the following:
 
-Describe this..
+- Action excecution methods.
+- State properties.
+- ``CreateWebHostBuilder()`` (used to setup the TestServer).
+- ``EmptyAggregateRepositories()`` (used to empty your repositories before each test)
+- Dependency properties.
+- Assertion methods.
+
+Subclass ``ActionUnitTests`` to create your own base class for the unit tests.
+
+.. note:: This is a very concise description of the relatively big ``ActionUnitTests`` concept. Later we'll add more documentation and guides on the topic of testing but for now you should be able to look at the example code and get started with your action testing.
+
+An example action unit tests class::
+
+    using Microsoft.AspNetCore;
+    using Microsoft.AspNetCore.Hosting;
+    using Microsoft.Extensions.DependencyInjection;
+    using Xunit;
+    using DDD.NETCore.Extensions;
+    using DDD.Domain.Model.Auth;
+    using DDD.Domain.Services.Auth;
+    using DDD.NETCore.Hooks;
+    using Main;
+    using Main.Extensions;
+    using Main.NETCore.Hooks;
+    using Application.Actions;
+    using Application.Actions.Commands;
+    using Application.Settings;
+    using Domain.Model.Assignment;
+    using Domain.Model.Domain;
+    using Domain.Model.Permission;
+    using Domain.Model.Realm;
+    using Domain.Model.Role;
+    using Domain.Model.User;
+    using DddActionUnitTests = DDD.Tests.ActionUnitTests;
+
+    namespace Tests
+    {
+        public class ActionUnitTests : DddActionUnitTests
+        {
+            protected global::Domain.Model.Domain.Domain Domain => Domains.First();
+            protected List<global::Domain.Model.Domain.Domain> Domains = new();
+            protected Permission Permission => Permissions.First();
+            protected List<Permission> Permissions = new();
+            protected Realm Realm => Realms.First();
+            protected List<Realm> Realms = new();
+            protected Role Role => Roles.First();
+            protected List<Role> Roles = new();
+            protected AccessToken Token;
+            protected User User => Users.First();
+            protected List<User> Users = new();
+
+            // Setup
+
+            protected override IWebHostBuilder CreateWebHostBuilder()
+            {
+                var builder = WebHost.CreateDefaultBuilder()
+                    .UseKestrel()
+                    .UseStartup<Startup>()
+                    .AddEnvFile($"ENV_FILE_{ActionName}", $"CFG_{ActionName}_", "", false)
+                    .AddSettings()
+                    .AddCustomSettings()
+                    .AddLogging();
+                return builder;
+            }
+
+            protected override void EmptyAggregateRepositories(CancellationToken ct)
+            {
+                AssignmentRepository.DeleteAll(ActionId, CancellationToken.None);
+                DomainRepository.DeleteAll(ActionId, CancellationToken.None);
+                PermissionRepository.DeleteAll(ActionId, CancellationToken.None);
+                RealmRepository.DeleteAll(ActionId, CancellationToken.None);
+                RoleRepository.DeleteAll(ActionId, CancellationToken.None);
+                UserRepository.DeleteAll(ActionId, CancellationToken.None);
+            }
+
+            protected override async Task EmptyAggregateRepositoriesAsync(CancellationToken ct)
+            {
+                await AssignmentRepository.DeleteAllAsync(ActionId, CancellationToken.None);
+                await DomainRepository.DeleteAllAsync(ActionId, CancellationToken.None);
+                await PermissionRepository.DeleteAllAsync(ActionId, CancellationToken.None);
+                await RealmRepository.DeleteAllAsync(ActionId, CancellationToken.None);
+                await RoleRepository.DeleteAllAsync(ActionId, CancellationToken.None);
+                await UserRepository.DeleteAllAsync(ActionId, CancellationToken.None);
+            }
+            
+            protected Task EnsureRootUserAsync()
+                => new EnsureRootUser(CustomSettings, UserRepository).ExecuteAsync();
+            
+            protected Task EnsureIamDomainAsync()
+                => new EnsureIamDomain(DomainRepository).ExecuteAsync();
+            
+            protected Task EnsureIamPermissionsAsync()
+                => new EnsureIamPermissions(CustomSettings, UserRepository, DomainRepository, PermissionRepository).ExecuteAsync();
+
+            // Do as actor
+
+            protected async Task DoAsRoot(Func<Task> actionsAsync)
+            {
+                await AuthenticateRootUser();
+                await actionsAsync();
+                Credentials.JwtToken = null;
+            }
+            
+            protected async Task DoAsUser(Func<Task> actionsAsync)
+            {
+                await AuthenticateUser();
+                await actionsAsync();
+                Credentials.JwtToken = null;
+            }
+        
+            // Actions
+
+            protected AddPermissionToRoleAction AddPermissionToRoleAction => TestServer.Host.Services.GetRequiredService<AddPermissionToRoleAction>();
+            protected AddUserToRealmAction AddUserToRealmAction => TestServer.Host.Services.GetRequiredService<AddUserToRealmAction>();
+            protected AssignRoleAction AssignRoleAction => TestServer.Host.Services.GetRequiredService<AssignRoleAction>();
+            protected AuthenticateAction AuthenticateAction => TestServer.Host.Services.GetRequiredService<AuthenticateAction>();
+            protected CreateAccountAction CreateAccountAction => TestServer.Host.Services.GetRequiredService<CreateAccountAction>();
+            protected CreateDomainAction CreateDomainAction => TestServer.Host.Services.GetRequiredService<CreateDomainAction>();
+            protected CreatePermissionAction CreatePermissionAction => TestServer.Host.Services.GetRequiredService<CreatePermissionAction>();
+            protected CreateRealmAction CreateRealmAction => TestServer.Host.Services.GetRequiredService<CreateRealmAction>();
+            protected CreateRoleAction CreateRoleAction => TestServer.Host.Services.GetRequiredService<CreateRoleAction>();
+            protected DeleteDomainAction DeleteDomainAction => TestServer.Host.Services.GetRequiredService<DeleteDomainAction>();
+            protected ForgetPasswordAction ForgetPasswordAction => TestServer.Host.Services.GetRequiredService<ForgetPasswordAction>();
+            protected GetDomainsAction GetDomainsAction => TestServer.Host.Services.GetRequiredService<GetDomainsAction>();
+            protected GetPermissionsGrantedAction GetPermissionsGrantedAction => TestServer.Host.Services.GetRequiredService<GetPermissionsGrantedAction>();
+            protected GetRoleAssignmentsAction GetRoleAssignmentsAction => TestServer.Host.Services.GetRequiredService<GetRoleAssignmentsAction>();
+            protected SendEmailVerificationEmailAction SendEmailVerificationEmailAction => TestServer.Host.Services.GetRequiredService<SendEmailVerificationEmailAction>();
+            protected VerifyEmailAction VerifyEmailAction => TestServer.Host.Services.GetRequiredService<VerifyEmailAction>();
+
+            // Auth
+            
+            protected IAuthDomainService AuthDomainService => TestServer.Host.Services.GetRequiredService<IAuthDomainService>();
+
+            // Credentials
+            
+            protected ICredentials Credentials => TestServer.Host.Services.GetRequiredService<ICredentials>();
+            
+            // Settings
+            
+            protected ICustomSettings CustomSettings => TestServer.Host.Services.GetRequiredService<ICustomSettings>();
+        
+            // Domains
+
+            protected Task<global::Domain.Model.Domain.Domain> GetIamDomainAsync() 
+                => DomainRepository.GetWithNameInWorldAsync("IAM", ActionId, CancellationToken.None);
+            
+            // Permissions
+            
+            protected async Task<Permission> GetIamPermissionAsync(string name) 
+                => (await PermissionRepository.GetWithNameInWorldAsync(name, (await GetIamDomainAsync()).DomainId, ActionId, CancellationToken.None))!;
+            
+            // Hooks
+            
+            protected IOnBeforePrimaryAdaptersStartedHook OnBeforePrimaryAdaptersStartedHook => TestServer.Host.Services.GetRequiredService<IOnBeforePrimaryAdaptersStartedHook>();
+
+            // Repositories
+            
+            protected IAssignmentRepository AssignmentRepository => TestServer.Host.Services.GetRequiredService<IAssignmentRepository>();
+            protected IDomainRepository DomainRepository => TestServer.Host.Services.GetRequiredService<IDomainRepository>();
+            protected IPermissionRepository PermissionRepository => TestServer.Host.Services.GetRequiredService<IPermissionRepository>();
+            protected IRealmRepository RealmRepository => TestServer.Host.Services.GetRequiredService<IRealmRepository>();
+            protected IRoleRepository RoleRepository => TestServer.Host.Services.GetRequiredService<IRoleRepository>();
+            protected IUserRepository UserRepository => TestServer.Host.Services.GetRequiredService<IUserRepository>();
+        
+            // Assertions
+
+            protected void AssertEmailSent(Email toEmail)
+                => AssertEmailSent(toEmail: toEmail, msgContains: null);
+
+            protected void AssertEmailSent(Email toEmail, string? msgContains)
+            {
+                var subString = "";
+                
+                if (msgContains != null)
+                    subString = $" containing '{msgContains}'";
+                
+                Assert.True(
+                    EmailAdapter.HasSent(
+                        toEmail: toEmail.ToString(), 
+                        msgContains: msgContains),
+                    $"Expected an email{subString} to be sent to {toEmail}.");
+            }
+
+            // Execute
+            
+            protected async Task AddPermissionToRole(PermissionId permissionId, RoleId roleId)
+            {
+                var command = new AddPermissionToRoleCommand
+                {
+                    PermissionId = permissionId,
+                    RoleId = roleId
+                };
+            
+                await AddPermissionToRoleAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+            }
+            
+            protected async Task AddUserToRealm(UserId userId, RealmId realmId)
+            {
+                var command = new AddUserToRealmCommand
+                {
+                    UserId = userId,
+                    RealmId = realmId
+                };
+            
+                await AddUserToRealmAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+            }
+            
+            protected async Task AssignRole(RoleId roleId, UserId? toUserId, RealmId? inRealmId = null)
+            {
+                var command = new AssignRoleCommand
+                {
+                    RoleId = roleId,
+                    ToUserId = toUserId,
+                    InRealmId = inRealmId
+                };
+            
+                await AssignRoleAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+            }
+            
+            protected async Task Authenticate(Email email, string password)
+            {
+                var command = new AuthenticateCommand
+                {
+                    Email = email,
+                    Password = password
+                };
+            
+                var accessToken = await AuthenticateAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Credentials.JwtToken = JwtToken.Read(accessToken.ToString());
+            }
+            
+            protected async Task AuthenticateRootUser()
+            {
+                var command = new AuthenticateCommand
+                {
+                    Email = CustomSettings.RootUser.Email,
+                    Password = CustomSettings.RootUser.Password
+                };
+            
+                var accessToken = await AuthenticateAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Credentials.JwtToken = JwtToken.Read(accessToken.ToString());
+            }
+            
+            protected async Task AuthenticateUser(string password = "test-password")
+            {
+                var command = new AuthenticateCommand
+                {
+                    Email = User.Email,
+                    Password = password
+                };
+            
+                var accessToken = await AuthenticateAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Credentials.JwtToken = JwtToken.Read(accessToken.ToString());
+            }
+
+            protected async Task CreateAccount(string email = "test.testsson@poweriam.com", string password = "test-password")
+            {
+                var command = new CreateAccountCommand
+                {
+                    FirstName = "Test",
+                    LastName = "Testsson",
+                    Email = Email.Create(email),
+                    Password = password,
+                    RepeatPassword = password
+                };
+            
+                var user = await CreateAccountAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Users.Add(user);
+            }
+            
+            protected async Task CreateDomain(RealmId inRealmId, string name = "Test Domain", string description = "Test description")
+            {
+                var command = new CreateDomainCommand
+                {
+                    Name = name,
+                    Description = description,
+                    InRealmId = inRealmId
+                };
+            
+                var domain = await CreateDomainAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Domains.Add(domain);
+            }
+            
+            protected async Task CreatePermission(string name = "Test Permission", RealmId? inRealmId = null, DomainId? inDomainId = null)
+            {
+                var command = new CreatePermissionCommand
+                {
+                    Name = name,
+                    Description = "Test Permission",
+                    ExternalId = "some-external-id",
+                    InRealmId = inRealmId,
+                    InDomainId = inDomainId
+                };
+            
+                var permission = await CreatePermissionAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Permissions.Add(permission);
+            }
+            
+            protected async Task CreateRealm(string name = "Test Realm")
+            {
+                var command = new CreateRealmCommand
+                {
+                    Name = name,
+                    Description = "Test Realm",
+                    ExternalId = "some-external-id"
+                };
+            
+                var realm = await CreateRealmAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Realms.Add(realm);
+            }
+            
+            protected async Task CreateRole(string name = "Test Permission", RealmId? inRealmId = null, string? inExternalRealmId = null)
+            {
+                var command = new CreateRoleCommand
+                {
+                    Name = name,
+                    Description = "Test Role",
+                    InRealmId = inRealmId,
+                    InExternalRealmId = inExternalRealmId
+                };
+            
+                var role = await CreateRoleAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                Roles.Add(role);
+            }
+            
+            protected async Task<IEnumerable<Assignment>> GetRoleAssignments(UserId toUserId, RealmId? inRealmId = null)
+            {
+                var command = new GetRoleAssignmentsCommand
+                {
+                    ToUserId = toUserId,
+                    InRealmId = inRealmId
+                };
+            
+                var assignments = await GetRoleAssignmentsAction.ExecuteAsync(command, ActionId, CancellationToken.None);
+
+                return assignments;
+            }
+            
+            // Data
+
+            protected async Task Refresh(User user)
+            {
+                var users = new List<User>();
+                foreach (var u in Users)
+                    if (u.UserId == user.UserId)
+                        users.Add(await UserRepository.GetAsync(u.UserId, ActionId, CancellationToken.None));
+                    else
+                        users.Add(u);
+                Users = users;
+            }
+        }
+    }
 
 
 ###############
