@@ -11,7 +11,6 @@ using Main.Extensions;
 using Main.NETCore.Hooks;
 using Application.Actions;
 using Application.Actions.Commands;
-using Application.Settings;
 using Domain.Model.Forecast;
 using Domain.Model.Summary;
 using Infrastructure.Ports.Adapters.Domain;
@@ -21,24 +20,17 @@ using Infrastructure.Ports.Adapters.Repositories.Memory;
 using Infrastructure.Ports.Adapters.Repositories.Migration;
 using Infrastructure.Ports.Adapters.Repositories.Postgres;
 using HttpCommonTranslation = Infrastructure.Ports.Adapters.Http.Common.Translation;
-using ILogger = DDD.Logging.ILogger;
 
 namespace Main
 {
     public class Startup
     {
         private ISettings _settings;
-        private ICustomSettings _customSettings;
-        private ILogger _logger;
 
         public Startup(
-            ISettings settings,
-            ICustomSettings customSettings,
-            ILogger logger)
+            ISettings settings)
         {
             _settings = settings;
-            _customSettings = customSettings;
-            _logger = logger;
         }
         
         public void ConfigureServices(IServiceCollection services)
@@ -74,7 +66,7 @@ namespace Main
         
         private void AddDomainServices(IServiceCollection services)
         {
-            services.AddTransient<IForecastDomainService, ForecastDomainService>();
+            services.AddDomainService<IForecastDomainService, ForecastDomainService>();
         }
 
         private void AddApplicationService(IServiceCollection services)
