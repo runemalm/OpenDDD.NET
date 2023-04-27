@@ -1094,13 +1094,63 @@ You register your serializer settings with the DI container like this::
 
     services.AddTransient<DddSerializerSettings, SerializerSettings>();
 
-.. note:: There's an extension method in the project templates that is used to add this class in the recommended way.
+.. note:: The ``AddSerialization()`` call in Startup.cs of the project templates does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
 
 
 Migrators
 ---------
 
-Describe this..
+Whenver you bump your domain model version, you need to create a migration for all the entities that have changed.
+
+Subclass the ``Migrator`` base class and implement the ``FromVX_X_X()`` method for all your entities affected by the change.
+
+An example migrator::
+
+    using System.Collections.Generic;
+    using System.Linq;
+    using DDD.Infrastructure.Ports.Adapters.Repository;
+    using Domain.Model.Realm;
+    using Domain.Model.User;
+    using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
+
+    namespace Infrastructure.Ports.Adapters.Repository.Migration
+    {
+        public class UserMigrator : Migrator<User>
+        {
+            public UserMigrator() : base(ContextDomainModelVersion.Latest())
+            {
+                
+            }
+            
+            public User FromV1_0_2(User userV1_0_2)
+            {
+                var salt = Salt.Generate();
+                var password = Password.GenerateAndHash(salt);
+                
+                userV1_0_2.Salt = salt;
+                userV1_0_2.Password = password;
+                userV1_0_2.ResetPasswordCode = null;
+                userV1_0_2.ResetPasswordCodeCreatedAt = null;
+                userV1_0_2.DomainModelVersion = new ContextDomainModelVersion("1.0.3");
+                return userV1_0_2;
+            }
+
+            public User FromV1_0_0(User userV1_0_0)
+            {
+                userV1_0_0.RealmIds = new List<RealmId>();
+                userV1_0_0.IsSuperUser = false;
+                userV1_0_0.DomainModelVersion = new ContextDomainModelVersion("1.0.1");
+                return userV1_0_0;
+            }
+
+            public IEnumerable<User> FromV1_0_0(IEnumerable<User> usersV1_0_0)
+                => usersV1_0_0.Select(FromV1_0_0);
+        }
+    }
+
+You register your migrator classes with the DI container like this::
+
+    services.AddMigrator<UserMigrator>();
 
 
 Unit Tests
