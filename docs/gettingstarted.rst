@@ -27,14 +27,17 @@ Building Blocks
 We will now cover all the ``building blocks`` of the framework:
 
 * :ref:`Env files`
-* :ref:`DomainModelVersion`
+* :ref:`Domain Model Version`
+* :ref:`Program.cs`
+* :ref:`Startup.cs`
+* :ref:`Commands`
 * :ref:`Actions`
 * :ref:`Entities`
 * :ref:`Events`
 * :ref:`Listeners`
 * :ref:`Domain Services`
 * :ref:`Errors`
-* :ref:`Serializers`
+* :ref:`Converters`
 * :ref:`Migrators`
 * :ref:`Unit Tests`
 * :ref:`The Action base class`
@@ -129,16 +132,16 @@ Example env file::
     CFG_EMAIL_SMTP_PASSWORD=
 
 
-DomainModelVersion
-------------------
+Domain Model Version
+--------------------
 
-Since this framework is all about focusing on an evolving and up-to-date domain model, we need to have a representation of a domain model ``version``.
+Since this framework is all about focusing on an evolving and up-to-date domain model, we need to have a representation of a domain model version.
 
 Create this class by subclassing the ``DomainModelVersion`` base class.
 
 As your model evolves, you will increment the ``LatestString`` and add appropriate migration methods to the entity migrators. More on :ref:`migrators in a later section <Migrators>`.
 
-Example DomainModelVersion::
+Example domain model version::
 
     namespace Domain.Model
     {
@@ -151,6 +154,74 @@ Example DomainModelVersion::
             public static DomainModelVersion Latest()
             {
                 return new DomainModelVersion(LatestString);
+            }
+        }
+    }
+
+You register your domain model version with the DI container like this::
+
+    services.AddDomainModelVersion<DomainModelVersion>();
+
+
+Program.cs
+----------
+
+Describe this..
+
+
+Startup.cs
+----------
+
+Describe this..
+
+
+Commands
+--------
+
+All command classes need to subclass the ``Command`` class.
+
+The command class is basically a data transfer object (DTO), except of course it has a very specific meaning in terms of your domain model.
+
+The command is passed to the relevant action when an actor requests it.
+
+Example command::
+
+    using System.Collections.Generic;
+    using System.Linq;
+    using DDD.Application;
+    using DDD.Application.Error;
+    using DDD.Domain.Model.Validation;
+    using Domain.Model.User;
+
+    namespace Application.Actions.Commands
+    {
+        public class CreateAccountCommand : Command
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public Email Email { get; set; }
+            public string Password { get; set; }
+            public string RepeatPassword { get; set; }
+
+            public override void Validate()
+            {
+                var errors = GetErrors();
+
+                if (errors.Any())
+                    throw new InvalidCommandException(this, errors);
+            }
+
+            public override IEnumerable<ValidationError> GetErrors()
+            {
+                var errors = new Validator<CreateAccountCommand>(this)
+                    .NotNullOrEmpty(command => command.FirstName)
+                    .NotNullOrEmpty(command => command.LastName)
+                    .Email(command => command.Email.ToString())
+                    .NotNullOrEmpty(command => command.Password.ToString())
+                    .NotNullOrEmpty(command => command.RepeatPassword.ToString())
+                    .Errors();
+
+                return errors;
             }
         }
     }
@@ -800,15 +871,230 @@ Example domain service::
 
 
 Errors
----------------
+------
 
-Describe this...
+When an error occurs in your domain model, you manifest it by :ref:`throwing an exception <Exceptions>` containing one or more ``DomainError``.
+
+The ``DomainError`` is of the following model:
+
+- Code
+- Message
+- User Message
+
+The ``Code`` is simply an identifier for the error.
+
+The ``Message`` should contain a message with a description useful and aimed towards understanding the error by an integrating developer.
+
+The ``User Message`` should contain a message with a description useful and aimed towards understanding the error in a frontend by an end user.
+
+.. tip:: It's recommeded that the frontend development team utilizes the ``Code`` to craft the most helpful and precise user message, instead of simply relying on the more generic ``User Message``.
+
+Example domain error::
+
+    using DDD.Domain.Model.Error;
+
+    namespace Domain.Model.Error
+    {
+        public class DomainError : DDD.Domain.Model.Error.DomainError
+        {
+            // Codes
+
+            private const int VerifyEmail_NotRequested_Code = 1001;
+            private const string VerifyEmail_NotRequested_Msg = "Email verification hasn't been requested.";
+            private const string VerifyEmail_NotRequested_UsrMsg = "No verification of your email has been requested.";
+            
+            private const int VerifyEmail_AlreadyVerified_Code = 1002;
+            private const string VerifyEmail_AlreadyVerified_Msg = "The email has already been verified.";
+            private const string VerifyEmail_AlreadyVerified_UsrMsg = "You email address has already been verified.";
+
+            private const int VerifyEmail_NoCode_Code = 1003;
+            private const string VerifyEmail_NoCode_Msg = "The user has no email verification code.";
+            private const string VerifyEmail_NoCode_UsrMsg = "An unknown error has occured. You can't verify your email because there's no email verification code.";
+            
+            private const int VerifyEmail_InvalidCode_Code = 1004;
+            private const string VerifyEmail_InvalidCode_Msg = "The code is invalid.";
+            private const string VerifyEmail_InvalidCode_UsrMsg = "The email verification code you provided is invalid. Please request a new verification code and try again.";
+            
+            private const int VerifyEmail_CodeExpired_Code = 1005;
+            private const string VerifyEmail_CodeExpired_Msg = "The code has expired.";
+            private const string VerifyEmail_CodeExpired_UsrMsg = "The verification code you provided has expired. Please request a new verification code.";
+            
+            private const int VerifyEmail_NoUserWithCode_Code = 1006;
+            private const string VerifyEmail_NoUserWithCode_Msg = "There's no user with that code.";
+            private const string VerifyEmail_NoUserWithCode_UsrMsg = "We couldn't find a user with that email verification code. Please make sure you entered the correct code and try again. Alternatively request a new verification code.";
+            
+            private const int VerifyEmail_UserHasNoEmail_Code = 1007;
+            private const string VerifyEmail_UserHasNoEmail_Msg = "The user has no email.";
+            private const string VerifyEmail_UserHasNoEmail_UsrMsg = "We couldn't verify your email because you haven't provided one. Please provide one and try verification again.";
+
+            public static IDomainError VerifyEmail_NotRequested() => Create(VerifyEmail_NotRequested_Code, VerifyEmail_NotRequested_Msg, VerifyEmail_NotRequested_UsrMsg);
+            public static IDomainError VerifyEmail_AlreadyVerified() => Create(VerifyEmail_AlreadyVerified_Code, VerifyEmail_AlreadyVerified_Msg, VerifyEmail_AlreadyVerified_UsrMsg);
+            public static IDomainError VerifyEmail_NoCode() => Create(VerifyEmail_NoCode_Code, VerifyEmail_NoCode_Msg, VerifyEmail_NoCode_UsrMsg);
+            public static IDomainError VerifyEmail_InvalidCode() => Create(VerifyEmail_InvalidCode_Code, VerifyEmail_InvalidCode_Msg, VerifyEmail_InvalidCode_UsrMsg);
+            public static IDomainError VerifyEmail_CodeExpired() => Create(VerifyEmail_CodeExpired_Code, VerifyEmail_CodeExpired_Msg, VerifyEmail_CodeExpired_UsrMsg);
+            public static IDomainError VerifyEmail_NoUserWithCode() => Create(VerifyEmail_NoUserWithCode_Code, VerifyEmail_NoUserWithCode_Msg, VerifyEmail_NoUserWithCode_UsrMsg);
+            public static IDomainError VerifyEmail_UserHasNoEmail() => Create(VerifyEmail_UserHasNoEmail_Code, VerifyEmail_UserHasNoEmail_Msg, VerifyEmail_UserHasNoEmail_UsrMsg);
+        }
+    }
+
+.. note:: The generic domain errors are to be found in the ``DomainError`` base class of the framework.
 
 
-Serializers
------------
+Exceptions
+----------
 
-Describe this..
+The error(s) are manifested by throwing an ``DomainException``, containing the error(s).
+
+There are two types of exceptions:
+
+- Highly precise ``Custom exceptions`` that are specific to your domain model and
+- ``Generic exceptions`` that are part of the framework and can be used by any bounded context.
+
+It's up to you to decided which would be best to use in each of your cases.
+
+In the example below, the ``VerifyEmailException.AlreadyVerified()`` exception is used, but it could also have been implemented using the generic ``DomainException.InvariantViolation("Email is already verified.")`` exception.
+
+Example exception::
+
+    using DDD.Domain.Model.Error;
+    using DomainError = Domain.Model.Error.DomainError;
+
+    namespace Domain.Model.User
+    {
+        public class VerifyEmailException : DomainException
+        {
+            public static VerifyEmailException NotRequested()
+                => new VerifyEmailException(DomainError.VerifyEmail_NotRequested());
+            
+            public static VerifyEmailException AlreadyVerified()
+                => new VerifyEmailException(DomainError.VerifyEmail_AlreadyVerified());
+            
+            public static VerifyEmailException NoCode()
+                => new VerifyEmailException(DomainError.VerifyEmail_NoCode());
+            
+            public static VerifyEmailException InvalidCode()
+                => new VerifyEmailException(DomainError.VerifyEmail_InvalidCode());
+            
+            public static VerifyEmailException CodeExpired()
+                => new VerifyEmailException(DomainError.VerifyEmail_CodeExpired());
+            
+            public static VerifyEmailException UserHasNoEmail()
+                => new VerifyEmailException(DomainError.VerifyEmail_UserHasNoEmail());
+            
+            public static VerifyEmailException NoUserWithCode()
+                => new VerifyEmailException(DomainError.VerifyEmail_NoUserWithCode());
+
+            public VerifyEmailException(IDomainError error) : base(error)
+            {
+                
+            }
+        }
+    }
+
+Example of throwing exceptions::
+
+    public async Task VerifyEmail(EmailVerificationCode code, ActionId actionId, CancellationToken ct)
+    {
+        if (Email == null)
+            throw VerifyEmailException.UserHasNoEmail();
+        
+        if (IsEmailVerified())
+            throw VerifyEmailException.AlreadyVerified();
+
+        if (!IsEmailVerificationRequested())
+            throw VerifyEmailException.NotRequested();
+
+        if (!code.Equals(EmailVerificationCode))
+            throw VerifyEmailException.InvalidCode();
+            
+        if (IsEmailVerificationCodeExpired())
+            throw VerifyEmailException.CodeExpired();
+
+        EmailVerifiedAt = DateTime.UtcNow;
+        EmailVerificationRequestedAt = null;
+        EmailVerificationCode = null;
+        EmailVerificationCodeCreatedAt = null;
+    }
+
+
+Converters
+----------
+
+Conversion is used to transform the aggregate roots and events into strings, so that they can be persisted and/or sent on a message bus.
+
+The OpenDDD.NET framework bases conversion on the Json.NET framework by Newtonsoft.
+
+Json.NET comes with converters for many non-primitive generic types, such as e.g. DateTime and classes themselves. OpenDDD.NET provides missing converters for DDD-generic types such as EntityId and DomainModelVersion.
+
+However, for ``all the types`` that are ``unique`` to your domain model, you need to create a ``corresponding converter``.
+
+You create a converter by subclassing the ``Converter<T>`` base class.
+
+.. note:: Don't mistake the Converter<T> class for the class with the same name in the Json.NET framework.
+
+.. tip:: Utilize the ``ReadJsonUsingMethod()`` method of the base class to conveniently deserialize strings using your entity- and value object classes static factory methods.
+
+An example converter::
+
+    using System;
+    using Newtonsoft.Json;
+    using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+    using Domain.Model.User;
+
+    namespace Infrastructure.Ports.Adapters.Common.Translation.Converters
+    {
+        public class EmailConverter : Converter<Email>
+        {
+            public override void WriteJson(
+                JsonWriter writer, 
+                object? value,
+                JsonSerializer serializer)
+            {
+                writer.WriteValue(value.ToString());
+            }
+            
+            public override object ReadJson(
+                JsonReader reader, 
+                Type objectType, 
+                object? existingValue,
+                JsonSerializer serializer)
+            {
+                if (reader.Value == null)
+                    return null;
+                return ReadJsonUsingMethod(reader, "Create", objectType);
+            }
+        }
+    }
+
+Registering your converter dependencies is a three-step process:
+
+1. Create the SerializerSettings class, (if you haven't already).
+2. Add the converter to the ``Converters`` collection of this class.
+3. Register your SerializerSettings class with the DI container.
+
+An example serializer settings class::
+
+    using DddSerializerSettings = DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.SerializerSettings;
+
+    namespace Infrastructure.Ports.Adapters.Common.Translation.Converters
+    {
+        public class SerializerSettings : DddSerializerSettings
+        {
+            public SerializerSettings()
+            {
+                Converters.Add(new EmailConverter());
+                Converters.Add(new EmailVerificationCodeConverter());
+                Converters.Add(new PasswordConverter());
+                Converters.Add(new SaltConverter());
+            }
+        }
+    }
+
+You register your serializer settings with the DI container like this::
+
+    services.AddTransient<DddSerializerSettings, SerializerSettings>();
+
+.. note:: There's an extension method in the project templates that is used to add this class in the recommended way.
 
 
 Migrators
