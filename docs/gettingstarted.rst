@@ -33,6 +33,7 @@ We will now cover all the ``building blocks`` of the framework:
 * :ref:`Commands`
 * :ref:`Actions`
 * :ref:`Entities`
+* :ref:`Repositories`
 * :ref:`Events`
 * :ref:`Listeners`
 * :ref:`Domain Services`
@@ -156,17 +157,13 @@ Example domain model version::
         }
     }
 
-You register your domain model version with the DI container like this::
-
-    services.AddDomainModelVersion<DomainModelVersion>();
-
 
 Program.cs
 ----------
 
 Use the ``AddXxx()`` extension methods of the framework to properly configure the .NET host and application.
 
-An example Program.cs file::
+Example Program.cs file::
 
     using Microsoft.AspNetCore;
     using Microsoft.AspNetCore.Hosting;
@@ -199,37 +196,29 @@ Since part of the design philosophy behind this framwork is to follow the hexago
 
 See the example below and create your Startup.cs file.
 
-An example Startup.cs file::
+Example Startup.cs file::
 
     using System.Reflection;
-    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Hosting;
     using DDD.Application.Settings;
-    using DDD.Logging;
     using DDD.Application.Settings.Persistence;
     using DDD.NETCore.Extensions;
-    using DDD.Domain.Model.Auth;
-    using DDD.Domain.Services.Auth;
     using DDD.NETCore.Hooks;
     using Main.Extensions;
     using Main.NETCore.Hooks;
     using Application.Actions;
     using Application.Actions.Commands;
-    using Application.Settings;
-    using Domain.Model.Assignment;
-    using Domain.Model.Domain;
-    using Domain.Model.Permission;
-    using Domain.Model.Realm;
-    using Domain.Model.Role;
-    using Domain.Model.User;
+    using Domain.Model.Forecast;
+    using Domain.Model.Summary;
     using Infrastructure.Ports.Adapters.Domain;
-    using Infrastructure.Ports.Adapters.Http.v2;
-    using Infrastructure.Ports.Adapters.Repository.Memory;
-    using Infrastructure.Ports.Adapters.Repository.Migration;
-    using Infrastructure.Ports.Adapters.Repository.Postgres;
-    using Microsoft.Extensions.Hosting;
-    using AuthDomainService = Domain.Model.Auth.AuthDomainService;
+    using Infrastructure.Ports.Adapters.Http.v1;
+    using Infrastructure.Ports.Adapters.Interchange.Translation;
+    using Infrastructure.Ports.Adapters.Repositories.Memory;
+    using Infrastructure.Ports.Adapters.Repositories.Migration;
+    using Infrastructure.Ports.Adapters.Repositories.Postgres;
     using HttpCommonTranslation = Infrastructure.Ports.Adapters.Http.Common.Translation;
 
     namespace Main
@@ -237,25 +226,21 @@ An example Startup.cs file::
         public class Startup
         {
             private ISettings _settings;
-            private ICustomSettings _customSettings;
-            private ILogger _logger;
-            
+
             public Startup(
-                ISettings settings,
-                ICustomSettings customSettings,
-                ILogger logger)
+                ISettings settings)
             {
                 _settings = settings;
-                _customSettings = customSettings;
-                _logger = logger;
             }
             
             public void ConfigureServices(IServiceCollection services)
             {
                 // DDD.NETCore
+                services.AddAccessControl(_settings);
                 services.AddMonitoring(_settings);
                 services.AddPersistence(_settings);
                 services.AddPubSub(_settings);
+                services.AddTransactional(_settings);
 
                 // App
                 AddDomainServices(services);
@@ -281,11 +266,7 @@ An example Startup.cs file::
             
             private void AddDomainServices(IServiceCollection services)
             {
-                services.AddScoped<ICredentials, Credentials>();
-                services.AddTransient<IAssignmentDomainService, AssignmentDomainService>();
-                services.AddTransient<IAuthDomainService, AuthDomainService>();
-                services.AddTransient<IRealmDomainService, RealmDomainService>();
-                services.AddTransient<IRoleDomainService, RoleDomainService>();
+                services.AddTransient<IForecastDomainService, ForecastDomainService>();
             }
 
             private void AddApplicationService(IServiceCollection services)
@@ -295,7 +276,6 @@ An example Startup.cs file::
             
             private void AddSecondaryAdapters(IServiceCollection services)
             {
-                services.AddIdpAdapters();
                 services.AddEmailAdapter(_settings);
                 AddRepositories(services);
             }
@@ -319,170 +299,62 @@ An example Startup.cs file::
 
             private void AddActions(IServiceCollection services)
             {
-                services.AddTransient<ActionDependencies>();
-                
-                services.AddAction<AddPermissionToRoleAction, AddPermissionToRoleCommand>();
-                services.AddAction<AddUserToRealmAction, AddUserToRealmCommand>();
-                services.AddAction<AssignRoleAction, AssignRoleCommand>();
-                services.AddAction<AuthenticateAction, AuthenticateCommand>();
-                services.AddAction<CreateAccessTokenAction, CreateAccessTokenCommand>();
-                services.AddAction<CreateAccountAction, CreateAccountCommand>();
-                services.AddAction<CreateDomainAction, CreateDomainCommand>();
-                services.AddAction<CreatePermissionAction, CreatePermissionCommand>();
-                services.AddAction<CreateRealmAction, CreateRealmCommand>();
-                services.AddAction<CreateRoleAction, CreateRoleCommand>();
-                services.AddAction<DeleteDomainAction, DeleteDomainCommand>();
-                services.AddAction<DeletePermissionAction, DeletePermissionCommand>();
-                services.AddAction<DeleteRealmAction, DeleteRealmCommand>();
-                services.AddAction<DeleteRoleAction, DeleteRoleCommand>();
-                services.AddAction<EditDomainAction, EditDomainCommand>();
-                services.AddAction<EditPermissionAction, EditPermissionCommand>();
-                services.AddAction<EditRealmAction, EditRealmCommand>();
-                services.AddAction<EditRoleAction, EditRoleCommand>();
-                services.AddAction<EndSessionAction, EndSessionCommand>();
-                services.AddAction<ForgetPasswordAction, ForgetPasswordCommand>();
-                services.AddAction<GetAuthenticationMethodsAction, GetAuthenticationMethodsCommand>();
-                services.AddAction<GetDomainAction, GetDomainCommand>();
-                services.AddAction<GetDomainsAction, GetDomainsCommand>();
-                services.AddAction<GetPermissionAction, GetPermissionCommand>();
-                services.AddAction<GetPermissionsAction, GetPermissionsCommand>();
-                services.AddAction<GetPermissionsGrantedAction, GetPermissionsGrantedCommand>();
-                services.AddAction<GetRealmAction, GetRealmCommand>();
-                services.AddAction<GetRealmsAction, GetRealmsCommand>();
-                services.AddAction<GetRoleAction, GetRoleCommand>();
-                services.AddAction<GetRolesAction, GetRolesCommand>();
-                services.AddAction<GetUserAction, GetUserCommand>();
-                services.AddAction<GetRoleAssignmentsAction, GetRoleAssignmentsCommand>();
-                services.AddAction<GetUsersAction, GetUsersCommand>();
-                services.AddAction<AssurePermissionsAction, AssurePermissionsCommand>();
-                services.AddAction<RefreshAccessTokenAction, RefreshAccessTokenCommand>();
-                services.AddAction<RemovePermissionFromRoleAction, RemovePermissionFromRoleCommand>();
-                services.AddAction<RemoveUserFromRealmAction, RemoveUserFromRealmCommand>();
-                services.AddAction<ResetPasswordAction, ResetPasswordCommand>();
-                services.AddAction<SendEmailVerificationEmailAction, SendEmailVerificationEmailCommand>();
-                services.AddAction<SetRolePermissionsAction, SetRolePermissionsCommand>();
-                services.AddAction<UnassignRoleAction, UnassignRoleCommand>();
-                services.AddAction<VerifyEmailAction, VerifyEmailCommand>();
+                services.AddAction<GetAverageTemperatureAction, GetAverageTemperatureCommand>();
+                services.AddAction<NotifyWeatherPredictedAction, NotifyWeatherPredictedCommand>();
+                services.AddAction<PredictWeatherAction, PredictWeatherCommand>();
             }
 
             private void AddHttpAdapters(IServiceCollection services)
             {
                 var mvcCoreBuilder = services.AddHttpAdapter(_settings);
                 AddHttpAdapterCommon(services);
-                AddHttpAdapterV2(services, mvcCoreBuilder);
+                AddHttpAdapterV1(services, mvcCoreBuilder);
             }
 
-            private void AddHttpAdapterV2(IServiceCollection services, IMvcCoreBuilder mvcCoreBuilder)
+            private void AddHttpAdapterV1(IServiceCollection services, IMvcCoreBuilder mvcCoreBuilder)
             {
                 mvcCoreBuilder.AddApplicationPart(Assembly.GetAssembly(typeof(HttpAdapter)));
+                services.AddTransient<HttpCommonTranslation.Commands.PredictWeatherCommandTranslator>();
+                services.AddTransient<HttpCommonTranslation.ForecastIdTranslator>();
+                services.AddTransient<HttpCommonTranslation.ForecastTranslator>();
+                services.AddTransient<HttpCommonTranslation.SummaryIdTranslator>();
+                services.AddTransient<HttpCommonTranslation.SummaryTranslator>();
             }
             
             private void AddHttpAdapterCommon(IServiceCollection services)
             {
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AddPermissionToRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AddUserToRealmCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AssignRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AuthenticateCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateAccessTokenCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateAccountCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateDomainCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreatePermissionCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateRealmCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.CreateRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeleteDomainCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeletePermissionCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeleteRealmCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.DeleteRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditDomainCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditPermissionCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditRealmCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EditRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.EndSessionCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.ForgetPasswordCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetAuthenticationMethodsCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetDomainCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetDomainsCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetPermissionCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetPermissionsCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetPermissionsGrantedCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRealmCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRealmsCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRolesCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetUserCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetRoleAssignmentsCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.GetUsersCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.AssurePermissionsCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.RefreshAccessTokenCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.RemovePermissionFromRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.RemoveUserFromRealmCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.ResetPasswordCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.SetRolePermissionsCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.UnassignRoleCommandTranslator>();
-                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.VerifyEmailCommandTranslator>();
+                services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.PredictWeatherCommandTranslator>();
 
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AccessTokenTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AssignmentTypeTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AuthenticationMethodsTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AuthMethodTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AuthorizationCodeTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AssignmentIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.AssignmentTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.EmailTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.OidcMethodTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.OidcResponseModeTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.DomainIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.DomainTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.EmailVerificationCodeTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.PermissionIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.PermissionTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RealmIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RealmTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ResourceIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ResourceGroupIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RoleIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.RoleTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.UserIdTranslator>();
-                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.UserTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ForecastIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ForecastTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.SummaryIdTranslator>();
+                services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.SummaryTranslator>();
             }
             
             private void AddInterchangeEventAdapters(IServiceCollection services)
             {
-                
+                services.AddTransient<IIcForecastTranslator, IcForecastTranslator>();
             }
             
             private void AddDomainEventAdapters(IServiceCollection services)
             {
-                services.AddListener<AccountCreatedListener>();
+                services.AddListener<WeatherPredictedListener>();
             }
             
             private void AddRepositories(IServiceCollection services)
             {
                 if (_settings.Persistence.Provider == PersistenceProvider.Memory)
                 {
-                    services.AddRepository<IAssignmentRepository, MemoryAssignmentRepository>();
-                    services.AddRepository<IDomainRepository, MemoryDomainRepository>();
-                    services.AddRepository<IPermissionRepository, MemoryPermissionRepository>();
-                    services.AddRepository<IRealmRepository, MemoryRealmRepository>();
-                    services.AddRepository<IRoleRepository, MemoryRoleRepository>();
-                    services.AddRepository<IUserRepository, MemoryUserRepository>();
+                    services.AddRepository<IForecastRepository, MemoryForecastRepository>();
+                    services.AddRepository<ISummaryRepository, MemorySummaryRepository>();
                 }
                 else if (_settings.Persistence.Provider == PersistenceProvider.Postgres)
                 {
-                    services.AddRepository<IAssignmentRepository, PostgresAssignmentRepository>();
-                    services.AddRepository<IDomainRepository, PostgresDomainRepository>();
-                    services.AddRepository<IPermissionRepository, PostgresPermissionRepository>();
-                    services.AddRepository<IRealmRepository, PostgresRealmRepository>();
-                    services.AddRepository<IRoleRepository, PostgresRoleRepository>();
-                    services.AddRepository<IUserRepository, PostgresUserRepository>();
+                    services.AddRepository<IForecastRepository, PostgresForecastRepository>();
+                    services.AddRepository<ISummaryRepository, PostgresSummaryRepository>();
                 }
-
-                services.AddMigrator<AssignmentMigrator>();
-                services.AddMigrator<DomainMigrator>();
-                services.AddMigrator<PermissionMigrator>();
-                services.AddMigrator<RealmMigrator>();
-                services.AddMigrator<RoleMigrator>();
-                services.AddMigrator<UserMigrator>();
+                services.AddMigrator<ForecastMigrator>();
+                services.AddMigrator<SummaryMigrator>();
             }
         }
     }
@@ -920,6 +792,62 @@ Example aggregate root::
     }
 
 
+Repositories
+------------
+
+A repository is the interface for getting & saving your aggregate root from/to the database.
+
+Subclass the ``Repository`` base class for each aggregate root.
+
+There are some base methods for e.g. getting all aggregate roots, getting by ID, saving an aggregate root, etc. You will need to add methods for the queries that are specific to your aggregate root and domain model.
+
+You will create one interface per repository, and one adapter for each of the technology implementations you want to support.
+
+E.g. for a user repository, you might need to create the following classes:
+
+- IUserRepository
+- MemoryUserRepository
+- PostgresUserRepository
+
+Example repository::
+
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using DDD.Application;
+    using DDD.Application.Settings;
+    using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+    using DDD.Infrastructure.Ports.Adapters.Repository.Postgres;
+    using DDD.Infrastructure.Services.Persistence;
+    using Domain.Model.Realm;
+    using Domain.Model.User;
+    using Infrastructure.Ports.Adapters.Repository.Migration;
+
+    namespace Infrastructure.Ports.Adapters.Repository.Postgres
+    {
+        public class PostgresUserRepository : PostgresRepository<User, UserId>, IUserRepository
+        {
+            public PostgresUserRepository(ISettings settings, UserMigrator migrator, IPersistenceService persistenceService, SerializerSettings serializerSettings) 
+                : base(settings, "users", migrator, persistenceService, serializerSettings)
+            {
+                
+            }
+            
+            public Task<IEnumerable<User>> GetInRealmAsync(RealmId realmId, ActionId actionId, CancellationToken ct)
+                => GetWithAsync(user => user.RealmIds.Contains(realmId), actionId, ct);
+            
+            public Task<User?> GetWithEmailAsync(Email email, ActionId actionId, CancellationToken ct)
+                => GetFirstOrDefaultWithAsync(new List<(string, object)>() { ("Email", email) }, actionId, ct);
+            
+            public Task<User?> GetWithEmailVerificationCodeAsync(EmailVerificationCode code, ActionId actionId, CancellationToken ct)
+                => GetFirstOrDefaultWithAsync(u => u.EmailVerificationCode != null && u.EmailVerificationCode.Equals(code), actionId, ct);
+
+            public Task<User?> GetWithResetPasswordCodeAsync(string code, ActionId actionId, CancellationToken ct)
+                => GetFirstOrDefaultWithAsync(u => u.ResetPasswordCode == code, actionId, ct);
+        }
+    }
+
+
 Events
 ------
 
@@ -1182,6 +1110,10 @@ Example domain service::
         }
     }
 
+You register your domain services with the DI container like this::
+
+    services.AddDomainService<IRoleDomainService, RoleDomainService>();
+
 
 Errors
 ------
@@ -1333,7 +1265,7 @@ Example of throwing exceptions::
 Converters
 ----------
 
-Conversion is used to transform the aggregate roots and events into strings, so that they can be persisted and/or sent on a message bus.
+Converters are used to transform the aggregate roots and events into strings, so that they can be persisted and/or sent on a message bus.
 
 The OpenDDD.NET framework bases conversion on the Json.NET framework by Newtonsoft.
 
@@ -1347,7 +1279,7 @@ You create a converter by subclassing the ``Converter<T>`` base class.
 
 .. tip:: Utilize the ``ReadJsonUsingMethod()`` method of the base class to conveniently deserialize strings using your entity- and value object classes static factory methods.
 
-An example converter::
+Example converter::
 
     using System;
     using Newtonsoft.Json;
@@ -1385,7 +1317,7 @@ Registering your converter dependencies is a three-step process:
 2. Add the converter to the ``Converters`` collection of this class.
 3. Register your SerializerSettings class with the DI container.
 
-An example serializer settings class::
+Example serializer settings::
 
     using DddSerializerSettings = DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.SerializerSettings;
 
@@ -1421,7 +1353,9 @@ Domain model versioning is a first-class citizen in this DDD framework. Thus, mi
 
 .. note:: Entities will migrate on-the-fly next time they are fetched and saved by the repositories.
 
-An example migrator::
+.. note:: If an entity has not changed it's model from one version to another, simply skip adding that method to the migrator class.
+
+Example migrator::
 
     using System.Collections.Generic;
     using System.Linq;
@@ -1452,6 +1386,8 @@ An example migrator::
                 return userV1_0_2;
             }
 
+            /* There's no changes in model for v1.0.2. */
+
             public User FromV1_0_0(User userV1_0_0)
             {
                 userV1_0_0.RealmIds = new List<RealmId>();
@@ -1459,9 +1395,6 @@ An example migrator::
                 userV1_0_0.DomainModelVersion = new ContextDomainModelVersion("1.0.1");
                 return userV1_0_0;
             }
-
-            public IEnumerable<User> FromV1_0_0(IEnumerable<User> usersV1_0_0)
-                => usersV1_0_0.Select(FromV1_0_0);
         }
     }
 
@@ -1483,7 +1416,7 @@ The test methods are based on the standard ``xUnit`` testing model, so you will 
 
 .. warning:: Remember that the unit tests need to reflect the domain model and ubiquitous language.
 
-An example action unit tests suite::
+Example action unit tests::
 
     using Xunit;
     using Application.Actions.Commands;
@@ -1659,7 +1592,7 @@ Subclass ``ActionUnitTests`` to create your own base class for the unit tests.
 
 .. note:: This is a very concise description of the relatively big ``ActionUnitTests`` concept. Later we'll add more documentation and guides on the topic of testing but for now you should be able to look at the example code and get started with your action testing.
 
-An example action unit tests class::
+Example action unit tests class::
 
     using Microsoft.AspNetCore;
     using Microsoft.AspNetCore.Hosting;
