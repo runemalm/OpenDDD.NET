@@ -2,15 +2,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
 using DDD.Domain.Model.Error;
+using DDD.Infrastructure.Ports.Email;
 using Application.Actions.Commands;
+using Domain.Model.Summary;
 
 namespace Application.Actions
 {
     public class NotifyWeatherPredictedAction : Action<NotifyWeatherPredictedCommand, object>
     {
-        public NotifyWeatherPredictedAction(ActionDependencies deps) : base(deps)
+        private readonly IEmailPort _emailAdapter;
+        private readonly ISummaryRepository _summaryRepository;
+        
+        public NotifyWeatherPredictedAction(
+            IEmailPort emailAdapter,
+            ISummaryRepository summaryRepository,
+            ITransactionalDependencies transactionalDependencies)
+            : base(transactionalDependencies)
         {
-            
+            _emailAdapter = emailAdapter;
+            _summaryRepository = summaryRepository;
         }
 
         public override async Task<object> ExecuteAsync(

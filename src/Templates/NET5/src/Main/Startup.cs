@@ -14,7 +14,6 @@ using Application.Actions.Commands;
 using Application.Settings;
 using Domain.Model.Forecast;
 using Domain.Model.Summary;
-using Domain.Services;
 using Infrastructure.Ports.Adapters.Domain;
 using Infrastructure.Ports.Adapters.Http.v1;
 using Infrastructure.Ports.Adapters.Interchange.Translation;
@@ -49,6 +48,7 @@ namespace Main
             services.AddMonitoring(_settings);
             services.AddPersistence(_settings);
             services.AddPubSub(_settings);
+            services.AddTransactional(_settings);
 
             // App
             AddDomainServices(services);
@@ -74,7 +74,6 @@ namespace Main
         
         private void AddDomainServices(IServiceCollection services)
         {
-            services.AddTransient<DomainServiceDependencies>();
             services.AddTransient<IForecastDomainService, ForecastDomainService>();
         }
 
@@ -108,8 +107,6 @@ namespace Main
 
         private void AddActions(IServiceCollection services)
         {
-            services.AddTransient<ActionDependencies>();
-    
             services.AddAction<GetAverageTemperatureAction, GetAverageTemperatureCommand>();
             services.AddAction<NotifyWeatherPredictedAction, NotifyWeatherPredictedCommand>();
             services.AddAction<PredictWeatherAction, PredictWeatherCommand>();

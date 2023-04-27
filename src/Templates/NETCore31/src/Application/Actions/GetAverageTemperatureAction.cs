@@ -2,14 +2,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using DDD.Application;
 using Application.Actions.Commands;
+using Domain.Model.Forecast;
 
 namespace Application.Actions
 {
     public class GetAverageTemperatureAction : Action<GetAverageTemperatureCommand, int>
     {
-        public GetAverageTemperatureAction(ActionDependencies deps) : base(deps)
+        private readonly IForecastDomainService _forecastDomainService;
+        
+        public GetAverageTemperatureAction(
+            IForecastDomainService forecastDomainService,
+            ITransactionalDependencies transactionalDependencies)
+            : base(transactionalDependencies)
         {
-            
+            _forecastDomainService = forecastDomainService;
         }
 
         public override async Task<int> ExecuteAsync(
