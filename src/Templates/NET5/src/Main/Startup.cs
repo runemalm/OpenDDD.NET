@@ -47,7 +47,7 @@ namespace Main
             AddApplicationService(services);
             AddSecondaryAdapters(services);
             AddPrimaryAdapters(services);
-            AddSerialization(services);
+            AddConversion(services);
             AddHooks(services);
         }
 
@@ -92,9 +92,9 @@ namespace Main
             services.AddTransient<IOnBeforePrimaryAdaptersStartedHook, OnBeforePrimaryAdaptersStartedHook>();
         }
 
-        private void AddSerialization(IServiceCollection services)
+        private void AddConversion(IServiceCollection services)
         {
-            services.AddSerialization(_settings);
+            services.AddConversion(_settings);
         }
 
         private void AddActions(IServiceCollection services)

@@ -7,22 +7,22 @@ namespace OpenDDD.Infrastructure.Services.Persistence.Memory
 {
 	public class MemoryPersistenceService : PersistenceService
 	{
-		public MemoryPersistenceService(ISettings settings, ILogger logger, SerializerSettings serializerSettings) 
-			: base("n/a", logger, serializerSettings)
+		public MemoryPersistenceService(ISettings settings, ILogger logger, ConversionSettings conversionSettings) 
+			: base("n/a", logger, conversionSettings)
 		{
 			
 		}
 		
 		public override IConnection OpenConnection()
 		{
-			var conn = new MemoryConnection(_serializerSettings);
+			var conn = new MemoryConnection(_conversionSettings);
 			conn.Open();
 			return conn;
 		}
 		
 		public override async Task<IConnection> OpenConnectionAsync()
 		{
-			var conn = new MemoryConnection(_serializerSettings);
+			var conn = new MemoryConnection(_conversionSettings);
 			await conn.OpenAsync();
 			return conn;
 		}

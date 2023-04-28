@@ -24,15 +24,15 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 		private readonly string _tableName;
 		private readonly IMigrator<T> _migrator;
 		private readonly IPersistenceService _persistenceService;
-		private readonly SerializerSettings _serializerSettings;
+		private readonly ConversionSettings _conversionSettings;
 
-		public SqlRepository(ISettings settings, string tableName, IMigrator<T> migrator, IPersistenceService persistenceService, SerializerSettings  serializerSettings)
+		public SqlRepository(ISettings settings, string tableName, IMigrator<T> migrator, IPersistenceService persistenceService, ConversionSettings  conversionSettings)
 		{
 			_settings = settings;
 			_tableName = tableName;
 			_migrator = migrator;
 			_persistenceService = persistenceService;
-			_serializerSettings = serializerSettings;
+			_conversionSettings = conversionSettings;
 		}
 		
 		public override void Start(CancellationToken ct)
@@ -191,7 +191,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 		public override IEnumerable<T> GetWith(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{
 			var conn = _persistenceService.GetConnection(actionId);
-			var whereExpr = string.Join(" AND ", andWhere.Select(t => $"data->>'{FormatPropertyName(t.Item1, _serializerSettings)}' = '{t.Item2}'"));
+			var whereExpr = string.Join(" AND ", andWhere.Select(t => $"data->>'{FormatPropertyName(t.Item1, _conversionSettings)}' = '{t.Item2}'"));
 			var stmt = $"SELECT * FROM {_tableName} WHERE {whereExpr}";
 			var aggregates = conn.ExecuteQuery<T>(stmt);
 			aggregates = _migrator.Migrate(aggregates).ToList();
@@ -201,7 +201,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 		public override async Task<IEnumerable<T>> GetWithAsync(IEnumerable<(string, object)> andWhere, ActionId actionId, CancellationToken ct)
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
-			var whereExpr = string.Join(" AND ", andWhere.Select(t => $"data->>'{FormatPropertyName(t.Item1, _serializerSettings)}' = '{t.Item2}'"));
+			var whereExpr = string.Join(" AND ", andWhere.Select(t => $"data->>'{FormatPropertyName(t.Item1, _conversionSettings)}' = '{t.Item2}'"));
 			var stmt = $"SELECT * FROM {_tableName} WHERE {whereExpr}";
 			var aggregates = await conn.ExecuteQueryAsync<T>(stmt);
 			aggregates = _migrator.Migrate(aggregates).ToList();
@@ -232,7 +232,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 			
 			var parameters = new Dictionary<string, object>();
 			parameters.Add("@id", aggregate.Id.ToString());
-			parameters.Add("@data", JsonDocument.Parse(JsonConvert.SerializeObject(aggregate, _serializerSettings)));
+			parameters.Add("@data", JsonDocument.Parse(JsonConvert.SerializeObject(aggregate, _conversionSettings)));
 
 			return (query, parameters);
 		}

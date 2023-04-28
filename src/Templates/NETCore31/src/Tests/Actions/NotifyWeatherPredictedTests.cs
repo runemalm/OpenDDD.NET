@@ -53,7 +53,7 @@ namespace Tests.Actions
             EnableDomainEvents();
     
             // Act
-            await DomainPublisher.FlushAsync(new OutboxEvent(new WeatherPredicted(Forecast, ActionId), SerializerSettings));
+            await DomainPublisher.FlushAsync(new OutboxEvent(new WeatherPredicted(Forecast, ActionId), ConversionSettings));
         
             // Assert
             AssertEmailSent(toEmail: Email.Create("bob@example.com"), msgContains: $"the weather tomorrow will be ");

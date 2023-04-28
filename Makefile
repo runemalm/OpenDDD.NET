@@ -18,10 +18,11 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := openddd
-BUILD_VERSION := 1.0.0-alpha.12
+BUILD_VERSION := 1.0.0-alpha.13
 
 NUGET_NAME := OpenDDD.NET
 TOOLS_IMAGE_NAME := runemalm/openddd-tools
+TOOLS_IMAGE_TAG := 1.0.0-alpha.1
 ROOT_NAMESPACE := OpenDDD
 
 SRC_DIR := $(PWD)/src
@@ -196,11 +197,11 @@ clear-nuget-caches: ##@Build	 clean all nuget caches
 
 .PHONY: build-tools-image
 build-tools-image: ##@Tools	Build the tools image
-	cd $(TOOLS_DIR) && docker build --progress plain -t $(TOOLS_IMAGE_NAME) .
+	cd $(TOOLS_DIR) && docker build --progress plain -t $(TOOLS_IMAGE_NAME):$(TOOLS_IMAGE_TAG) .
 
 .PHONY: push-tools-image
 push-tools-image: ##@Tools	Push the tools image
-	echo "TODO..."
+	docker push $(TOOLS_IMAGE_NAME):$(TOOLS_IMAGE_TAG)
 
 ##########################################################################
 # PROJECT TEMPLATES

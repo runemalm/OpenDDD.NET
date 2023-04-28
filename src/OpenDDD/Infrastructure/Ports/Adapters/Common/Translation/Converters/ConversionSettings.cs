@@ -5,9 +5,9 @@ using Newtonsoft.Json.Serialization;
 
 namespace OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters
 {
-    public class SerializerSettings : JsonSerializerSettings
+    public class ConversionSettings : JsonSerializerSettings
     {
-        public SerializerSettings()
+        public ConversionSettings()
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver();
             Converters = new List<JsonConverter>()

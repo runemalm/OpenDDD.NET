@@ -4,6 +4,7 @@
 	{
 		None,
 		Negative,
+		Positive,
 		PowerIAM
 	}
 }

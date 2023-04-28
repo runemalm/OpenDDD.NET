@@ -6,6 +6,11 @@ Version history
 
 .. tip:: Subscribe to the github repository to get notifications when we move into beta and rc phases!
 
+**1.0.0-alpha.13** - 2023-04-28
+
+- Rename 'Serialization' to 'Conversion'.
+- Add 'PositiveIamAdapter' that permits everything.
+
 **1.0.0-alpha.12** - 2023-04-28
 
 - Rename framework to 'OpenDDD.NET'.

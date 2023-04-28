@@ -24,7 +24,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		private readonly IDeadLetterQueue _deadLetterQueue;
 		private readonly TAction _action;
 		private readonly ILogger _logger;
-		private readonly SerializerSettings _serializerSettings;
+		private readonly ConversionSettings _conversionSettings;
 
 		public EventListener(
 			Context context, 
@@ -35,7 +35,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			IOutbox outbox,
 			IDeadLetterQueue deadLetterQueue,
 			ILogger logger,
-			SerializerSettings serializerSettings)
+			ConversionSettings conversionSettings)
 		{
 			Context = context;
 			ListensTo = listensTo;
@@ -45,7 +45,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			_outbox = outbox;
 			_deadLetterQueue = deadLetterQueue;
 			_logger = logger;
-			_serializerSettings = serializerSettings;
+			_conversionSettings = conversionSettings;
 		}
 
 		public void Start()
@@ -106,7 +106,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 				$"{_eventAdapter.GetContext()}.",
 				LogLevel.Debug);
 			
-			await _deadLetterQueue.EnqueueAsync(new DeadEvent(theEvent, _serializerSettings), CancellationToken.None);
+			await _deadLetterQueue.EnqueueAsync(new DeadEvent(theEvent, _conversionSettings), CancellationToken.None);
 		}
 
 		// React
@@ -115,7 +115,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		{
 			try
 			{
-				return JsonConvert.DeserializeObject<TEvent>(message.ToString(), _serializerSettings);
+				return JsonConvert.DeserializeObject<TEvent>(message.ToString(), _conversionSettings);
 			}
 			catch (Exception e)
 			{

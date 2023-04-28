@@ -7,12 +7,12 @@ namespace OpenDDD.Infrastructure.Services.Persistence
 	public abstract class Connection : IConnection
 	{
 		protected readonly string _connString;
-		protected readonly JsonSerializerSettings _serializerSettings;
+		protected readonly JsonSerializerSettings _conversionSettings;
 
-		public Connection(string connString, JsonSerializerSettings serializerSettings)
+		public Connection(string connString, JsonSerializerSettings conversionSettings)
 		{
 			_connString = connString;
-			_serializerSettings = serializerSettings;
+			_conversionSettings = conversionSettings;
 		}
 
 		public abstract void Open();

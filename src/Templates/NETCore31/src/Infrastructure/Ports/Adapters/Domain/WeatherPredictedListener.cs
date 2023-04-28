@@ -18,7 +18,7 @@ namespace Infrastructure.Ports.Adapters.Domain
 			IOutbox outbox,
 			IDeadLetterQueue deadLetterQueue,
 			ILogger logger,
-			SerializerSettings serializerSettings)
+			ConversionSettings conversionSettings)
 			: base(
 				Context.Domain,
 				"WeatherPredicted",
@@ -28,7 +28,7 @@ namespace Infrastructure.Ports.Adapters.Domain
 				outbox,
 				deadLetterQueue,
 				logger,
-				serializerSettings)
+				conversionSettings)
 		{
 			
 		}

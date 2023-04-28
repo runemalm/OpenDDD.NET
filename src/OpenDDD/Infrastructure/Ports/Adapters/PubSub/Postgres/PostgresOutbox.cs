@@ -16,12 +16,12 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Postgres
     public class PostgresOutbox : IOutbox
     {
         private readonly IPersistenceService _persistenceService;
-        private readonly SerializerSettings _serializerSettings;
+        private readonly ConversionSettings _conversionSettings;
         
-        public PostgresOutbox(IPersistenceService persistenceService, SerializerSettings serializerSettings)
+        public PostgresOutbox(IPersistenceService persistenceService, ConversionSettings conversionSettings)
         {
             _persistenceService = persistenceService;
-            _serializerSettings = serializerSettings;
+            _conversionSettings = conversionSettings;
         }
 		
         public void Start(CancellationToken ct)
@@ -82,10 +82,10 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             var count = 0;
             foreach (var theEvent in events)
             {
-                var outboxEvent = new OutboxEvent(theEvent, _serializerSettings);
+                var outboxEvent = new OutboxEvent(theEvent, _conversionSettings);
                 values.Add($"(@id_{count}, @data_{count})");
                 parameters.Add($"@id_{count}", outboxEvent.Id);
-                parameters.Add($"@data_{count}", JsonDocument.Parse(JsonConvert.SerializeObject(outboxEvent, _serializerSettings)));
+                parameters.Add($"@data_{count}", JsonDocument.Parse(JsonConvert.SerializeObject(outboxEvent, _conversionSettings)));
                 count++;
             }
 

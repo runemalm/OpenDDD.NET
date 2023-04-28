@@ -16,11 +16,11 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 
 		public DeadEvent() { }
 
-		public DeadEvent(IEvent theEvent, SerializerSettings serializerSettings)
+		public DeadEvent(IEvent theEvent, ConversionSettings conversionSettings)
 		{
 			Id = Guid.NewGuid().ToString();
 			EventId = theEvent.Header.EventId;
-			JsonPayload = JsonConvert.SerializeObject(theEvent, serializerSettings);
+			JsonPayload = JsonConvert.SerializeObject(theEvent, conversionSettings);
 		}
 		
 		// Equality

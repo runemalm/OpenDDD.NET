@@ -21,14 +21,14 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.ServiceBus
 			string subName,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter,
-			SerializerSettings serializerSettings) :
+			ConversionSettings conversionSettings) :
 			base(
 				context,
 				client,
 				maxDeliveryRetries,
 				logger,
 				monitoringAdapter,
-				serializerSettings)
+				conversionSettings)
 		{
 			_connString = connString;
 			_subName = subName;

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using OpenDDD.Application.Settings;
 using Infrastructure.Ports.Adapters.Common.Translation.Converters;
-using OpenDddSerializerSettings = OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.SerializerSettings;
+using OpenDddConversionSettings = OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.ConversionSettings;
 
 namespace Main.Extensions
 {
@@ -9,9 +9,9 @@ namespace Main.Extensions
 	{
 		// Public API
 
-		public static IServiceCollection AddSerialization(this IServiceCollection services, ISettings settings)
+		public static IServiceCollection AddConversion(this IServiceCollection services, ISettings settings)
 		{
-			services.AddTransient<OpenDddSerializerSettings, SerializerSettings>();
+			services.AddTransient<OpenDddConversionSettings, ConversionSettings>();
 			return services;
 		}
 	}

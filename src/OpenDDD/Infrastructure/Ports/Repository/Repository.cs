@@ -38,7 +38,7 @@ namespace OpenDDD.Infrastructure.Ports.Repository
         public abstract string GetNextIdentity();
         public abstract Task<string> GetNextIdentityAsync();
         
-        protected string FormatPropertyName(string name, SerializerSettings serializerSettings)
+        protected string FormatPropertyName(string name, ConversionSettings conversionSettings)
         {
             /*
              * Format the property name according to the
@@ -53,8 +53,8 @@ namespace OpenDDD.Infrastructure.Ports.Repository
                 {
                     { name, "dummyValue" }
                 };
-            var dummyJson = JsonConvert.SerializeObject(dummyDict, serializerSettings);
-            var dummyObject = JObject.FromObject(JsonConvert.DeserializeObject(dummyJson, serializerSettings));
+            var dummyJson = JsonConvert.SerializeObject(dummyDict, conversionSettings);
+            var dummyObject = JObject.FromObject(JsonConvert.DeserializeObject(dummyJson, conversionSettings));
 
             foreach (var kvp in dummyObject)
                 formatted = kvp.Key;

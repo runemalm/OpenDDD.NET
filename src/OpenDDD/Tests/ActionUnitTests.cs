@@ -200,7 +200,7 @@ namespace OpenDDD.Tests
 
         // Translation
         
-        public SerializerSettings SerializerSettings => TestServer.Host.Services.GetRequiredService<SerializerSettings>();
+        public ConversionSettings ConversionSettings => TestServer.Host.Services.GetRequiredService<ConversionSettings>();
 
         // Persistence
         

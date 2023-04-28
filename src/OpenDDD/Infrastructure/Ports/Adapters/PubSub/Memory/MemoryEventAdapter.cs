@@ -16,14 +16,14 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			int maxDeliveryRetries,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter,
-			SerializerSettings serializerSettings)
+			ConversionSettings conversionSettings)
 			: base(
 				topic, 
 				client, 
 				maxDeliveryRetries,
 				logger, 
 				monitoringAdapter,
-				serializerSettings)
+				conversionSettings)
 		{
 			
 		}

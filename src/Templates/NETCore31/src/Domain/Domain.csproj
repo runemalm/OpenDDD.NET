@@ -7,6 +7,6 @@
     <ProjectReference Include="..\Interchange\Interchange.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="OpenDDD.NET" Version="1.0.0-alpha.12" />
+    <PackageReference Include="OpenDDD.NET" Version="1.0.0-alpha.13" />
   </ItemGroup>
 </Project>

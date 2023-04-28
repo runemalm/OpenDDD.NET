@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using NSwag;
 using NSwag.Generation.Processors.Security;
-using OpenDDD.Domain.Model.Error;
 using OpenDDD.Application;
 using OpenDDD.Application.Error;
 using OpenDDD.Application.Settings;
@@ -18,6 +17,7 @@ using OpenDDD.Domain.Model.Auth;
 using OpenDDD.Domain.Services;
 using OpenDDD.Domain.Services.Auth;
 using OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.Negative;
+using OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.Positive;
 using OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam;
 using OpenDDD.Infrastructure.Ports.Adapters.Email.Memory;
 using OpenDDD.Infrastructure.Ports.Adapters.Email.Smtp;
@@ -70,7 +70,11 @@ namespace OpenDDD.NET.Extensions
 		
 		public static IServiceCollection AddIamAdapter(this IServiceCollection services, ISettings settings)
 		{
-			if (settings.Auth.Rbac.Provider == RbacProvider.Negative)
+			if (settings.Auth.Rbac.Provider == RbacProvider.None)
+			{
+				services.AddTransient<IIamPort, PositiveIamAdapter>();
+			}
+			else if (settings.Auth.Rbac.Provider == RbacProvider.Negative)
 			{
 				services.AddTransient<IIamPort, NegativeIamAdapter>();
 			}

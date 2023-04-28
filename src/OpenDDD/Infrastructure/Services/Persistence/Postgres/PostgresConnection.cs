@@ -3,8 +3,6 @@ using System.Data;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Npgsql;
-using OpenDDD.Domain.Model.Error;
-using PostgresException = OpenDDD.Infrastructure.Ports.Adapters.Common.Exceptions.PostgresException;
 
 namespace OpenDDD.Infrastructure.Services.Persistence.Postgres
 {
@@ -103,7 +101,7 @@ namespace OpenDDD.Infrastructure.Services.Persistence.Postgres
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                var aggregate = JsonConvert.DeserializeObject<T>(reader.GetFieldValue<string>(1), _serializerSettings);
+                var aggregate = JsonConvert.DeserializeObject<T>(reader.GetFieldValue<string>(1), _conversionSettings);
                 aggregates.Add(aggregate);
             }
 
@@ -119,7 +117,7 @@ namespace OpenDDD.Infrastructure.Services.Persistence.Postgres
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                var aggregate = JsonConvert.DeserializeObject<T>(reader.GetFieldValue<string>(1), _serializerSettings);
+                var aggregate = JsonConvert.DeserializeObject<T>(reader.GetFieldValue<string>(1), _conversionSettings);
                 aggregates.Add(aggregate);
             }
 
