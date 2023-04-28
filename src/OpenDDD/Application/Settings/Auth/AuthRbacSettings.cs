@@ -7,8 +7,6 @@ namespace OpenDDD.Application.Settings.Auth
 		public RbacProvider Provider { get; set; }
 		public string ExternalRealmId { get; }
 
-		public AuthRbacSettings() { }
-
 		public AuthRbacSettings(IOptions<Options> options)
 		{
 			// RBAC provider
@@ -17,8 +15,12 @@ namespace OpenDDD.Application.Settings.Auth
 			if (providerString != null)
 				if (providerString.ToLower() == "negative")
 					rbacProvider = RbacProvider.Negative;
+				else if (providerString.ToLower() == "positive")
+					rbacProvider = RbacProvider.Positive;
 				else if (providerString.ToLower() == "poweriam")
 					rbacProvider = RbacProvider.PowerIAM;
+				else
+					throw SettingsException.Invalid($"Unsupported RBAC setting: '{providerString}'.");
 			Provider = rbacProvider;
 			
 			// External realm ID

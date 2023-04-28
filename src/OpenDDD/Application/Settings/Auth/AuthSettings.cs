@@ -10,8 +10,6 @@ namespace OpenDDD.Application.Settings.Auth
 		public IAuthRbacSettings Rbac { get; set; }
 		public IAuthJwtTokenSettings JwtToken { get; }
 		
-		public AuthSettings() { }
-
 		public AuthSettings(IOptions<Options> options)
 		{
 			// Enabled
@@ -25,6 +23,9 @@ namespace OpenDDD.Application.Settings.Auth
 			// Validate
 			if (Enabled && JwtToken.PrivateKey.IsNullOrEmpty())
 				throw SettingsException.AuthEnabledButNoPrivateKey();
+			
+			if (Enabled && Rbac.Provider == RbacProvider.None)
+				throw SettingsException.Invalid("Setting 'auth' enabled with RBAC provider 'none' is not a valid configuration.");
 		}
 	}
 }

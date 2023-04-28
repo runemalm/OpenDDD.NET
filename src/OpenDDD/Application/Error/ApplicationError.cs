@@ -58,18 +58,18 @@ namespace OpenDDD.Application.Error
         // Settings errors
 		
         public const int Settings_Invalid_Code = 171;
-        public const string Settings_Invalid_Msg = "Invalid setting: '{}'";
-        public const string Settings_Invalid_UsrMsg = "Couldn't perform your request because the server was misconfigured: '{}'";
+        public const string Settings_Invalid_Msg = "Invalid setting: '{0}'";
+        public const string Settings_Invalid_UsrMsg = "Couldn't perform your request because the server was misconfigured: '{0}'";
 
         public const int Settings_UnsupportedJwtTokenLocationSetting_Code = 172;
         public const string Settings_UnsupportedJwtTokenLocationSetting_Msg = "Unsupported jwt token location setting: {0}";
         public const string Settings_UnsupportedJwtTokenLocationSetting_UsrMsg = "The server was misconfigured. The JWT location setting is unsupported: '{0}'.";
         
         public const int Settings_AuthEnabledButNoPrivateKey_Code = 173;
-        public const string Settings_AuthEnabledButNoPrivateKey_Msg = "Settings auth enabled with no or empty private key is not allowed.";
-        public const string Settings_AuthEnabledButNoPrivateKey_UsrMsg = "Settings auth enabled with no or empty private key is not allowed.";
+        public const string Settings_AuthEnabledButNoPrivateKey_Msg = "Setting 'auth' enabled with no or empty private key is not allowed.";
+        public const string Settings_AuthEnabledButNoPrivateKey_UsrMsg = "Setting 'auth' enabled with no or empty private key is not allowed.";
 
-        public static IApplicationError Settings_InvalidSettings(string spec) => Create(Settings_Invalid_Code, String.Format(Settings_Invalid_Msg, spec), String.Format(Settings_Invalid_UsrMsg, spec));
+        public static IApplicationError Settings_Invalid(string spec) => Create(Settings_Invalid_Code, String.Format(Settings_Invalid_Msg, spec), String.Format(Settings_Invalid_UsrMsg, spec));
         public static IApplicationError Settings_UnsupportedJwtTokenLocationSetting(string location) => Create(Settings_UnsupportedJwtTokenLocationSetting_Code, String.Format(Settings_UnsupportedJwtTokenLocationSetting_Msg, location), String.Format(Settings_UnsupportedJwtTokenLocationSetting_UsrMsg, location));
         public static IApplicationError Settings_AuthEnabledButNoPrivateKey() => Create(Settings_AuthEnabledButNoPrivateKey_Code, Settings_AuthEnabledButNoPrivateKey_Msg, Settings_AuthEnabledButNoPrivateKey_UsrMsg);
         
