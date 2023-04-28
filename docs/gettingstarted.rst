@@ -44,7 +44,9 @@ We will now cover all the ``building blocks`` of the framework:
 Env files
 ---------
 
-An `env file <https://12factor.net/config>`_ is used to configure your bounded context for a specific environment.
+An ``env file`` is used to configure your bounded context for a specific environment.
+
+It's part of the `Twelve-Factor App <https://12factor.net/config>`_ pattern.
 
 You will have one env file for each of your environments:
 
@@ -53,9 +55,9 @@ You will have one env file for each of your environments:
 - env.local
 - env.test
 
-.. tip:: Copy one of the env.sample files to quickly create an env file with sample content.
+.. tip:: In each of the directories that you need to create an env file there is a ``.sample`` file that you can copy and edit accordingly.
 
-Set the ``ENV_FILE`` environment variable to specify the name of the env file or the actual contents of it. This is how you define the configuration to use.
+Load your env file using the ``ENV_FILE`` environment variable. In this variable, you either specify the env file filename, or put it's content directly in it (serialized as a json string).
 
 If you load this variable with a filename, the framwork will look for an env file with that name in the current directory, or any of the parent directories. If you on the other hand specify the actual contents of the env file in this variable, remember to first serialize it into a json string. The framework is smart enough to detect if the ``ENV_FILE`` variable value is a filename or a json encoded string with it's contents.
 
@@ -91,7 +93,7 @@ Example env file::
     CFG_HTTP_DOCS_HTTP_PORT=80
     CFG_HTTP_DOCS_HTTPS_PORT=443
     CFG_HTTP_DOCS_AUTH_EXTRA_TOKENS=
-    CFG_HTTP_DOCS_TITLE=Weather Context API
+    CFG_HTTP_DOCS_TITLE=Weather API
 
     # Persistence
     CFG_PERSISTENCE_PROVIDER=Memory
@@ -118,9 +120,9 @@ Example env file::
 
     # Email
     CFG_EMAIL_ENABLED=true
-    CFG_EMAIL_PROVIDER=smtp
-    CFG_EMAIL_SMTP_HOST=localhost
-    CFG_EMAIL_SMTP_PORT=1025
+    CFG_EMAIL_PROVIDER=memory
+    CFG_EMAIL_SMTP_HOST=
+    CFG_EMAIL_SMTP_PORT=
     CFG_EMAIL_SMTP_USERNAME=
     CFG_EMAIL_SMTP_PASSWORD=
 
@@ -157,6 +159,8 @@ Program.cs
 
 Use the ``AddXxx()`` extension methods of the framework to properly configure the .NET host and application.
 
+.. tip:: Use one of the weather forecast project templates and you won't need to create this file.
+
 Example Program.cs file::
 
     using Microsoft.AspNetCore;
@@ -188,6 +192,8 @@ Startup.cs
 
 Since part of the design philosophy behind this framwork is to follow the hexagonal architecture, and to make this intent clear through the structure of the code, the ``Startup.cs`` file is written according to a specific convention.
 
+.. tip:: Use one of the weather forecast project templates and you won't need to create this file.
+
 See the example below and create your Startup.cs file.
 
 Example Startup.cs file::
@@ -197,12 +203,12 @@ Example Startup.cs file::
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
-    using DDD.Application.Settings;
-    using DDD.Application.Settings.Persistence;
+    using OpenDDD.Application.Settings;
+    using OpenDDD.Application.Settings.Persistence;
     using OpenDDD.NET.Extensions;
     using OpenDDD.NET.Hooks;
     using Main.Extensions;
-    using Main.NETCore.Hooks;
+    using Main.NET.Hooks;
     using Application.Actions;
     using Application.Actions.Commands;
     using Domain.Model.Forecast;
@@ -241,7 +247,7 @@ Example Startup.cs file::
                 AddApplicationService(services);
                 AddSecondaryAdapters(services);
                 AddPrimaryAdapters(services);
-                AddSerialization(services);
+                AddConversion(services);
                 AddHooks(services);
             }
 
@@ -260,7 +266,7 @@ Example Startup.cs file::
             
             private void AddDomainServices(IServiceCollection services)
             {
-                services.AddTransient<IForecastDomainService, ForecastDomainService>();
+                services.AddDomainService<IForecastDomainService, ForecastDomainService>();
             }
 
             private void AddApplicationService(IServiceCollection services)
@@ -286,9 +292,9 @@ Example Startup.cs file::
                 services.AddTransient<IOnBeforePrimaryAdaptersStartedHook, OnBeforePrimaryAdaptersStartedHook>();
             }
 
-            private void AddSerialization(IServiceCollection services)
+            private void AddConversion(IServiceCollection services)
             {
-                services.AddSerialization(_settings);
+                services.AddConversion(_settings);
             }
 
             private void AddActions(IServiceCollection services)
@@ -411,15 +417,15 @@ Actions
 
 All action classes need to subclass the ``Action<TCommand, TReturn>`` class.
 
-The ``ExecuteAsync()`` method is where you fetch your aggregate roots and delegate domain logic to them and/or domain services.
+The ``ExecuteAsync()`` method is where you fetch your aggregates and delegate domain logic to them and/or domain services.
 
-If your aggregate roots or domain services need to publish events or use any adapter, you inject them via the constructor and pass along in the calls that drive your domain logic through these objects.
+If your aggregates or domain services need to publish events or use any adapter, you inject them via the constructor and pass along in the calls that drive your domain logic through these objects.
 
-Remember that an aggregate is only allowed to change the state of a single aggregate root at a time. It must also delegate all domain logic to the aggregate roots and/or domain services. Domain logic doesn't belong in the application layer.
+Remember that an aggregate is only allowed to change the state of a single aggregate at a time. It must also delegate all domain logic to the aggregates and/or domain services. Domain logic doesn't belong in the application layer.
 
-.. warning:: Delegate all domain logic to aggregate roots or domain services.
+.. warning:: Delegate all domain logic to aggregates or domain services.
 
-.. warning:: Only act upon one aggregate root per action.
+.. warning:: Only act upon one aggregate per action.
 
 You register your action classes with the DI container like this::
 
@@ -429,29 +435,26 @@ Example action::
 
     using System.Threading;
     using System.Threading.Tasks;
-    using DDD.Application;
-    using DDD.Domain.Model.Error;
-    using DDD.Domain.Services.Auth;
-    using DDD.Infrastructure.Ports.PubSub;
-    using DDD.Infrastructure.Services.Persistence;
+    using OpenDDD.Application;
+    using OpenDDD.Domain.Model.Error;
+    using OpenDDD.Infrastructure.Ports.PubSub;
     using Application.Actions.Commands;
     using Domain.Model.User;
 
     namespace Application.Actions
     {
-        public class CreateAccountAction : DDD.Application.Action<CreateAccountCommand, User>
+        public class CreateAccountAction : Action<CreateAccountCommand, User>
         {
+            private readonly IDomainPublisher _domainPublisher;
             private readonly IUserRepository _userRepository;
             
             public CreateAccountAction(
-                IAuthDomainService authDomainService,
-                IUserRepository userRepository,
                 IDomainPublisher domainPublisher,
-                IInterchangePublisher interchangePublisher,
-                IOutbox outbox,
-                IPersistenceService persistenceService)
-                : base(authDomainService, domainPublisher, interchangePublisher, outbox, persistenceService)
+                IUserRepository userRepository,
+                ITransactionalDependencies transactionalDependencies)
+                : base(transactionalDependencies)
             {
+                _domainPublisher = domainPublisher;
                 _userRepository = userRepository;
             }
 
@@ -460,7 +463,7 @@ Example action::
                 ActionId actionId,
                 CancellationToken ct)
             {
-                // Run
+                // Validate
                 var existing =
                     await _userRepository.GetWithEmailAsync(
                         command.Email,
@@ -470,27 +473,21 @@ Example action::
                 if (existing != null)
                     throw DomainException.AlreadyExists("user", "email", command.Email);
 
-                if (command.Password != command.RepeatPassword)
-                    throw DomainException.InvariantViolation("The passwords don't match.");
-
+                // Run
                 var user =
-                    User.Create(
+                    await User.CreateAccountAsync(
                         userId: UserId.Create(await _userRepository.GetNextIdentityAsync()),
                         firstName: command.FirstName,
                         lastName: command.LastName,
                         email: command.Email,
-                        isSuperUser: false,
+                        password: command.Password,
+                        passwordAgain: command.RepeatPassword,
+                        domainPublisher: _domainPublisher,
                         actionId: actionId,
                         ct: ct);
 
-                user.SetPassword(command.Password, actionId, ct);
-                user.RequestEmailValidation(actionId, ct);
-                
                 // Persist
                 await _userRepository.SaveAsync(user, actionId, ct);
-                
-                // Publish
-                await _domainPublisher.PublishAsync(new AccountCreated(user, actionId));
                 
                 // Return
                 return user;
@@ -502,13 +499,13 @@ Example action::
 Entities
 --------
 
-The entities subclass either the ``Aggregate`` class if it's an aggregate root, or the ``Entity`` class otherwise.
+The entities subclass either the ``Aggregate`` class if it's an aggregate, or the ``Entity`` class otherwise.
 
 They need to implement the ``IEquatable<>`` interface, so that assertions in the unit tests can compare them to each other.
 
 Actions use the methods of aggregate roots to drive the domain logic, passing adapters and publishers needed as arguments.
 
-Example aggregate root::
+Example aggregate::
 
     using System;
     using System.Collections.Generic;
@@ -516,12 +513,13 @@ Example aggregate root::
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.WebUtilities;
-    using DDD.Application;
-    using DDD.Domain.Model.BuildingBlocks.Aggregate;
-    using DDD.Domain.Model.BuildingBlocks.Entity;
-    using DDD.Domain.Model.Error;
-    using DDD.Domain.Model.Validation;
-    using DDD.Infrastructure.Ports.Email;
+    using OpenDDD.Application;
+    using OpenDDD.Domain.Model.BuildingBlocks.Aggregate;
+    using OpenDDD.Domain.Model.BuildingBlocks.Entity;
+    using OpenDDD.Domain.Model.Error;
+    using OpenDDD.Domain.Model.Validation;
+    using OpenDDD.Infrastructure.Ports.Email;
+    using OpenDDD.Infrastructure.Ports.PubSub;
     using Domain.Model.Realm;
     using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
     using SaltClass = Domain.Model.User.Salt;
@@ -550,12 +548,51 @@ Example aggregate root::
 
             // Public
             
-            public static User Create(
+            public static async Task<User> CreateAccountAsync(
                 UserId userId,
                 string firstName,
                 string lastName,
                 Email email,
-                bool isSuperUser,
+                string password,
+                string passwordAgain,
+                IDomainPublisher domainPublisher,
+                ActionId actionId,
+                CancellationToken ct)
+            {
+                if (password != passwordAgain)
+                    throw DomainException.InvariantViolation("The passwords don't match.");
+                
+                var user =
+                    new User
+                    {
+                        DomainModelVersion = ContextDomainModelVersion.Latest(),
+                        UserId = userId,
+                        FirstName = firstName,
+                        LastName = lastName,
+                        Email = email,
+                        EmailVerifiedAt = null,
+                        EmailVerificationRequestedAt = null,
+                        EmailVerificationCodeCreatedAt = null,
+                        EmailVerificationCode = null,
+                        IsSuperUser = false,
+                        RealmIds = new List<RealmId>()
+                    };
+                
+                user.SetPassword(password, actionId, ct);
+                user.RequestEmailValidation(actionId, ct);
+
+                user.Validate();
+
+                await domainPublisher.PublishAsync(new AccountCreated(user, actionId));
+
+                return user;
+            }
+            
+            public static User CreateDefaultAccountAtIdpLogin(
+                UserId userId,
+                string firstName,
+                string lastName,
+                Email email,
                 ActionId actionId,
                 CancellationToken ct)
             {
@@ -571,7 +608,7 @@ Example aggregate root::
                         EmailVerificationRequestedAt = null,
                         EmailVerificationCodeCreatedAt = null,
                         EmailVerificationCode = null,
-                        IsSuperUser = isSuperUser,
+                        IsSuperUser = false,
                         RealmIds = new List<RealmId>()
                     };
                 
@@ -581,7 +618,39 @@ Example aggregate root::
 
                 return user;
             }
+            
+            public static User CreateRootAccountAtBoot(
+                UserId userId,
+                string firstName,
+                string lastName,
+                Email email,
+                string password,
+                ActionId actionId,
+                CancellationToken ct)
+            {
+                var user =
+                    new User
+                    {
+                        DomainModelVersion = ContextDomainModelVersion.Latest(),
+                        UserId = userId,
+                        FirstName = firstName,
+                        LastName = lastName,
+                        Email = email,
+                        EmailVerifiedAt = null,
+                        EmailVerificationRequestedAt = null,
+                        EmailVerificationCodeCreatedAt = null,
+                        EmailVerificationCode = null,
+                        IsSuperUser = true,
+                        RealmIds = new List<RealmId>()
+                    };
+                
+                user.SetPassword(password, actionId, ct);
 
+                user.Validate();
+
+                return user;
+            }
+            
             public bool IsEmailVerified()
                 => EmailVerifiedAt != null;
             
@@ -789,11 +858,11 @@ Example aggregate root::
 Repositories
 ------------
 
-A repository is the interface for getting & saving your aggregate root from/to the database.
+A repository is the interface for getting & saving your aggregates from/to the database.
 
-Subclass the ``Repository`` base class for each aggregate root.
+Subclass the ``Repository`` base class for each aggregate.
 
-There are some base methods for e.g. getting all aggregate roots, getting by ID, saving an aggregate root, etc. You will need to add methods for the queries that are specific to your aggregate root and domain model.
+There are some base methods for e.g. getting all aggregates, getting by ID, saving an aggregate, etc. You will need to add methods for the queries that are specific to your aggregate and domain model.
 
 You will create one interface per repository, and one adapter for each of the technology implementations you want to support.
 
@@ -808,11 +877,11 @@ Example repository::
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using DDD.Application;
-    using DDD.Application.Settings;
-    using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
-    using DDD.Infrastructure.Ports.Adapters.Repository.Postgres;
-    using DDD.Infrastructure.Services.Persistence;
+    using OpenDDD.Application;
+    using OpenDDD.Application.Settings;
+    using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+    using OpenDDD.Infrastructure.Ports.Adapters.Repository.Postgres;
+    using OpenDDD.Infrastructure.Services.Persistence;
     using Domain.Model.Realm;
     using Domain.Model.User;
     using Infrastructure.Ports.Adapters.Repository.Migration;
@@ -821,8 +890,8 @@ Example repository::
     {
         public class PostgresUserRepository : PostgresRepository<User, UserId>, IUserRepository
         {
-            public PostgresUserRepository(ISettings settings, UserMigrator migrator, IPersistenceService persistenceService, SerializerSettings serializerSettings) 
-                : base(settings, "users", migrator, persistenceService, serializerSettings)
+            public PostgresUserRepository(ISettings settings, UserMigrator migrator, IPersistenceService persistenceService, ConversionSettings conversionSettings) 
+                : base(settings, "users", migrator, persistenceService, conversionSettings)
             {
                 
             }
@@ -849,13 +918,11 @@ There are two classes for implementing events, ``DomainEvent`` and ``Integration
 
 Subclass the appropriate one depending on the type of event you're implementing.
 
-.. note:: Integration event names are prefixed with ``Ic`` to easily separate them from possible domain events with the same name.
-
 Example domain event::
 
     using System;
-    using DDD.Application;
-    using DDD.Domain.Model.BuildingBlocks.Event;
+    using OpenDDD.Application;
+    using OpenDDD.Domain.Model.BuildingBlocks.Event;
 
     namespace Domain.Model.User
     {
@@ -897,11 +964,13 @@ Example domain event::
         }
     }
 
+.. note:: Integration event names are prefixed with ``Ic`` to easily separate them from possible domain events with the same name.
+
 Example integration event::
 
     using System;
-    using DDD.Application;
-    using DDD.Domain.Model.BuildingBlocks.Event;
+    using OpenDDD.Application;
+    using OpenDDD.Domain.Model.BuildingBlocks.Event;
     using ContextDomainModelVersion = Interchange.Domain.Model.DomainModelVersion;
 
     namespace Interchange.Domain.Model.Forecast
@@ -956,10 +1025,6 @@ Listeners
 
 A listener is used to react to domain- and integration events.
 
-Subscribe to an event by registering the listener with the DI container::
-
-    services.AddListener<AccountCreatedListener>();
-
 Your listeners will basically just create a command and pass it to the action that will be run to perform the reaction necessary.
 
 In the example below you can see how the ``AccountCreated`` event is reacted to by calling the ``SendEmailVerification`` action.
@@ -968,10 +1033,10 @@ Example domain event listener::
 
     using Application.Actions;
     using Application.Actions.Commands;
-    using DDD.Application;
-    using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
-    using DDD.Infrastructure.Ports.PubSub;
-    using DDD.Logging;
+    using OpenDDD.Application;
+    using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+    using OpenDDD.Infrastructure.Ports.PubSub;
+    using OpenDDD.Logging;
     using Domain.Model.User;
     using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
 
@@ -986,7 +1051,7 @@ Example domain event listener::
                 IOutbox outbox,
                 IDeadLetterQueue deadLetterQueue,
                 ILogger logger,
-                SerializerSettings serializerSettings)
+                ConversionSettings conversionSettings)
                 : base(
                     Context.Domain,
                     "AccountCreated",
@@ -996,7 +1061,7 @@ Example domain event listener::
                     outbox,
                     deadLetterQueue,
                     logger,
-                    serializerSettings)
+                    conversionSettings)
             {
                 
             }
@@ -1014,6 +1079,10 @@ Example domain event listener::
         }
     }
 
+Subscribe to an event by registering the listener with the DI container::
+
+    services.AddListener<AccountCreatedListener>();
+
 
 Domain Services
 ---------------
@@ -1024,12 +1093,9 @@ Example domain service::
 
     using System.Threading;
     using System.Threading.Tasks;
-    using DDD.Application;
-    using DDD.Application.Settings;
-    using DDD.Domain.Model.Auth;
-    using DDD.Domain.Model.Error;
-    using DDD.Domain.Services;
-    using DDD.Logging;
+    using OpenDDD.Application;
+    using OpenDDD.Domain.Model.Error;
+    using OpenDDD.Domain.Services;
     using Domain.Model.Assignment;
     using Domain.Model.Permission;
     using Domain.Model.Realm;
@@ -1047,11 +1113,7 @@ Example domain service::
                 IAssignmentDomainService assignmentDomainService,
                 IPermissionRepository permissionRepository,
                 IRealmRepository realmRepository,
-                IRoleRepository roleRepository,
-                ICredentials credentials,
-                ISettings settings,
-                ILogger logger) 
-                : base(credentials, settings, logger)
+                IRoleRepository roleRepository)
             {
                 _assignmentDomainService = assignmentDomainService;
                 _permissionRepository = permissionRepository;
@@ -1101,6 +1163,77 @@ Example domain service::
 
                 return role;
             }
+            
+            public async Task<Role> CreateRoleInWorldAsync(string name, string description, ActionId actionId, CancellationToken ct)
+            {
+                // Authorize
+                await _assignmentDomainService.AssurePermissionsInWorldAsync(
+                    new[] { ("IAM", "CREATE_ROLE") },
+                    actionId,
+                    ct);
+
+                // Run
+                var existing = await _roleRepository.GetWithNameInWorldAsync(name, actionId, ct);
+
+                if (existing != null)
+                    throw DomainException.AlreadyExists("role", "name", name);
+
+                var role = await Role.CreateInWorldAsync(
+                    RoleId.Create(await _roleRepository.GetNextIdentityAsync()),
+                    null,
+                    name, 
+                    description,
+                    actionId);
+                
+                // Return
+                return role;
+            }
+
+            public async Task<Role> CreateRoleInRealmAsync(string name, string description, RealmId realmId, string externalRealmId, ActionId actionId, CancellationToken ct)
+            {
+                // Validate
+                if (!(realmId != null ^ externalRealmId != null))
+                    throw DomainException.InvariantViolation(
+                        "You must supply exactly one of realmId and externalRealmId.");
+
+                var isExternalRealmId = realmId == null;
+                
+                // Authorize
+                await _assignmentDomainService.AssurePermissionsInRealmAsync(
+                    realmId?.ToString(),
+                    externalRealmId,
+                    new[] { ("IAM", "CREATE_ROLE") },
+                    actionId,
+                    ct);
+
+                // Run
+                Realm.Realm realm;
+
+                if (isExternalRealmId)
+                    realm = await _realmRepository.GetWithExternalIdAsync(externalRealmId, actionId, ct);
+                else
+                    realm = await _realmRepository.GetAsync(realmId, actionId, ct);
+
+                if (realm == null)
+                    throw DomainException.NotFound("realm", (isExternalRealmId ? null : realmId).ToString());
+
+                // Exists?
+                var existing = await _roleRepository.GetWithNameInRealmAsync(name, realm.RealmId, actionId, ct);
+
+                if (existing != null)
+                    throw DomainException.AlreadyExists("role", "name", name);
+
+                var role = await Role.CreateInRealmAsync(
+                    RoleId.Create(await _roleRepository.GetNextIdentityAsync()),
+                    realmId,
+                    null,
+                    name, 
+                    description,
+                    actionId);
+                
+                // Return
+                return role;
+            }
         }
     }
 
@@ -1112,7 +1245,7 @@ You register your domain services with the DI container like this::
 Errors
 ------
 
-When an error occurs in your domain model, you manifest it by :ref:`throwing an exception <Exceptions>` containing one or more ``DomainError``.
+When an error occurs in your domain model, you manifest it by :ref:`throwing an exception <Exceptions>` containing the ``DomainError``.
 
 The ``DomainError`` is of the following model:
 
@@ -1130,11 +1263,11 @@ The ``User Message`` should contain a message with a description useful and aime
 
 Example domain error::
 
-    using DDD.Domain.Model.Error;
+    using OpenDDD.Domain.Model.Error;
 
     namespace Domain.Model.Error
     {
-        public class DomainError : DDD.Domain.Model.Error.DomainError
+        public class DomainError : OpenDDD.Domain.Model.Error.DomainError
         {
             // Codes
 
@@ -1191,11 +1324,11 @@ There are two types of exceptions:
 
 It's up to you to decided which would be best to use in each of your cases.
 
-In the example below, the ``VerifyEmailException.AlreadyVerified()`` exception is used, but it could also have been implemented using the generic ``DomainException.InvariantViolation("Email is already verified.")`` exception.
+In the example below, the ``VerifyEmailException.AlreadyVerified()`` exception is used, but it could also have been implemented using the generic ``DomainException.InvariantViolation("Email is already verified.")`` exception, (with a custom message sent as argument).
 
 Example exception::
 
-    using DDD.Domain.Model.Error;
+    using OpenDDD.Domain.Model.Error;
     using DomainError = Domain.Model.Error.DomainError;
 
     namespace Domain.Model.User
@@ -1259,25 +1392,25 @@ Example of throwing exceptions::
 Converters
 ----------
 
-Converters are used to transform the aggregate roots and events into strings, so that they can be persisted and/or sent on a message bus.
+Converters are used to serialize and deserialize your aggregates and events into strings and back, so that they can be persisted and/or sent on a message bus.
 
 The OpenDDD.NET framework bases conversion on the Json.NET framework by Newtonsoft.
 
 Json.NET comes with converters for many non-primitive generic types, such as e.g. DateTime and classes themselves. OpenDDD.NET provides missing converters for DDD-generic types such as EntityId and DomainModelVersion.
 
-However, for ``all the types`` that are ``unique`` to your domain model, you need to create a ``corresponding converter``.
+However, for all the entities and value objects that are ``unique`` to your domain model, you need to create a ``corresponding converter``.
 
 You create a converter by subclassing the ``Converter<T>`` base class.
 
 .. note:: Don't mistake the Converter<T> class for the class with the same name in the Json.NET framework.
 
-.. tip:: Utilize the ``ReadJsonUsingMethod()`` method of the base class to conveniently deserialize strings using your entity- and value object classes static factory methods.
+.. tip:: Utilize the ``ReadJsonUsingMethod()`` method of the OpenDDD framework base class to conveniently deserialize strings using your entity- and value object classes static factory methods.
 
 Example converter::
 
     using System;
     using Newtonsoft.Json;
-    using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+    using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
     using Domain.Model.User;
 
     namespace Infrastructure.Ports.Adapters.Common.Translation.Converters
@@ -1307,19 +1440,19 @@ Example converter::
 
 Registering your converter dependencies is a three-step process:
 
-1. Create the SerializerSettings class, (if you haven't already).
-2. Add the converter to the ``Converters`` collection of this class.
-3. Register your SerializerSettings class with the DI container.
+1. Create the ConversionSettings class, (if you haven't already).
+2. Add the converter to the ``Converters`` collection in the constructor.
+3. Register your ConversionSettings class with the DI container.
 
-Example serializer settings::
+Example conversion settings::
 
-    using DddSerializerSettings = DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.SerializerSettings;
+    using DddConversionSettings = OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.ConversionSettings;
 
     namespace Infrastructure.Ports.Adapters.Common.Translation.Converters
     {
-        public class SerializerSettings : DddSerializerSettings
+        public class ConversionSettings : DddConversionSettings
         {
-            public SerializerSettings()
+            public ConversionSettings()
             {
                 Converters.Add(new EmailConverter());
                 Converters.Add(new EmailVerificationCodeConverter());
@@ -1331,9 +1464,9 @@ Example serializer settings::
 
 You register your serializer settings with the DI container like this::
 
-    services.AddTransient<DddSerializerSettings, SerializerSettings>();
+    services.AddTransient<OpenDddConversionSettings, ConversionSettings>();
 
-.. note:: The ``AddSerialization()`` call in Startup.cs of the project templates does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
+.. note:: The ``AddConversion()`` call in Startup.cs of the project templates does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
 
 
 Migrators
@@ -1347,13 +1480,12 @@ Domain model versioning is a first-class citizen in this DDD framework. Thus, mi
 
 .. note:: Entities will migrate on-the-fly next time they are fetched and saved by the repositories.
 
-.. note:: If an entity has not changed it's model from one version to another, simply skip adding that method to the migrator class.
+.. note:: If an entity has not changed it's model from one version to another, simply don't add a method for that version to the migrator class.
 
 Example migrator::
 
     using System.Collections.Generic;
-    using System.Linq;
-    using DDD.Infrastructure.Ports.Adapters.Repository;
+    using OpenDDD.Infrastructure.Ports.Adapters.Repository;
     using Domain.Model.Realm;
     using Domain.Model.User;
     using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
@@ -1379,7 +1511,7 @@ Example migrator::
                 userV1_0_2.DomainModelVersion = new ContextDomainModelVersion("1.0.3");
                 return userV1_0_2;
             }
-
+            
             /* There's no changes in model for v1.0.2. */
 
             public User FromV1_0_0(User userV1_0_0)
@@ -1593,12 +1725,12 @@ Example action unit tests class::
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
     using OpenDDD.NET.Extensions;
-    using DDD.Domain.Model.Auth;
-    using DDD.Domain.Services.Auth;
+    using OpenDDD.Domain.Model.Auth;
+    using OpenDDD.Domain.Services.Auth;
     using OpenDDD.NET.Hooks;
     using Main;
     using Main.Extensions;
-    using Main.NETCore.Hooks;
+    using Main.NET.Hooks;
     using Application.Actions;
     using Application.Actions.Commands;
     using Application.Settings;
@@ -1608,7 +1740,7 @@ Example action unit tests class::
     using Domain.Model.Realm;
     using Domain.Model.Role;
     using Domain.Model.User;
-    using DddActionUnitTests = DDD.Tests.ActionUnitTests;
+    using DddActionUnitTests = OpenDDD.Tests.ActionUnitTests;
 
     namespace Tests
     {
@@ -1684,7 +1816,7 @@ Example action unit tests class::
                 await actionsAsync();
                 Credentials.JwtToken = null;
             }
-        
+            
             // Actions
 
             protected AddPermissionToRoleAction AddPermissionToRoleAction => TestServer.Host.Services.GetRequiredService<AddPermissionToRoleAction>();
@@ -1715,7 +1847,7 @@ Example action unit tests class::
             // Settings
             
             protected ICustomSettings CustomSettings => TestServer.Host.Services.GetRequiredService<ICustomSettings>();
-        
+            
             // Domains
 
             protected Task<global::Domain.Model.Domain.Domain> GetIamDomainAsync() 
@@ -1738,7 +1870,7 @@ Example action unit tests class::
             protected IRealmRepository RealmRepository => TestServer.Host.Services.GetRequiredService<IRealmRepository>();
             protected IRoleRepository RoleRepository => TestServer.Host.Services.GetRequiredService<IRoleRepository>();
             protected IUserRepository UserRepository => TestServer.Host.Services.GetRequiredService<IUserRepository>();
-        
+            
             // Assertions
 
             protected void AssertEmailSent(Email toEmail)
