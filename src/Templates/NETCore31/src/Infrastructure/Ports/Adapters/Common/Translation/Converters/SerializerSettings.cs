@@ -1,8 +1,8 @@
-﻿using DddSerializerSettings = DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.SerializerSettings;
+﻿using OpenDddSerializerSettings = OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters.SerializerSettings;
 
 namespace Infrastructure.Ports.Adapters.Common.Translation.Converters
 {
-    public class SerializerSettings : DddSerializerSettings
+    public class SerializerSettings : OpenDddSerializerSettings
     {
         public SerializerSettings()
         {

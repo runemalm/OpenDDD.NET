@@ -1,6 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using Domain.Model.Notification;
 
 namespace Infrastructure.Ports.Adapters.Common.Translation.Converters

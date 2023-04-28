@@ -18,11 +18,11 @@ using Domain.Model.Forecast;
 using Domain.Model.Notification;
 using Domain.Model.Summary;
 using Main.NETCore.Hooks;
-using DddActionUnitTests = DDD.Tests.ActionUnitTests;
+using OpenDddActionUnitTests = OpenDDD.Tests.ActionUnitTests;
 
 namespace Tests
 {
-    public class ActionUnitTests : DddActionUnitTests
+    public class ActionUnitTests : OpenDddActionUnitTests
     {
         protected Forecast Forecast => Forecasts.First();
         protected List<Forecast> Forecasts = new List<Forecast>();

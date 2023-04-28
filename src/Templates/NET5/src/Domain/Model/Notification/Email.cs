@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
-using DDD.Domain.Model.BuildingBlocks.ValueObject;
-using DDD.Domain.Model.Error;
-using DDD.Domain.Model.Validation;
+using OpenDDD.Domain.Model.BuildingBlocks.ValueObject;
+using OpenDDD.Domain.Model.Error;
+using OpenDDD.Domain.Model.Validation;
 
 namespace Domain.Model.Notification
 {

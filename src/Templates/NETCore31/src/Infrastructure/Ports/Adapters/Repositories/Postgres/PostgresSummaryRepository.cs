@@ -1,10 +1,10 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
-using DDD.Application.Settings;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
-using DDD.Infrastructure.Ports.Adapters.Repository.Postgres;
-using DDD.Infrastructure.Services.Persistence;
+using OpenDDD.Application;
+using OpenDDD.Application.Settings;
+using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using OpenDDD.Infrastructure.Ports.Adapters.Repository.Postgres;
+using OpenDDD.Infrastructure.Services.Persistence;
 using Domain.Model.Summary;
 using Infrastructure.Ports.Adapters.Repositories.Migration;
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
+using OpenDDD.Application;
 using Domain.Model.Summary;
 
 namespace Main.NETCore.Hooks

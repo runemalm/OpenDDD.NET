@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using DDD.Infrastructure.Ports.PubSub;
+using OpenDDD.Infrastructure.Ports.PubSub;
 using Application.Actions.Commands;
 using Domain.Model.Forecast;
 using Domain.Model.Notification;

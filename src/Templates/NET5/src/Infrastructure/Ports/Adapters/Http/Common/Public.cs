@@ -1,4 +1,4 @@
-﻿using DDD.Infrastructure.Ports.Adapters.Http.Common;
+﻿using OpenDDD.Infrastructure.Ports.Adapters.Http.Common;
 
 namespace Infrastructure.Ports.Adapters.Http.Common
 {

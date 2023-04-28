@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
-using DDD.Domain.Services;
-using DDD.Domain.Services.Auth;
+using OpenDDD.Application;
+using OpenDDD.Domain.Services;
+using OpenDDD.Domain.Services.Auth;
 
 namespace Domain.Model.Forecast
 {

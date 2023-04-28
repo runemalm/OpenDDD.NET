@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation;
+using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation;
 using Domain.Model.Summary;
 using Infrastructure.Ports.Adapters.Http.v1.Model;
 

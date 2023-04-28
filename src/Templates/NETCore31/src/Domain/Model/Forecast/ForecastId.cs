@@ -1,4 +1,4 @@
-using DDD.Domain.Model.BuildingBlocks.Entity;
+using OpenDDD.Domain.Model.BuildingBlocks.Entity;
 
 namespace Domain.Model.Forecast
 {

@@ -1,4 +1,4 @@
-﻿using DDD.Infrastructure.Ports.Adapters.Common.Translation;
+﻿using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation;
 using Domain.Model.Summary;
 
 namespace Infrastructure.Ports.Adapters.Http.Common.Translation

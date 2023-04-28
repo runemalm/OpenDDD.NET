@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
-using DDD.Infrastructure.Ports.Repository;
+using OpenDDD.Application;
+using OpenDDD.Infrastructure.Ports.Repository;
 
 namespace Domain.Model.Summary
 {

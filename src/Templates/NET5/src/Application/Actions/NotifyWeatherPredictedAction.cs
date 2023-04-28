@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
-using DDD.Domain.Model.Error;
-using DDD.Infrastructure.Ports.Email;
+using OpenDDD.Application;
+using OpenDDD.Domain.Model.Error;
+using OpenDDD.Infrastructure.Ports.Email;
 using Application.Actions.Commands;
 using Domain.Model.Summary;
 

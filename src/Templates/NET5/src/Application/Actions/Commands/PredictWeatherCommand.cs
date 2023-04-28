@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using DDD.Application;
-using DDD.Application.Error;
-using DDD.Domain.Model.Validation;
+using OpenDDD.Application;
+using OpenDDD.Application.Error;
+using OpenDDD.Domain.Model.Validation;
 
 namespace Application.Actions.Commands
 {

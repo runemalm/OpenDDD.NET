@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
+using OpenDDD.Application;
 
 namespace Domain.Model.Forecast
 {

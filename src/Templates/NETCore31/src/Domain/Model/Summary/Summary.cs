@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using DDD.Application;
-using DDD.Domain.Model.BuildingBlocks.Aggregate;
-using DDD.Domain.Model.BuildingBlocks.Entity;
-using DDD.Domain.Model.Error;
-using DDD.Domain.Model.Validation;
+using OpenDDD.Application;
+using OpenDDD.Domain.Model.BuildingBlocks.Aggregate;
+using OpenDDD.Domain.Model.BuildingBlocks.Entity;
+using OpenDDD.Domain.Model.Error;
+using OpenDDD.Domain.Model.Validation;
 using WeatherDomainModelVersion = Domain.Model.DomainModelVersion;
 
 namespace Domain.Model.Summary

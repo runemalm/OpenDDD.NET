@@ -1,4 +1,4 @@
-﻿using DDD.Infrastructure.Ports.Adapters.Repository;
+﻿using OpenDDD.Infrastructure.Ports.Adapters.Repository;
 using Domain.Model.Forecast;
 using WeatherDomainModelVersion = Domain.Model.DomainModelVersion;
 

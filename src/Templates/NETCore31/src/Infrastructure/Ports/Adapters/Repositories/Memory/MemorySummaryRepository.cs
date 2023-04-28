@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
-using DDD.Infrastructure.Ports.Adapters.Repository.Memory;
+using OpenDDD.Application;
+using OpenDDD.Infrastructure.Ports.Adapters.Repository.Memory;
 using Domain.Model.Summary;
 
 namespace Infrastructure.Ports.Adapters.Repositories.Memory

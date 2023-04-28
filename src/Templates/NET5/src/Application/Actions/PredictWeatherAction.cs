@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
-using DDD.Domain.Services.Auth;
-using DDD.Infrastructure.Ports.PubSub;
+using OpenDDD.Application;
+using OpenDDD.Domain.Services.Auth;
+using OpenDDD.Infrastructure.Ports.PubSub;
 using Application.Actions.Commands;
 using Domain.Model.Forecast;
 using Domain.Model.Summary;

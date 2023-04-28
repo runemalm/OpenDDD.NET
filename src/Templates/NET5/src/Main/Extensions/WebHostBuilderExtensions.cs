@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Application.Settings;
 using Application.Settings.Frontend;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using DddSettings = DDD.Application.Settings.Settings;
+using OpenDddSettings = OpenDDD.Application.Settings.Settings;
 
 namespace Main.Extensions
 {

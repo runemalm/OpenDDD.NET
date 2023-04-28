@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using DDD.Infrastructure.Ports.Adapters.Http.Common;
-using DDD.Infrastructure.Ports.Adapters.Http.NETCore;
+using OpenDDD.Infrastructure.Ports.Adapters.Http.Common;
+using OpenDDD.Infrastructure.Ports.Adapters.Http.NETCore;
 using Application.Actions;
 using Infrastructure.Ports.Adapters.Http.Common;
 using Infrastructure.Ports.Adapters.Http.Common.Translation;

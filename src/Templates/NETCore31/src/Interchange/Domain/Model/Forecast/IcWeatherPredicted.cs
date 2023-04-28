@@ -1,6 +1,6 @@
 ﻿using System;
-using DDD.Application;
-using DDD.Domain.Model.BuildingBlocks.Event;
+using OpenDDD.Application;
+using OpenDDD.Domain.Model.BuildingBlocks.Event;
 using ContextDomainModelVersion = Interchange.Domain.Model.DomainModelVersion;
 
 namespace Interchange.Domain.Model.Forecast

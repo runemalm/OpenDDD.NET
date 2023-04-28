@@ -1,6 +1,6 @@
 ﻿namespace Interchange.Domain.Model
 {
-	public class DomainModelVersion : DDD.Domain.Model.DomainModelVersion
+	public class DomainModelVersion : OpenDDD.Domain.Model.DomainModelVersion
 	{
 		public const string LatestString = "1.0.0";
 

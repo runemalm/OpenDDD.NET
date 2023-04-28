@@ -1,9 +1,9 @@
 ﻿using Application.Actions;
 using Application.Actions.Commands;
-using DDD.Application;
-using DDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
-using DDD.Infrastructure.Ports.PubSub;
-using DDD.Logging;
+using OpenDDD.Application;
+using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using OpenDDD.Infrastructure.Ports.PubSub;
+using OpenDDD.Logging;
 using Domain.Model.Forecast;
 using WeatherDomainModelVersion = Domain.Model.DomainModelVersion;
 
