@@ -18,7 +18,7 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := openddd
-BUILD_VERSION := 1.0.0-alpha.12
+BUILD_VERSION := 1.0.0-alpha.13
 
 NUGET_NAME := OpenDDD.NET
 TOOLS_IMAGE_NAME := runemalm/openddd-tools
