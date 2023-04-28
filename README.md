@@ -426,6 +426,7 @@ If you want to contribute to the code base, create a pull request on the develop
 - Add project template for .NET Core 3.1.
 - Add project template for .NET 5.
 - Introduce Transactional and use in Action. (**breaking**)
+- Add extension method 'AddDomainService()'.
 
 **1.0.0-alpha.11** - 2023-04-25
 

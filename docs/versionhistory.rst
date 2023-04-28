@@ -6,10 +6,25 @@ Version history
 
 .. tip:: Subscribe to the github repository to get notifications when we move into beta and rc phases!
 
-**1.0.0-alpha.10** - 2023-04-xx
+**1.0.0-alpha.12** - 2023-04-28
+
+- Rename framework to 'OpenDDD.NET'.
+- Add project template for .NET Core 3.1.
+- Add project template for .NET 5.
+- Introduce Transactional and use in Action. (**breaking**)
+- Add extension method 'AddDomainService()'.
+
+**1.0.0-alpha.11** - 2023-04-25
+
+- Add support to disable emails in tests.
+- Fix code generation templates.
+- Replace IApplicationLifetime with IHostApplicationLifetime. (**breaking**)
+
+**1.0.0-alpha.10** - 2023-04-24
 
 - Add more synchronous versions of methods used by tests.
-- Rename the framework to OpenDDD.NET
+- Break out application error classes.
+- Fix minor issue in code generation tool.
 
 **1.0.0-alpha.9** - 2023-04-19
 
