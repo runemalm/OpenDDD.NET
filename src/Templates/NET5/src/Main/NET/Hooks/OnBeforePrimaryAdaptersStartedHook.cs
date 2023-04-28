@@ -3,7 +3,7 @@ using OpenDDD.NET.Hooks;
 using Domain.Model.Summary;
 using Microsoft.AspNetCore.Builder;
 
-namespace Main.NETCore.Hooks
+namespace Main.NET.Hooks
 {
 	public class OnBeforePrimaryAdaptersStartedHook : IOnBeforePrimaryAdaptersStartedHook
 	{

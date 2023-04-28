@@ -17,7 +17,7 @@ using Application.Settings;
 using Domain.Model.Forecast;
 using Domain.Model.Notification;
 using Domain.Model.Summary;
-using Main.NETCore.Hooks;
+using Main.NET.Hooks;
 using OpenDddActionUnitTests = OpenDDD.Tests.ActionUnitTests;
 
 namespace Tests

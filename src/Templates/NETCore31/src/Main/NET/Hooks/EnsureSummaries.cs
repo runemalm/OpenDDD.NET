@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using OpenDDD.Application;
 using Domain.Model.Summary;
 
-namespace Main.NETCore.Hooks
+namespace Main.NET.Hooks
 {
 	public class EnsureSummaries
 	{

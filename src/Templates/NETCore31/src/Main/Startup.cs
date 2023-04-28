@@ -8,7 +8,7 @@ using OpenDDD.Application.Settings.Persistence;
 using OpenDDD.NET.Extensions;
 using OpenDDD.NET.Hooks;
 using Main.Extensions;
-using Main.NETCore.Hooks;
+using Main.NET.Hooks;
 using Application.Actions;
 using Application.Actions.Commands;
 using Domain.Model.Forecast;
