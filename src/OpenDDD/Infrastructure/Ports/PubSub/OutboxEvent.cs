@@ -1,6 +1,4 @@
 ﻿using System;
-using OpenDDD.Domain;
-using OpenDDD.Domain.Model.BuildingBlocks;
 using Newtonsoft.Json;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
@@ -24,7 +22,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 
 		public OutboxEvent() { }
 
-		public OutboxEvent(IEvent theEvent, SerializerSettings serializerSettings)
+		public OutboxEvent(IEvent theEvent, ConversionSettings conversionSettings)
 		{
 			Id = Guid.NewGuid().ToString();
 			EventId = theEvent.Header.EventId;
@@ -35,7 +33,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			AddedAt = DateTime.UtcNow;
 			IsPublishing = false;
 			NumDeliveryFailures = theEvent.Header.NumDeliveryFailures;
-			JsonPayload = JsonConvert.SerializeObject(theEvent, serializerSettings);
+			JsonPayload = JsonConvert.SerializeObject(theEvent, conversionSettings);
 		}
 		
 		// Equality

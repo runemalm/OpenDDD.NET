@@ -11,8 +11,8 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Postgres
 	public class PostgresRepository<T, TId> : SqlRepository<T, TId> where T : IAggregate where TId : EntityId
 	{
 		public PostgresRepository(ISettings settings, string tableName, IMigrator<T> migrator,
-			IPersistenceService persistenceService, SerializerSettings serializerSettings) :
-			base(settings, tableName, migrator, persistenceService, serializerSettings)
+			IPersistenceService persistenceService, ConversionSettings conversionSettings) :
+			base(settings, tableName, migrator, persistenceService, conversionSettings)
 		{
 			
 		}

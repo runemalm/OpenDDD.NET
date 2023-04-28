@@ -4,14 +4,13 @@ using Npgsql;
 using OpenDDD.Application.Settings;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using OpenDDD.Logging;
-using PostgresException = OpenDDD.Infrastructure.Ports.Adapters.Common.Exceptions.PostgresException;
 
 namespace OpenDDD.Infrastructure.Services.Persistence.Postgres
 {
 	public class PostgresPersistenceService : PersistenceService
 	{
-		public PostgresPersistenceService(ISettings settings, ILogger logger, SerializerSettings serializerSettings) 
-			: base(GetConnString(settings), logger, serializerSettings)
+		public PostgresPersistenceService(ISettings settings, ILogger logger, ConversionSettings conversionSettings) 
+			: base(GetConnString(settings), logger, conversionSettings)
 		{
 			
 		}
@@ -44,7 +43,7 @@ namespace OpenDDD.Infrastructure.Services.Persistence.Postgres
 				throw new Ports.Adapters.Common.Exceptions.PostgresException("Can't create database. The database was not specified in settings.");
 
 			builder.Database = "postgres";
-			using (var conn = new PostgresConnection(builder.ConnectionString, _serializerSettings))
+			using (var conn = new PostgresConnection(builder.ConnectionString, _conversionSettings))
 			{
 				conn.Open();
 				
@@ -71,7 +70,7 @@ namespace OpenDDD.Infrastructure.Services.Persistence.Postgres
 				throw new Ports.Adapters.Common.Exceptions.PostgresException("Can't create database. The database was not specified in settings.");
 
 			builder.Database = "postgres";
-			using (var conn = new PostgresConnection(builder.ConnectionString, _serializerSettings))
+			using (var conn = new PostgresConnection(builder.ConnectionString, _conversionSettings))
 			{
 				await conn.OpenAsync();
 				
@@ -91,14 +90,14 @@ namespace OpenDDD.Infrastructure.Services.Persistence.Postgres
 
 		public override IConnection OpenConnection()
 		{
-			var conn = new PostgresConnection(_connString, _serializerSettings);
+			var conn = new PostgresConnection(_connString, _conversionSettings);
 			conn.Open();
 			return conn;
 		}
 		
 		public override async Task<IConnection> OpenConnectionAsync()
 		{
-			var conn = new PostgresConnection(_connString, _serializerSettings);
+			var conn = new PostgresConnection(_connString, _conversionSettings);
 			await conn.OpenAsync();
 			return conn;
 		}

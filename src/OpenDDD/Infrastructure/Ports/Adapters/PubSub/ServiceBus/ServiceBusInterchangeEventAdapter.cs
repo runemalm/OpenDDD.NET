@@ -12,7 +12,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.ServiceBus
 			ISettings settings,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter,
-			SerializerSettings serializerSettings) 
+			ConversionSettings conversionSettings) 
 			: base(
 				"Interchange",
 				settings.General.Context,
@@ -21,7 +21,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.ServiceBus
 				settings.Azure.ServiceBus.SubName,
 				logger,
 				monitoringAdapter,
-				serializerSettings)
+				conversionSettings)
 		{
 			
 		}

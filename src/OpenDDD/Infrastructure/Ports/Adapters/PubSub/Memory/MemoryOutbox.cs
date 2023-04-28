@@ -13,12 +13,12 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 	{
 		private IDictionary<ActionId, ICollection<OutboxEvent>> _events;
 		private object _lock = new{};
-		private readonly SerializerSettings _serializerSettings;
+		private readonly ConversionSettings _conversionSettings;
 		
-		public MemoryOutbox(SerializerSettings serializerSettings)
+		public MemoryOutbox(ConversionSettings conversionSettings)
 		{
 			_events = new Dictionary<ActionId, ICollection<OutboxEvent>>();
-			_serializerSettings = serializerSettings;
+			_conversionSettings = conversionSettings;
 		}
 		
 		public void Start(CancellationToken ct)
@@ -51,7 +51,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 				if (!_events.ContainsKey(actionId))
 					_events.Add(actionId, new List<OutboxEvent>());
 				var es = _events[actionId].ToList();
-				es.AddRange(events.Select(e => new OutboxEvent(e, _serializerSettings)));
+				es.AddRange(events.Select(e => new OutboxEvent(e, _conversionSettings)));
 				_events[actionId] = es;
 				return Task.CompletedTask;
 			}

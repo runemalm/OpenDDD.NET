@@ -12,8 +12,8 @@ namespace Infrastructure.Ports.Adapters.Repositories.Postgres
 {
 	public class PostgresSummaryRepository : PostgresRepository<Summary, SummaryId>, ISummaryRepository
 	{
-		public PostgresSummaryRepository(ISettings settings, SummaryMigrator migrator, IPersistenceService persistenceService, SerializerSettings serializerSettings) 
-			: base(settings, "Summaries", migrator, persistenceService, serializerSettings)
+		public PostgresSummaryRepository(ISettings settings, SummaryMigrator migrator, IPersistenceService persistenceService, ConversionSettings conversionSettings) 
+			: base(settings, "Summaries", migrator, persistenceService, conversionSettings)
 		{
 
 		}

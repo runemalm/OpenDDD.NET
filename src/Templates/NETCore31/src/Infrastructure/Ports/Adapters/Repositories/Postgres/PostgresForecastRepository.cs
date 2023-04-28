@@ -9,8 +9,8 @@ namespace Infrastructure.Ports.Adapters.Repositories.Postgres
 {
 	public class PostgresForecastRepository : PostgresRepository<Forecast, ForecastId>, IForecastRepository
 	{
-		public PostgresForecastRepository(ISettings settings, ForecastMigrator migrator, IPersistenceService persistenceService, SerializerSettings serializerSettings) 
-			: base(settings, "Forecasts", migrator, persistenceService, serializerSettings)
+		public PostgresForecastRepository(ISettings settings, ForecastMigrator migrator, IPersistenceService persistenceService, ConversionSettings conversionSettings) 
+			: base(settings, "Forecasts", migrator, persistenceService, conversionSettings)
 		{
 			
 		}

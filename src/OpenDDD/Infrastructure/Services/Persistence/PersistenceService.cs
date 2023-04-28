@@ -12,14 +12,14 @@ namespace OpenDDD.Infrastructure.Services.Persistence
 	{
 		protected readonly ILogger _logger;
 		protected readonly string _connString;
-		protected readonly SerializerSettings _serializerSettings;
+		protected readonly ConversionSettings _conversionSettings;
 		private readonly ConcurrentDictionary<ActionId, IConnection> _connections;
 
-		public PersistenceService(string connString, ILogger logger, SerializerSettings serializerSettings)
+		public PersistenceService(string connString, ILogger logger, ConversionSettings conversionSettings)
 		{
 			_logger = logger;
 			_connString = connString;
-			_serializerSettings = serializerSettings;
+			_conversionSettings = conversionSettings;
 			_connections = new ConcurrentDictionary<ActionId, IConnection>();
 		}
 		

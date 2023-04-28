@@ -419,6 +419,10 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes
 
+**1.0.0-alpha.13** - 2023-04-28
+
+- Rename 'Serialization' to 'Conversion'.
+
 **1.0.0-alpha.12** - 2023-04-28
 
 - Rename framework to 'OpenDDD.NET'.

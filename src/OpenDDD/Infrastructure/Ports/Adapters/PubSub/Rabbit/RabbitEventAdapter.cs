@@ -37,7 +37,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 			int port,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter,
-			SerializerSettings serializerSettings,
+			ConversionSettings conversionSettings,
 			string username = "guest",
 			string password = "guest") 
 			: base(
@@ -46,7 +46,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 				maxDeliveryRetries,
 				logger, 
 				monitoringAdapter,
-				serializerSettings)
+				conversionSettings)
 		{
 			_host = host;
 			_port = port;

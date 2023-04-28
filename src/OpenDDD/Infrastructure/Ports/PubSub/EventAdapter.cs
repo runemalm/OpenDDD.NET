@@ -29,7 +29,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		public bool IsStopping = false;
 		protected ILogger _logger;
 		protected IMonitoringPort _monitoringAdapter;
-		protected SerializerSettings _serializerSettings;
+		protected ConversionSettings _conversionSettings;
 		public int MaxDeliveryRetries { get; }
 
 		public abstract void Start();
@@ -65,14 +65,14 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			int maxDeliveryRetries,
 			ILogger logger,
 			IMonitoringPort monitoringAdapter,
-			SerializerSettings serializerSettings)
+			ConversionSettings conversionSettings)
 		{
 			_context = context;
 			_client = client;
 			MaxDeliveryRetries = maxDeliveryRetries;
 			_logger = logger;
 			_monitoringAdapter = monitoringAdapter;
-			_serializerSettings = serializerSettings;
+			_conversionSettings = conversionSettings;
 		}
 
 		protected void AddSubscription(TSub subscription)
@@ -147,7 +147,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 				{
 					if (o.EventName == theEvent.Header.Name)
 					{
-						var theEventObject = (JObject)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(theEvent, _serializerSettings));
+						var theEventObject = (JObject)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(theEvent, _conversionSettings));
 						var flushedEventObject = (JObject)JsonConvert.DeserializeObject(o.JsonPayload);
 
 						((JObject)theEventObject["header"]).Remove("eventId");

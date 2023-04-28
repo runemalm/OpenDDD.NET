@@ -10,7 +10,7 @@ namespace OpenDDD.Infrastructure.Services.Persistence.Memory
         private bool _hasConnection;
         private bool _hasTransaction;
 
-        public MemoryConnection(SerializerSettings serializerSettings) : base("n/a", serializerSettings)
+        public MemoryConnection(ConversionSettings conversionSettings) : base("n/a", conversionSettings)
         {
             
         }
