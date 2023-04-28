@@ -4,7 +4,9 @@
     <LangVersion>8</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OpenDDD.NET" Version="1.0.0-alpha.12" />
     <ProjectReference Include="..\Domain\Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenDDD.NET" Version="1.0.0-alpha.12" />
   </ItemGroup>
 </Project>
