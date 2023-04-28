@@ -52,7 +52,7 @@ If you find there's a specific technology you'd like to see as an adapter in the
 
 ### Supported .NET Versions
 
-- .NET 5 (not tested)
+- .NET 5
 - .NET Core 3.1
   
 ### Installation
@@ -66,8 +66,6 @@ You can check out the source code of identityaccess.io for a full example of a p
 If you want to jump straight in, we provide that opportunity through the conventional [WeatherForecast](...) project templates for Visual Studio, Rider IDE, etc.
 
 If you prefer to see some code examples, simply look below to see some extracts from the IAM project referenced above. We start with the env sample file.
-
-This is a project created from the .NET Core 3.1 project template:
 
 #### Env file
 
@@ -426,6 +424,7 @@ If you want to contribute to the code base, create a pull request on the develop
 
 - Add project template for .NET Core 3.1.
 - Add project template for .NET 5.
+- Introduce Transactional and use in Action. (**breaking**)
 
 **1.0.0-alpha.11** - 2023-04-25
 
