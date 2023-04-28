@@ -120,10 +120,6 @@ CFG_MONITORING_PROVIDER=AppInsights
 # PowerIAM
 CFG_POWERIAM_URL=https://api.poweriam.com/mycompany/myapp
 
-# Service Bus
-CFG_SERVICEBUS_CONN_STR=
-CFG_SERVICEBUS_SUB_NAME=
-
 # Rabbit
 CFG_RABBIT_HOST=rabbit.myapp.com
 CFG_RABBIT_PORT=5672
