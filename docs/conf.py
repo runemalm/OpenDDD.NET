@@ -19,6 +19,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.autosectionlabel',
     'sphinx_rtd_theme',
+    'sphinx_copybutton',
 ]
 
 # List of directories, relative to source directory, that shouldn't be searched

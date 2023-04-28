@@ -1,4 +1,4 @@
-## DDD.NETCore
+## OpenDDD.NET
 
 This is a framework for domain-driven design (DDD) using C# and .NET.
 
@@ -52,12 +52,12 @@ If you find there's a specific technology you'd like to see as an adapter in the
 
 ### Supported .NET Versions
 
-- .NET 5 (not tested)
+- .NET 5
 - .NET Core 3.1
   
 ### Installation
 
-    dotnet add package DDD.NETCore
+    dotnet add package OpenDDD.NET
 
 ### Examples
 
@@ -66,8 +66,6 @@ You can check out the source code of identityaccess.io for a full example of a p
 If you want to jump straight in, we provide that opportunity through the conventional [WeatherForecast](...) project templates for Visual Studio, Rider IDE, etc.
 
 If you prefer to see some code examples, simply look below to see some extracts from the IAM project referenced above. We start with the env sample file.
-
-This is a project created from the .NET Core 3.1 project template:
 
 #### Env file
 
@@ -120,10 +118,6 @@ CFG_MONITORING_PROVIDER=AppInsights
 # PowerIAM
 CFG_POWERIAM_URL=https://api.poweriam.com/mycompany/myapp
 
-# Service Bus
-CFG_SERVICEBUS_CONN_STR=
-CFG_SERVICEBUS_SUB_NAME=
-
 # Rabbit
 CFG_RABBIT_HOST=rabbit.myapp.com
 CFG_RABBIT_PORT=5672
@@ -172,7 +166,7 @@ namespace Main
         
         public void ConfigureServices(IServiceCollection services)
         {
-            // DDD.NETCore
+            // OpenDDD.NET
             services.AddAccessControl(_settings);
             services.AddMonitoring(_settings);
             services.AddPersistence(_settings);
@@ -192,7 +186,7 @@ namespace Main
             IWebHostEnvironment env,
             IApplicationLifetime lifetime)
         {
-            // DDD.NETCore
+            // OpenDDD.NET
             app.AddAccessControl(_settings);
             app.AddHttpAdapter(_settings);
             app.AddControl(lifetime);
@@ -359,13 +353,13 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Roadmap v1.0.0
 
-- [ ] GitHub README
-- [ ] NuGet README
+- [x] GitHub README
+- [x] NuGet README
 - [ ] Full Sample Project
 - [ ] Quickstart Guide
 - [ ] Full Test Coverage
 - [ ] Visual Studio Project Templates
-- [ ] .NET 5 Support
+- [x] .NET 5 Support
 - [x] .NET Core 3.1 Support
 - [x] Start Context
 - [x] Stop Context
@@ -422,8 +416,17 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] Admin Tool: Inspect Dead Letter Queue
 - [ ] Admin Tool: Republish Dead Letters
 - [ ] Administration
+- [ ] And more...
 
 ### Release Notes
+
+**1.0.0-alpha.12** - 2023-04-28
+
+- Rename framework to 'OpenDDD.NET'.
+- Add project template for .NET Core 3.1.
+- Add project template for .NET 5.
+- Introduce Transactional and use in Action. (**breaking**)
+- Add extension method 'AddDomainService()'.
 
 **1.0.0-alpha.11** - 2023-04-25
 

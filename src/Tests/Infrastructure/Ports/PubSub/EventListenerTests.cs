@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Xunit;
-using DDD.Tests;
+using OpenDDD.Tests;
 
-namespace Test.Infrastructure.Ports.PubSub
+namespace Tests.Infrastructure.Ports.PubSub
 {
 	public class EventListenerTests : UnitTests
 	{

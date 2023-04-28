@@ -45,7 +45,7 @@ These are examples of how your code will look like::
 
            public void ConfigureServices(IServiceCollection services)
            {
-               // DDD.NETCore
+               // OpenDDD.NET
                services.AddAccessControl(_settings);
                services.AddMonitoring(_settings);
                services.AddPersistence(_settings);
@@ -65,7 +65,7 @@ These are examples of how your code will look like::
                IWebHostEnvironment env,
                IApplicationLifetime lifetime)
            {
-               // DDD.NETCore
+               // OpenDDD.NET
                app.AddAccessControl(_settings);
                app.AddHttpAdapter(_settings);
                app.AddControl(lifetime);
@@ -258,10 +258,6 @@ These are examples of how your code will look like::
    # PowerIAM
    CFG_POWERIAM_URL=https://api.poweriam.com/mycompany/myapp
 
-   # Service Bus
-   CFG_SERVICEBUS_CONN_STR=
-   CFG_SERVICEBUS_SUB_NAME=
-
    # Rabbit
    CFG_RABBIT_HOST=rabbit.myapp.com
    CFG_RABBIT_PORT=5672
@@ -283,6 +279,13 @@ These are examples of how your code will look like::
   :caption: User guide
 
   gettingstarted
+
+.. philosophy-docs:
+.. toctree::
+  :maxdepth: 1
+  :caption: Philosophy
+
+  philosophy
 
 .. versionhistory-docs:
 .. toctree::

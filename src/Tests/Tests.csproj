@@ -1,11 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-
+    <LangVersion>8</LangVersion>
     <IsPackable>false</IsPackable>
-
-    <RootNamespace>Test</RootNamespace>
+    <RootNamespace>Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DDD\DDD.csproj" />
+    <ProjectReference Include="..\OpenDDD\OpenDDD.csproj" />
   </ItemGroup>
 
   <ItemGroup>
