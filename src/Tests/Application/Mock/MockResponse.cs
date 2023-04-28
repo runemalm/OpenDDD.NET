@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http;
 
-namespace DDD.Tests.Mock
+namespace Tests.Application.Mock
 {
     public class MockResponse
     {

@@ -5,8 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using DDD.Application.Settings;
 using DDD.Application.Settings.Persistence;
-using DDD.NETCore.Extensions;
-using DDD.NETCore.Hooks;
+using OpenDDD.NET.Extensions;
+using OpenDDD.NET.Hooks;
 using Main.Extensions;
 using Main.NETCore.Hooks;
 using Application.Actions;
@@ -35,7 +35,7 @@ namespace Main
         
         public void ConfigureServices(IServiceCollection services)
         {
-            // DDD.NETCore
+            // OpenDDD.NET
             services.AddAccessControl(_settings);
             services.AddMonitoring(_settings);
             services.AddPersistence(_settings);
@@ -56,7 +56,7 @@ namespace Main
             IWebHostEnvironment env,
             IHostApplicationLifetime lifetime)
         {
-            // DDD.NETCore
+            // OpenDDD.NET
             app.AddAccessControl(_settings);
             app.AddHttpAdapter(_settings);
             app.AddControl(lifetime);

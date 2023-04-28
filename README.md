@@ -1,4 +1,4 @@
-## DDD.NETCore
+## OpenDDD.NET
 
 This is a framework for domain-driven design (DDD) using C# and .NET.
 
@@ -57,7 +57,7 @@ If you find there's a specific technology you'd like to see as an adapter in the
   
 ### Installation
 
-    dotnet add package DDD.NETCore
+    dotnet add package OpenDDD.NET
 
 ### Examples
 
@@ -166,7 +166,7 @@ namespace Main
         
         public void ConfigureServices(IServiceCollection services)
         {
-            // DDD.NETCore
+            // OpenDDD.NET
             services.AddAccessControl(_settings);
             services.AddMonitoring(_settings);
             services.AddPersistence(_settings);
@@ -186,7 +186,7 @@ namespace Main
             IWebHostEnvironment env,
             IApplicationLifetime lifetime)
         {
-            // DDD.NETCore
+            // OpenDDD.NET
             app.AddAccessControl(_settings);
             app.AddHttpAdapter(_settings);
             app.AddControl(lifetime);
@@ -420,8 +420,9 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes
 
-**1.0.0-alpha.12** - 2023-04-XX
+**1.0.0-alpha.12** - 2023-04-28
 
+- Rename framework to 'OpenDDD.NET'.
 - Add project template for .NET Core 3.1.
 - Add project template for .NET 5.
 - Introduce Transactional and use in Action. (**breaking**)

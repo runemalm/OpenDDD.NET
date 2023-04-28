@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using DDD.NETCore.Hooks;
+using OpenDDD.NET.Hooks;
 using Domain.Model.Summary;
 using Microsoft.AspNetCore.Builder;
 

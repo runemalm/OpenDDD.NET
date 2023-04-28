@@ -17,16 +17,18 @@ export $(shell sed 's/=.*//' env.make)
 ##########################################################################
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
-NETWORK := ddddotnetcore
+NETWORK := openddd
 BUILD_VERSION := 1.0.0-alpha.11
 
-TOOLS_IMAGE_NAME := runemalm/dddnetcore-tools
+NUGET_NAME := OpenDDD.NET
+TOOLS_IMAGE_NAME := runemalm/openddd-tools
+ROOT_NAMESPACE := OpenDDD
 
 SRC_DIR := $(PWD)/src
 DOCS_DIR := $(PWD)/docs
-DDD_DIR := $(SRC_DIR)/DDD
-BUILD_DIR := $(DDD_DIR)/DDD/bin
-TESTS_DIR := $(SRC_DIR)/DDD.Tests
+NAMESPACE_DIR := $(SRC_DIR)/$(ROOT_NAMESPACE)
+BUILD_DIR := $(NAMESPACE_DIR)/$(ROOT_NAMESPACE)/bin
+TESTS_DIR := $(SRC_DIR)/Tests
 TOOLS_DIR := $(SRC_DIR)/Tools
 PROJECT_TEMPLATES_DIR := $(SRC_DIR)/Templates
 FEED_DIR := $(HOME)/Projects/LocalFeed
@@ -131,7 +133,7 @@ pack: ##@Build	 Create the nuget in local feed
 .PHONY: push
 push: ##@Build	 Push the nuget to the global feed
 	cd $(FEED_DIR) && \
-	dotnet nuget push DDD.NETCore.$(BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
+	dotnet nuget push $(NUGET_NAME).$(BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
 
 ##########################################################################
 # Docs

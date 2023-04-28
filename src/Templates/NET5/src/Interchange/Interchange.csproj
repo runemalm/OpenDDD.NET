@@ -4,6 +4,6 @@
     <LangVersion>8</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DDD.NETCore" Version="1.0.0-alpha.11" />
+    <PackageReference Include="OpenDDD.NET" Version="1.0.0-alpha.12" />
   </ItemGroup>
 </Project>

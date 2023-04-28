@@ -161,7 +161,7 @@ Example Program.cs file::
 
     using Microsoft.AspNetCore;
     using Microsoft.AspNetCore.Hosting;
-    using DDD.NETCore.Extensions;
+    using OpenDDD.NET.Extensions;
     using Main.Extensions;
 
     namespace Main
@@ -199,8 +199,8 @@ Example Startup.cs file::
     using Microsoft.Extensions.Hosting;
     using DDD.Application.Settings;
     using DDD.Application.Settings.Persistence;
-    using DDD.NETCore.Extensions;
-    using DDD.NETCore.Hooks;
+    using OpenDDD.NET.Extensions;
+    using OpenDDD.NET.Hooks;
     using Main.Extensions;
     using Main.NETCore.Hooks;
     using Application.Actions;
@@ -229,7 +229,7 @@ Example Startup.cs file::
             
             public void ConfigureServices(IServiceCollection services)
             {
-                // DDD.NETCore
+                // OpenDDD.NET
                 services.AddAccessControl(_settings);
                 services.AddMonitoring(_settings);
                 services.AddPersistence(_settings);
@@ -250,7 +250,7 @@ Example Startup.cs file::
                 IWebHostEnvironment env,
                 IHostApplicationLifetime lifetime)
             {
-                // DDD.NETCore
+                // OpenDDD.NET
                 app.AddAccessControl(_settings);
                 app.AddHttpAdapter(_settings);
                 app.AddControl(lifetime);
@@ -1592,10 +1592,10 @@ Example action unit tests class::
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
-    using DDD.NETCore.Extensions;
+    using OpenDDD.NET.Extensions;
     using DDD.Domain.Model.Auth;
     using DDD.Domain.Services.Auth;
-    using DDD.NETCore.Hooks;
+    using OpenDDD.NET.Hooks;
     using Main;
     using Main.Extensions;
     using Main.NETCore.Hooks;

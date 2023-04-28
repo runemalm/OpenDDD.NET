@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using DDD.NETCore.Extensions;
+using OpenDDD.NET.Extensions;
 using Main.Extensions;
 
 namespace Main

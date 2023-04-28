@@ -28,7 +28,7 @@ TESTS_DIR := $(SRC_DIR)/Tests
 IMAGE_NAME := my.azurecr.io/weather-backend
 IMAGE_TAG := 1.0.0-alpha.1
 
-TOOLS_IMAGE_NAME := runemalm/dddnetcore-tools
+TOOLS_IMAGE_NAME := runemalm/openddd-tools
 
 BLUE      := $(shell tput -Txterm setaf 4)
 GREEN     := $(shell tput -Txterm setaf 2)
@@ -142,7 +142,6 @@ gen-code: ##@Code Generation	Generate code (uses COMMAND)
 		--name gen-code \
 		-v "$(PROJECT_DIR)/domain.yml:/tools/gen_code/domain.yml" \
 		-v "$(SRC_DIR):/context/src" \
-		-v "/Users/david/Projects/DDD.NETCore/src/Tools/gen_code:/tools/gen_code" \
 		$(TOOLS_IMAGE_NAME) \
 		gen_code $(COMMAND)
 
