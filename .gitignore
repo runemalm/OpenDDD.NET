@@ -8,7 +8,10 @@ src/Templates/testing
 *.sublime-project
 *.sublime-workspace
 docs/_build
+
+# ..project templates
 src/Templates/**/NuGet.config
+!src/Templates/**/env*
 
 # globs
 Makefile.in
