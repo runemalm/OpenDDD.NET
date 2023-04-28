@@ -46,7 +46,7 @@ Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon
 
 The list of technologies supported through the implemented adapters are constantly growing. 
 
-Currently, we support PostgreSQL, RabbitMQ, Application Insights, MailChimp, Sendgrid and more.
+Currently, we support PostgreSQL, RabbitMQ, SMTP and more.
 
 If you find there's a specific technology you'd like to see as an adapter in the framework, please leave a recommendation, or perhaps create a pull request. All ports have a clearly defined interface and the [documentation](...) contains a section on implementing ports.
 
