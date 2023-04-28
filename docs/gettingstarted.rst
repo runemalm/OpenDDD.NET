@@ -13,9 +13,7 @@ Example Application
 
 The quickest way to get a taste of this framework is to check out the code snippets on the :doc:`start page<index>`.
 
-If you want to see the full source code of a project based on this framework you can check out the `poweriam github repository <https://...>`_.
-
-Another easy way to get started quickly is to use the WeatherForecast `project templates <https://todo>`_.
+The reommended and easy way to get started quickly is to use the WeatherForecast `project templates <https://todo>`_.
 
 Next, we'll guide you through the building blocks to get you started.
 
@@ -111,10 +109,6 @@ Example env file::
 
     # Monitoring
     CFG_MONITORING_PROVIDER=Memory
-
-    # Service Bus
-    CFG_SERVICEBUS_CONN_STR=
-    CFG_SERVICEBUS_SUB_NAME=
 
     # Rabbit
     CFG_RABBIT_HOST=
@@ -1947,9 +1941,9 @@ Example action unit tests class::
 Troubleshooting
 ###############
 
-If you suspect something in the ddd package isn't as expected, it will be helpful to increase the logging level of the
+If you suspect something in the nuget isn't working as expected, it will be helpful to increase the logging level of the
 framework to the ``DEBUG`` level in the ``env file`` like this::
 
     CFG_LOGGING_LEVEL=Debug
 
-This should provide lots of useful information about what's going on inside the openddd.net core.
+This should provide useful information about what's going on inside the OpenDDD.NET core.
