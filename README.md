@@ -6,30 +6,29 @@ Star and/or follow the project to get notifications on new releases.
 
 ### Purpose
 
-Domain-driven design is an approach to software development where focus lies on the domain model.
+Domain-driven design is an approach to software development where focus lies on an ever-evolving domain model.
 
-We couldn't find a framework that was specifically crafted for the purpose of domain-driven design. That was opinionated enough so that there would be clear patterns and rules to follow. So this framework was born.
+By utilizing the DDD principles and design patterns, hexagonal architecture and other well-known patterns, this framework is especially crafted for domain-driven design and implementing bounded contexts with C# and the .NET framework.
 
-If you're an avid practitioner of domain-driven design, please drop me a line if you're interested in becoming a contributor.
+If you're interested in becoming a contributor, please drop us a line or simply create a pull request and we'll see what we can do together.
 
 ### Key Features
 
 - Domain model versioning.
-- SemVer2.0 support.
-- Swagger auto-generation.
-- Code generation from domain model specification file.
-- Publishing of domain & integration events.
-- Reactions through event listeners.
+- Swagger docs auto-generation.
+- Bounded context code generation from yaml.
+- Event-driven architecture.
+- Domain- & Integration events.
 - Migration support.
-- Hexagonal architecture.
-- Testing framework specifically crafted for this framework.
-- Extensible architecture through the *ports and adapters* pattern.
-- Code samples to quickly get started.
-- Based on standard design patterns.
+- Standard design patterns.
+- Testing framework.
+- Extensible architecture through *ports and adapters*.
+- Project templates for getting started quickly.
+- Code examples.
 
 ### Design Patterns
 
-The following are the framework's foundational design patterns:
+The framework is based on the following design patterns:
 
 - [Domain-Driven Design](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)  
 - [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
@@ -44,16 +43,18 @@ Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon
 
 ### Adapters
 
-The list of technologies supported through the implemented adapters are constantly growing. 
+Among the adapters we support so far are technologies such as PostgreSQL, RabbitMQ, SMTP and others.
 
-Currently, we support PostgreSQL, RabbitMQ, SMTP and more.
+Since the framework is relatively new, this list will grow over time.
 
-If you find there's a specific technology you'd like to see as an adapter in the framework, please leave a recommendation, or perhaps create a pull request. All ports have a clearly defined interface and the [documentation](...) contains a section on implementing ports.
+If you find there's a technology missing that you'd like to see implemented as an adapter, please leave a recommendation and we'll add it to the backlog.
+
+If you're interested in becoming a contributor, the ports all have clearly defined interfaces and you're very welcome to send us a pull request.
 
 ### Supported .NET Versions
 
-- .NET 5
 - .NET Core 3.1
+- .NET 5
   
 ### Installation
 
@@ -61,11 +62,9 @@ If you find there's a specific technology you'd like to see as an adapter in the
 
 ### Examples
 
-You can check out the source code of identityaccess.io for a full example of a product built using this framework.
+By using the WeatherForecast [project templates](...), you can setup your new project and also get some boilerplate code to get your started quickly.
 
-If you want to jump straight in, we provide that opportunity through the conventional [WeatherForecast](...) project templates for Visual Studio, Rider IDE, etc.
-
-If you prefer to see some code examples, simply look below to see some extracts from the IAM project referenced above. We start with the env sample file.
+This section will now continue with some code examples:
 
 #### Env file
 
@@ -75,51 +74,51 @@ CFG_LOGGING_LEVEL_DOTNET=Information
 CFG_LOGGING_LEVEL=Debug
 
 # General
-CFG_GENERAL_CONTEXT=MyContext
+CFG_GENERAL_CONTEXT=MyDomain
 
 # Auth
-CFG_AUTH_ENABLED=true
-CFG_AUTH_RBAC_PROVIDER=PowerIAM
+CFG_AUTH_ENABLED=false
+CFG_AUTH_RBAC_PROVIDER=
 CFG_AUTH_RBAC_EXTERNAL_REALM_ID=
-CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=arg8WLiCr3Y5tLXHHP01fh53bgTHnof8
-CFG_AUTH_JWT_TOKEN_NAME=Authorization
-CFG_AUTH_JWT_TOKEN_LOCATION=header
-CFG_AUTH_JWT_TOKEN_SCHEME=Bearer
+CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=
+CFG_AUTH_JWT_TOKEN_NAME=
+CFG_AUTH_JWT_TOKEN_LOCATION=
+CFG_AUTH_JWT_TOKEN_SCHEME=
 
 # Http Adapter
-CFG_HTTP_URLS=https://api.myapp.com
-CFG_HTTP_CORS_ALLOWED_ORIGINS=https://www.myapp.com:443,http://www.myapp.com:80
-CFG_HTTP_DOCS_MAJOR_VERSIONS=2
+CFG_HTTP_URLS=https://api.mydomain.com
+CFG_HTTP_CORS_ALLOWED_ORIGINS=https://www.mydomain.com:443,http://www.mydomain.com:80
+CFG_HTTP_DOCS_MAJOR_VERSIONS=1
 CFG_HTTP_DOCS_DEFINITIONS=
 CFG_HTTP_DOCS_ENABLED=true
-CFG_HTTP_DOCS_HTTP_ENABLED=false
-CFG_HTTP_DOCS_HTTPS_ENABLED=true
-CFG_HTTP_DOCS_HOSTNAME=https://api.myapp.com/docs
+CFG_HTTP_DOCS_HTTP_ENABLED=true
+CFG_HTTP_DOCS_HTTPS_ENABLED=false
+CFG_HTTP_DOCS_HOSTNAME=http://api.mydomain.com/swagger
 CFG_HTTP_DOCS_AUTH_EXTRA_TOKENS=
-CFG_HTTP_DOCS_TITLE="My App API"
+CFG_HTTP_DOCS_TITLE="My Domain API"
 
 # Persistence
-CFG_PERSISTENCE_PROVIDER=Postgres
+CFG_PERSISTENCE_PROVIDER=Memory
 CFG_PERSISTENCE_POOLING_ENABLED=true
 CFG_PERSISTENCE_POOLING_MIN_SIZE=0
 CFG_PERSISTENCE_POOLING_MAX_SIZE=100
 
 # Postgres
-CFG_POSTGRES_CONN_STR="Host=postgres.myapp.com:5432;Username=some-username;Password=some-password;Database=myapp"
+CFG_POSTGRES_CONN_STR="Host=postgres.mydomain.com:5432;Username=some-username;Password=some-password;Database=mydomain"
 
 # PubSub
-CFG_PUBSUB_PROVIDER=Rabbit
+CFG_PUBSUB_PROVIDER=Memory
 CFG_PUBSUB_MAX_DELIVERY_RETRIES=3
 CFG_PUBSUB_PUBLISHER_ENABLED=true
 
 # Monitoring
-CFG_MONITORING_PROVIDER=AppInsights
+CFG_MONITORING_PROVIDER=Memory
 
 # PowerIAM
 CFG_POWERIAM_URL=https://api.poweriam.com/mycompany/myapp
 
 # Rabbit
-CFG_RABBIT_HOST=rabbit.myapp.com
+CFG_RABBIT_HOST=rabbit.mydomain.com
 CFG_RABBIT_PORT=5672
 CFG_RABBIT_USERNAME=some-username
 CFG_RABBIT_PASSWORD=some-password
@@ -127,8 +126,8 @@ CFG_RABBIT_PASSWORD=some-password
 # Email
 CFG_EMAIL_ENABLED=true
 CFG_EMAIL_PROVIDER=smtp
-CFG_EMAIL_SMTP_HOST=some.host.com
-CFG_EMAIL_SMTP_PORT=1025
+CFG_EMAIL_SMTP_HOST=smtp.mydomain.com
+CFG_EMAIL_SMTP_PORT=25
 CFG_EMAIL_SMTP_USERNAME=some-username
 CFG_EMAIL_SMTP_PASSWORD=some-password
 ```
@@ -162,7 +161,7 @@ namespace Main
 {
     public class Startup
     {
-        # ...
+        /* ... */
         
         public void ConfigureServices(IServiceCollection services)
         {
@@ -178,7 +177,7 @@ namespace Main
             AddSecondaryAdapters(services);
             AddPrimaryAdapters(services);
             AddHooks(services);
-            AddSerialization(settings);
+            AddConverters(settings);
         }
 
         public void Configure(
@@ -192,7 +191,7 @@ namespace Main
             app.AddControl(lifetime);
         }
 
-        # ...
+        /* ... */
     }
 }
 ```
@@ -266,7 +265,7 @@ namespace Domain.Model.User
         public Email Email { get; set; }
         public DateTime? EmailVerifiedAt { get; set; }
         
-        # ...
+        /* ... */
 
         public static User Create(
             UserId userId,
@@ -320,21 +319,21 @@ namespace Domain.Model.User
             if (!IsEmailVerificationRequested())
                 throw DomainException.InvariantViolation("Email verification hasn't been requested.");
 
-            # ...
+            /* ... */
         }
         
-        # ...
+        /* ... */
     }
 }
 ```
 
 ### Documentation
 
-Documentation will be provided in this README and also at readthedocs.org by the time this framework has reached the release candidate stage. The final documentation will provide both a quick get started guide as well as an in-depth advanced concepts content.
+Documentation is available at [readthedocs](https://opendddnet.readthedocs.io/).
 
 ### Semantic versioning
 
-We have chosen the SemVer2.0 policy for versioning of the http api through the primary http adapters.
+We have chosen the SemVer2.0 policy for versioning of the domain model and the primary http adapter of your bounded context.
 
 In SemVer2.0, *backwards compatible* changes increments the patch- and minor versions, whereas *backwards incompatible* changes increments the major version.
 
@@ -355,10 +354,8 @@ If you want to contribute to the code base, create a pull request on the develop
 
 - [x] GitHub README
 - [x] NuGet README
-- [ ] Full Sample Project
-- [ ] Quickstart Guide
-- [ ] Full Test Coverage
-- [ ] Visual Studio Project Templates
+- [x] Quickstart Guide
+- [x] Visual Studio Project Templates
 - [x] .NET 5 Support
 - [x] .NET Core 3.1 Support
 - [x] Start Context
@@ -402,6 +399,8 @@ If you want to contribute to the code base, create a pull request on the develop
 
 - [ ] .NET 7 Support
 - [ ] .NET 6 Support
+- [ ] Full Sample Project
+- [ ] Full Test Coverage
 - [ ] Monitoring
 - [ ] Tasks support
 - [ ] Migration of all aggregates not up-to-date
