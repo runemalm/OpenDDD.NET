@@ -1,0 +1,29 @@
+{
+  "author": "David Runemalm",
+  "name": "OpenDDD.NET Project Template",
+  "description": "A project template for creating bounded contexts using the OpenDDD.NET framework.",
+  "identity": "OpenDDD.NET Project Template",
+  "shortName": "openddd-net",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "Weather",
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "description": "The target framework for the project.",
+      "datatype": "choice",
+      "choices": [
+        {
+          "choice": "netcoreapp3.1"
+        },
+        {
+          "choice": "net5.0"
+        }
+      ],
+      "defaultValue": "net5.0"
+    }
+  },
+  "preferNameDirectory": true
+}
