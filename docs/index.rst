@@ -7,7 +7,7 @@ This framework is used to implement bounded contexts in software teams with a do
 
 It's heavily based on hexagonal architecture, so if you're familiar with that pattern you should get started very quickly.
 
-Check out some code examples below, then a great way for your next step would be to use one of the `project templates <https://todo>`_ to quickly setup a bounded context with some code, this would be your starting point.
+Check out some code examples below, then a great way for your next step would be to use the :ref:`project template <Project Template>` to quickly setup a bounded context with some code, this would be your starting point.
 
 Check out the :doc:`user guide<gettingstarted>` to quickly get started building your own context.
 

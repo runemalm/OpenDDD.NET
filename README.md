@@ -62,7 +62,7 @@ If you're interested in becoming a contributor, the ports all have clearly defin
 
 ### Examples
 
-By using the WeatherForecast [project templates](...), you can setup your new project and also get some boilerplate code to get your started quickly.
+By using the WeatherForecast [project templates](https://opendddnet.readthedocs.io/en/latest/gettingstarted.html#project-template), you can setup your new project and also get some boilerplate code to get your started quickly.
 
 This section will now continue with some code examples:
 
