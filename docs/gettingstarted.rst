@@ -13,9 +13,9 @@ Example Application
 
 The quickest way to get a taste of this framework is to check out the code snippets on the :doc:`start page<index>`.
 
-The reommended and easy way to get started quickly is to use the WeatherForecast `project templates <https://todo>`_.
+The reommended next step is to use one of the `project templates <https://todo>`_ to actually create your first project with some boilerplate code that will get you up and running quickly.
 
-Next, we'll guide you through the building blocks to get you started.
+You could also follow along in this guide below if you want to first get some theory behind the building blocks of the framework.
 
 
 ###############
