@@ -833,6 +833,10 @@ If you want to contribute to the code base, create a pull request on the develop
 
 ### Release Notes
 
+**1.0.0-alpha.14** - 2023-04-30
+
+- Change listeners to wildcard both minor and patch versions.
+
 **1.0.0-alpha.13** - 2023-04-28
 
 - Rename 'Serialization' to 'Conversion'.
