@@ -25,7 +25,7 @@ First you need to install the project templates package. Then use the project te
     ----------------------------  -----------  --------  ----
     OpenDDD.NET Project Template  openddd-net  [C#]
 
-    $ dotnet new install openddd-net -n MyBoundedContext
+    $ dotnet new openddd-net -n MyBoundedContext
 
 After running the above two commands you will have the solution in a new folder called ``MyBoundedContext``.
 
