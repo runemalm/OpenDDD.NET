@@ -99,8 +99,8 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 			{
 				if (sub.EventName == outboxEvent.EventName)
 				{
-					if (sub.DomainModelVersion.ToStringWithWildcardBuild() ==
-					    outboxEvent.DomainModelVersion.ToStringWithWildcardBuild())
+					if (sub.DomainModelVersion.ToStringWithWildcardMinorAndBuildVersions() ==
+					    outboxEvent.DomainModelVersion.ToStringWithWildcardMinorAndBuildVersions())
 					{
 						await sub.Listener.Handle(message);
 					}
