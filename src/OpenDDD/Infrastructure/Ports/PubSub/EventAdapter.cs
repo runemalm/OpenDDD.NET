@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using Namotion.Reflection;
 using KellermanSoftware.CompareNetObjects;
 using OpenDDD.Application;
@@ -41,23 +39,6 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		public abstract void Unsubscribe(IEventListener listener);
 		public abstract Task UnsubscribeAsync(IEventListener listener);
 		public abstract Task AckAsync(IPubSubMessage message);
-
-		protected readonly JsonSerializerSettings _jsonSerializerSettings =
-			new JsonSerializerSettings
-			{
-				ContractResolver = new CamelCasePropertyNamesContractResolver(),
-				Converters = new List<JsonConverter>
-				{
-					new StringEnumConverter
-					{
-						AllowIntegerValues = false,
-						NamingStrategy = new DefaultNamingStrategy()
-					}
-				},
-				DateFormatString = "yyyy-MM-dd'T'HH:mm:ss.fffK",
-				NullValueHandling = NullValueHandling.Ignore,
-				Formatting = Formatting.Indented
-			};
 
 		public EventAdapter(
 			string context,
@@ -219,7 +200,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			=> TopicForEvent(listener.ListensTo, listener.ListensToVersion);
 
 		public string TopicForEvent(string eventName, DomainModelVersion domainModelVersion)
-			=> $"{_context}-{eventName}-{domainModelVersion.ToStringWithWildcardBuild()}";
+			=> $"{_context}-{eventName}-{domainModelVersion.ToStringWithWildcardMinorAndBuildVersions()}";
 
 		public string TopicSubscriptionForEvent(IEvent theEvent)
 			=> TopicSubscriptionForEvent(theEvent.Header.Name, theEvent.Header.DomainModelVersion);

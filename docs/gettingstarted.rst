@@ -2,20 +2,43 @@
 Installation
 ############
 
-Install the framework using the package manager or the `dotnet CLI <https://learn.microsoft.com/en-us/nuget/consume-packages/install-use-packages-dotnet-cli>`_::
+Install the framework in an existing project using the package manager or the `dotnet CLI <https://learn.microsoft.com/en-us/nuget/consume-packages/install-use-packages-dotnet-cli>`_::
 
     $ dotnet add package OpenDDD.NET
+
+
+################
+Project Template
+################
+
+To get started quickest possible way, use the project template.
+
+First you need to install the project templates package. Then use the project template in there to create your actual project::
+
+    $ dotnet new install OpenDDD.NET-Templates
+
+    The following template packages will be installed:
+        OpenDDD.NET-Templates
+
+    Success: OpenDDD.NET-Templates::1.0.0 installed the following templates:
+    Template Name                 Short Name   Language  Tags
+    ----------------------------  -----------  --------  ----
+    OpenDDD.NET Project Template  openddd-net  [C#]
+
+    $ dotnet new install openddd-net -n MyBoundedContext
+
+After running the above two commands you will have the solution in a new folder called ``MyBoundedContext``.
 
 
 ###################
 Example Application
 ###################
 
-The quickest way to get a taste of this framework is to check out the code snippets on the :doc:`start page<index>`.
+You can check out some code examples on the :doc:`start page<index>`.
 
-The reommended and easy way to get started quickly is to use the WeatherForecast `project templates <https://todo>`_.
+Alternatively, create a project using the project template as described above.
 
-Next, we'll guide you through the building blocks to get you started.
+Your final option is to keep reading below where we go through the building blocks of the framework and also show you some code examples.
 
 
 ###############
@@ -159,7 +182,7 @@ Program.cs
 
 Use the ``AddXxx()`` extension methods of the framework to properly configure the .NET host and application.
 
-.. tip:: Use one of the weather forecast project templates and you won't need to create this file.
+.. tip:: Use the weather forecast :ref:`project template <Project Template>` and you won't need to create this file.
 
 Example Program.cs file::
 
@@ -192,7 +215,7 @@ Startup.cs
 
 Since part of the design philosophy behind this framwork is to follow the hexagonal architecture, and to make this intent clear through the structure of the code, the ``Startup.cs`` file is written according to a specific convention.
 
-.. tip:: Use one of the weather forecast project templates and you won't need to create this file.
+.. tip:: Use the weather forecast :ref:`project template <Project Template>` and you won't need to create this file.
 
 See the example below and create your Startup.cs file.
 
@@ -1466,7 +1489,7 @@ You register your serializer settings with the DI container like this::
 
     services.AddTransient<OpenDddConversionSettings, ConversionSettings>();
 
-.. note:: The ``AddConversion()`` call in Startup.cs of the project templates does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
+.. note:: The ``AddConversion()`` call in Startup.cs of the :ref:`project template <Project Template>` does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
 
 
 Migrators

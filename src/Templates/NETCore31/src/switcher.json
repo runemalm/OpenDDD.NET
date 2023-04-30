@@ -1,8 +1,0 @@
-{
-  "solution": "Weather.sln",
-  "solutionFolder": null,
-  "mappings": {
-    "OpenDDD.NET": "../../../OpenDDD/OpenDDD.csproj"
-  },
-  "removeProjects": true
-}

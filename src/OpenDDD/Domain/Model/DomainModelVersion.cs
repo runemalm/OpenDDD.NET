@@ -26,8 +26,8 @@ namespace OpenDDD.Domain.Model
 		public override string ToString()
 			=> _version.ToString();
 		
-		public string ToStringWithWildcardBuild()
-			=> $"{_version.Major}.{_version.Minor}.*";
+		public string ToStringWithWildcardMinorAndBuildVersions()
+			=> $"{_version.Major}.*.*";
 
 		// Equality
 
