@@ -5,7 +5,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Weather' " />
   <ItemGroup>
-    <PackageReference Include="OpenDDD.NET" Version="1.0.0-alpha.13" />
+    <PackageReference Include="OpenDDD.NET" Version="1.*-*" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
   <ItemGroup>
