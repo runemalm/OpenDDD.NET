@@ -207,10 +207,19 @@ push-tools-image: ##@Tools	Push the tools image
 # PROJECT TEMPLATES
 ##########################################################################
 
-.PHONY: uninstall-template-net60
-uninstall-template-net60: ##@Project Templates	Uninstall the .Net 6.0 project template
-	cd $(PROJECT_TEMPLATES_DIR)/BoundedContextNet60 && dotnet new --uninstall .
+.PHONY: templates-install
+templates-install: ##@Project Templates	Install the .NET Core 3.1 template
+	cd $(PROJECT_TEMPLATES_DIR)/templates/NETCore31 && dotnet new --install .
 
-.PHONY: install-template-net60
-install-template-net60: ##@Project Templates	Install the .Net 6.0 project template
-	cd $(PROJECT_TEMPLATES_DIR)/BoundedContextNet60 && dotnet new --install .
+.PHONY: templates-uninstall
+templates-uninstall: ##@Project Templates	Uninstall the .NET Core 3.1 template
+	cd $(PROJECT_TEMPLATES_DIR)/templates/NETCore31 && dotnet new --uninstall .
+
+.PHONY: templates-pack
+templates-pack: ##@Project Templates	Builds and packs the template package.
+	cd $(PROJECT_TEMPLATES_DIR) && dotnet pack
+
+.PHONY: templates-push
+templates-push: ##@Project Templates	Push the template package nuget to the global feed..
+	cd $(PROJECT_TEMPLATES_DIR)/bin/Debug && \
+	dotnet nuget push OpenDDD.NET-Templates.1.0.0.nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
