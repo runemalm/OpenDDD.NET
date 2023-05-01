@@ -35,6 +35,16 @@ namespace OpenDDD.Infrastructure.Services.Publisher
             _waitCancellationTokenSource = new CancellationTokenSource();
         }
 
+        public void Start()
+        {
+            _isStarted = true;
+        }
+
+        public void Stop()
+        {
+            _isStarted = false;
+        }
+
         public async Task WorkOutboxAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested && 
@@ -69,7 +79,6 @@ namespace OpenDDD.Infrastructure.Services.Publisher
                     {
                         _logger.Log($"Exception when publishing in publisher: {e}", LogLevel.Error);
                         didPublish = false;
-
                     }
 
                     if (didPublish)
