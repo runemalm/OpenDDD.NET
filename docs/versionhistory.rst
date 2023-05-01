@@ -6,6 +6,15 @@ Version history
 
 .. tip:: Subscribe to the github repository to get notifications when we move into beta and rc phases!
 
+**1.0.0-alpha.15** - 2023-05-01
+
+- Re-enable previously disabled publisher service.
+- Change message bus topic name format for events.
+
+**1.0.0-alpha.14** - 2023-04-30
+
+- Change listeners to wildcard both minor and patch versions.
+
 **1.0.0-alpha.13** - 2023-04-28
 
 - Rename 'Serialization' to 'Conversion'.

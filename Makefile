@@ -18,12 +18,15 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := openddd
-BUILD_VERSION := 1.0.0-alpha.14
+BUILD_VERSION := 1.0.0-alpha.15
 
 NUGET_NAME := OpenDDD.NET
 TOOLS_IMAGE_NAME := runemalm/openddd-tools
 TOOLS_IMAGE_TAG := 1.0.0-alpha.1
 ROOT_NAMESPACE := OpenDDD
+
+TEMPLATES_NUGET_NAME := OpenDDD.NET-Templates
+TEMPLATES_BUILD_VERSION := 1.0.0-alpha.2
 
 SRC_DIR := $(PWD)/src
 DOCS_DIR := $(PWD)/docs
@@ -222,4 +225,4 @@ templates-pack: ##@Project Templates	Builds and packs the template package.
 .PHONY: templates-push
 templates-push: ##@Project Templates	Push the template package nuget to the global feed..
 	cd $(PROJECT_TEMPLATES_DIR)/bin/Debug && \
-	dotnet nuget push OpenDDD.NET-Templates.1.0.0.nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
+	dotnet nuget push $(TEMPLATES_NUGET_NAME).$(TEMPLATES_BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json

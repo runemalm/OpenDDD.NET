@@ -13,10 +13,10 @@ using OpenDDD.Domain.Model.Error;
 using OpenDDD.Infrastructure.Ports.PubSub;
 using OpenDDD.Infrastructure.Ports.Repository;
 using OpenDDD.Infrastructure.Services.Persistence;
+using OpenDDD.Infrastructure.Services.Publisher;
 using OpenDDD.NET.Hooks;
 using OpenDDD.NET.Middleware;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
 namespace OpenDDD.NET.Extensions
 {
@@ -236,9 +236,17 @@ namespace OpenDDD.NET.Extensions
 		{
 			var outbox = app.ApplicationServices.GetService<IOutbox>();
 			outbox.Start(CancellationToken.None);
+			app.StartPublisherService();
 			return app;
 		}
 		
+		private static IApplicationBuilder StartPublisherService(this IApplicationBuilder app)
+		{
+			var publisherService = app.ApplicationServices.GetService<IPublisherService>();
+			publisherService.Start();
+			return app;
+		}
+
 		private static IApplicationBuilder StartRepositories(this IApplicationBuilder app)
 		{
 			foreach (var repository in app.ApplicationServices.GetServices<IStartableRepository>())
@@ -317,10 +325,17 @@ namespace OpenDDD.NET.Extensions
 		{
 			var outbox = app.ApplicationServices.GetService<IOutbox>();
 			outbox.Stop(CancellationToken.None);
-		
+			app.StopPublisherService();
 			return app;
 		}
 		
+		private static IApplicationBuilder StopPublisherService(this IApplicationBuilder app)
+		{
+			var publisherService = app.ApplicationServices.GetService<IPublisherService>();
+			publisherService.Stop();
+			return app;
+		}
+
 		private static IApplicationBuilder StopRepositories(this IApplicationBuilder app)
 		{
 			foreach (var repository in app.ApplicationServices.GetServices<IStartableRepository>())

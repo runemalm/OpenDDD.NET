@@ -10,21 +10,19 @@ Domain-driven design is an approach to software development where focus lies on 
 
 By utilizing the DDD principles and design patterns, hexagonal architecture and other well-known patterns, this framework is especially crafted for domain-driven design and implementing bounded contexts with C# and the .NET framework.
 
-If you're interested in becoming a contributor, please drop us a line or simply create a pull request and we'll see what we can do together.
+If you're interested in becoming a contributor, please drop us a line or simply create a pull request.
 
 ### Key Features
 
 - Domain model versioning.
-- Swagger docs auto-generation.
-- Bounded context code generation from yaml.
-- Event-driven architecture.
+- Swagger support.
+- Code generation support.
 - Domain- & Integration events.
 - Migration support.
-- Standard design patterns.
+- Based on industry standard design patterns.
 - Testing framework.
 - Extensible architecture through *ports and adapters*.
-- Project templates for getting started quickly.
-- Code examples.
+- Rider/VS Project templates.
 
 ### Design Patterns
 
@@ -41,288 +39,42 @@ The framework is based on the following design patterns:
 Big thanks to Eric Evans for his [seminal book on DDD](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215) and 
 Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon/IDDD_Samples) of DDD in Java.
 
-### Adapters
-
-Among the adapters we support so far are technologies such as PostgreSQL, RabbitMQ, SMTP and others.
-
-Since the framework is relatively new, this list will grow over time.
-
-If you find there's a technology missing that you'd like to see implemented as an adapter, please leave a recommendation and we'll add it to the backlog.
-
-If you're interested in becoming a contributor, the ports all have clearly defined interfaces and you're very welcome to send us a pull request.
-
 ### Supported .NET Versions
 
-- .NET Core 3.1
 - .NET 5
-  
+- .NET Core 3.1
+
+### Documentation
+
+Documentation is available at [readthedocs](https://opendddnet.readthedocs.io/). 
+
 ### Installation
+
+Install the nuget in an existing project using the package manager or the dotnet CLI:
 
     dotnet add package OpenDDD.NET
 
+NOTE: In most cases it's a better idea to use the project templates to get started quickly with some boilerplate code.
+
+### Create a project using project templates
+
+Use the project template to create a project with boiler plate code.
+
+First install the templates package:
+
+    $ dotnet new install OpenDDD.NET-Templates
+
+Then use the project template to setup a new project:
+
+    dotnet new install openddd-net -n MyBoundedContext
+
+Replace *MyBoundedContext* with the name of your bounded context. A folder will be created with the same name and the solution inside will also get this name.
+
+Refer to the [user guide](https://opendddnet.readthedocs.io/en/latest/gettingstarted.html) for more information on where to go from here.
+
 ### Examples
 
-By using the WeatherForecast [project templates](https://opendddnet.readthedocs.io/en/latest/gettingstarted.html#project-template), you can setup your new project and also get some boilerplate code to get your started quickly.
-
-This section will now continue with some code examples:
-
-#### Env file
-
-```bash
-# Logging
-CFG_LOGGING_LEVEL_DOTNET=Information
-CFG_LOGGING_LEVEL=Debug
-
-# General
-CFG_GENERAL_CONTEXT=MyDomain
-
-# Auth
-CFG_AUTH_ENABLED=false
-CFG_AUTH_RBAC_PROVIDER=
-CFG_AUTH_RBAC_EXTERNAL_REALM_ID=
-CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=
-CFG_AUTH_JWT_TOKEN_NAME=
-CFG_AUTH_JWT_TOKEN_LOCATION=
-CFG_AUTH_JWT_TOKEN_SCHEME=
-
-# Http Adapter
-CFG_HTTP_URLS=https://api.mydomain.com
-CFG_HTTP_CORS_ALLOWED_ORIGINS=https://www.mydomain.com:443,http://www.mydomain.com:80
-CFG_HTTP_DOCS_MAJOR_VERSIONS=1
-CFG_HTTP_DOCS_DEFINITIONS=
-CFG_HTTP_DOCS_ENABLED=true
-CFG_HTTP_DOCS_HTTP_ENABLED=true
-CFG_HTTP_DOCS_HTTPS_ENABLED=false
-CFG_HTTP_DOCS_HOSTNAME=http://api.mydomain.com/swagger
-CFG_HTTP_DOCS_AUTH_EXTRA_TOKENS=
-CFG_HTTP_DOCS_TITLE="My Domain API"
-
-# Persistence
-CFG_PERSISTENCE_PROVIDER=Memory
-CFG_PERSISTENCE_POOLING_ENABLED=true
-CFG_PERSISTENCE_POOLING_MIN_SIZE=0
-CFG_PERSISTENCE_POOLING_MAX_SIZE=100
-
-# Postgres
-CFG_POSTGRES_CONN_STR="Host=postgres.mydomain.com:5432;Username=some-username;Password=some-password;Database=mydomain"
-
-# PubSub
-CFG_PUBSUB_PROVIDER=Memory
-CFG_PUBSUB_MAX_DELIVERY_RETRIES=3
-CFG_PUBSUB_PUBLISHER_ENABLED=true
-
-# Monitoring
-CFG_MONITORING_PROVIDER=Memory
-
-# PowerIAM
-CFG_POWERIAM_URL=https://api.poweriam.com/mycompany/myapp
-
-# Rabbit
-CFG_RABBIT_HOST=rabbit.mydomain.com
-CFG_RABBIT_PORT=5672
-CFG_RABBIT_USERNAME=some-username
-CFG_RABBIT_PASSWORD=some-password
-
-# Email
-CFG_EMAIL_ENABLED=true
-CFG_EMAIL_PROVIDER=smtp
-CFG_EMAIL_SMTP_HOST=smtp.mydomain.com
-CFG_EMAIL_SMTP_PORT=25
-CFG_EMAIL_SMTP_USERNAME=some-username
-CFG_EMAIL_SMTP_PASSWORD=some-password
-```
-
-#### Program.cs
-
-```c#
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using OpenDDD.NET.Extensions;
-using Main.Extensions;
-
-namespace Main
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-            => CreateWebHostBuilder(args).Build().Run();
-        
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseKestrel()
-                .UseStartup<Startup>()
-                .AddEnvFile("ENV_FILE", "CFG_")
-                .AddSettings()
-                .AddCustomSettings()
-                .AddLogging();
-    }
-}
-```
-
-#### Startup.cs
-
-```c#
-using System.Reflection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using OpenDDD.Application.Settings;
-using OpenDDD.Application.Settings.Persistence;
-using OpenDDD.NET.Extensions;
-using OpenDDD.NET.Hooks;
-using Main.Extensions;
-using Main.NET.Hooks;
-using Application.Actions;
-using Application.Actions.Commands;
-using Domain.Model.Forecast;
-using Domain.Model.Summary;
-using Infrastructure.Ports.Adapters.Domain;
-using Infrastructure.Ports.Adapters.Http.v1;
-using Infrastructure.Ports.Adapters.Interchange.Translation;
-using Infrastructure.Ports.Adapters.Repositories.Memory;
-using Infrastructure.Ports.Adapters.Repositories.Migration;
-using Infrastructure.Ports.Adapters.Repositories.Postgres;
-using HttpCommonTranslation = Infrastructure.Ports.Adapters.Http.Common.Translation;
-
-namespace Main
-{
-    public class Startup
-    {
-        private ISettings _settings;
-
-        public Startup(
-            ISettings settings)
-        {
-            _settings = settings;
-        }
-        
-        public void ConfigureServices(IServiceCollection services)
-        {
-            // OpenDDD.NET
-            services.AddAccessControl(_settings);
-            services.AddMonitoring(_settings);
-            services.AddPersistence(_settings);
-            services.AddPubSub(_settings);
-            services.AddTransactional(_settings);
-
-            // App
-            AddDomainServices(services);
-            AddApplicationService(services);
-            AddSecondaryAdapters(services);
-            AddPrimaryAdapters(services);
-            AddConversion(services);
-            AddHooks(services);
-        }
-
-        public void Configure(
-            IApplicationBuilder app, 
-            IWebHostEnvironment env,
-            IHostApplicationLifetime lifetime)
-        {
-            // OpenDDD.NET
-            app.AddAccessControl(_settings);
-            app.AddHttpAdapter(_settings);
-            app.AddControl(lifetime);
-        }
-
-        // App
-        
-        private void AddDomainServices(IServiceCollection services)
-        {
-            services.AddDomainService<IForecastDomainService, ForecastDomainService>();
-        }
-
-        private void AddApplicationService(IServiceCollection services)
-        {
-            AddActions(services);
-        }
-        
-        private void AddSecondaryAdapters(IServiceCollection services)
-        {
-            services.AddEmailAdapter(_settings);
-            AddRepositories(services);
-        }
-
-        private void AddPrimaryAdapters(IServiceCollection services)
-        {
-            AddHttpAdapters(services);
-            AddInterchangeEventAdapters(services);
-            AddDomainEventAdapters(services);
-        }
-
-        private void AddHooks(IServiceCollection services)
-        {
-            services.AddTransient<IOnBeforePrimaryAdaptersStartedHook, OnBeforePrimaryAdaptersStartedHook>();
-        }
-
-        private void AddConversion(IServiceCollection services)
-        {
-            services.AddConversion(_settings);
-        }
-
-        private void AddActions(IServiceCollection services)
-        {
-            services.AddAction<GetAverageTemperatureAction, GetAverageTemperatureCommand>();
-            services.AddAction<NotifyWeatherPredictedAction, NotifyWeatherPredictedCommand>();
-            services.AddAction<PredictWeatherAction, PredictWeatherCommand>();
-        }
-
-        private void AddHttpAdapters(IServiceCollection services)
-        {
-            var mvcCoreBuilder = services.AddHttpAdapter(_settings);
-            AddHttpAdapterCommon(services);
-            AddHttpAdapterV1(services, mvcCoreBuilder);
-        }
-
-        private void AddHttpAdapterV1(IServiceCollection services, IMvcCoreBuilder mvcCoreBuilder)
-        {
-            mvcCoreBuilder.AddApplicationPart(Assembly.GetAssembly(typeof(HttpAdapter)));
-            services.AddTransient<HttpCommonTranslation.Commands.PredictWeatherCommandTranslator>();
-            services.AddTransient<HttpCommonTranslation.ForecastIdTranslator>();
-            services.AddTransient<HttpCommonTranslation.ForecastTranslator>();
-            services.AddTransient<HttpCommonTranslation.SummaryIdTranslator>();
-            services.AddTransient<HttpCommonTranslation.SummaryTranslator>();
-        }
-        
-        private void AddHttpAdapterCommon(IServiceCollection services)
-        {
-            services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.PredictWeatherCommandTranslator>();
-
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ForecastIdTranslator>();
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ForecastTranslator>();
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.SummaryIdTranslator>();
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.SummaryTranslator>();
-        }
-        
-        private void AddInterchangeEventAdapters(IServiceCollection services)
-        {
-            services.AddTransient<IIcForecastTranslator, IcForecastTranslator>();
-        }
-        
-        private void AddDomainEventAdapters(IServiceCollection services)
-        {
-            services.AddListener<WeatherPredictedListener>();
-        }
-        
-        private void AddRepositories(IServiceCollection services)
-        {
-            if (_settings.Persistence.Provider == PersistenceProvider.Memory)
-            {
-                services.AddRepository<IForecastRepository, MemoryForecastRepository>();
-                services.AddRepository<ISummaryRepository, MemorySummaryRepository>();
-            }
-            else if (_settings.Persistence.Provider == PersistenceProvider.Postgres)
-            {
-                services.AddRepository<IForecastRepository, PostgresForecastRepository>();
-                services.AddRepository<ISummaryRepository, PostgresSummaryRepository>();
-            }
-            services.AddMigrator<ForecastMigrator>();
-            services.AddMigrator<SummaryMigrator>();
-        }
-    }
-}
-```
+Here are some code examples:
 
 #### CreateAccountAction.cs
 
@@ -741,25 +493,6 @@ namespace Domain.Model.User
 }
 ```
 
-### Documentation
-
-Documentation is available at [readthedocs](https://opendddnet.readthedocs.io/).
-
-### Semantic versioning
-
-We have chosen the SemVer2.0 policy for versioning of the domain model and the primary http adapter of your bounded context.
-
-In SemVer2.0, *backwards compatible* changes increments the patch- and minor versions, whereas *backwards incompatible* changes increments the major version.
-
-See the table below for examples of when to increment which version.
-
-| Code Status                               | Stage         | Rule                                                               | Example Version |
-|-------------------------------------------|---------------|--------------------------------------------------------------------|-----------------|
-| First release                             | New product   | Start with 1.0.0                                                   | 1.0.0           |
-| Backward-compatible bug fixes             | Patch release | Increment the third digit                                          | 1.0.1           |
-| Backward compatible new features          | Minor release | Increment the middle digit and reset last digit to zero            | 1.1.0           |
-| Changes that break backward compatibility | Major release | Increment the first digit and reset middle and last digits to zero | 2.0.0           |
-
 ### Contribution
   
 If you want to contribute to the code base, create a pull request on the develop branch. Feel very free to reach out to us by email or via social media.
@@ -809,29 +542,25 @@ If you want to contribute to the code base, create a pull request on the develop
 - [x] Postgres Repository
 - [x] Memory Repository
 
-### Roadmap Future
+### Backlog
 
+- [ ] .NET 8 Support
 - [ ] .NET 7 Support
 - [ ] .NET 6 Support
 - [ ] Full Sample Project
 - [ ] Full Test Coverage
-- [ ] Monitoring
-- [ ] Tasks support
-- [ ] Migration of all aggregates not up-to-date
-- [ ] Periodic Jobs
-- [ ] Interval Jobs
-- [ ] One-off Jobs
+- [ ] Monitoring support
+- [ ] Migration of all aggregates not at latest domain model version
+- [ ] Tasks / Jobs support
 - [ ] Command Line Interface (CLI)
-- [ ] CLI Operation: Migrate
-- [ ] CLI Operation: Create Migration
-- [ ] CLI Operation: Increment Domain Model Version
 - [ ] Admin Dashboard
-- [ ] Admin Tool: Inspect Dead Letter Queue
-- [ ] Admin Tool: Republish Dead Letters
-- [ ] Administration
-- [ ] And more...
 
 ### Release Notes
+
+**1.0.0-alpha.15** - 2023-05-01
+
+- Re-enable previously disabled publisher service.
+- Change message bus topic name format for events.
 
 **1.0.0-alpha.14** - 2023-04-30
 

@@ -166,7 +166,7 @@ namespace OpenDDD.NET.Extensions
 			services.AddDeadLetterQueue(settings);
 			if (settings.PubSub.PublisherEnabled)
 			{
-				services.AddTransient<IPublisherService, PublisherService>();
+				services.AddSingleton<IPublisherService, PublisherService>();
 				services.AddHostedService<PublisherHostedService>();
 			}
 			return services;

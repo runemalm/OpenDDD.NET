@@ -200,7 +200,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			=> TopicForEvent(listener.ListensTo, listener.ListensToVersion);
 
 		public string TopicForEvent(string eventName, DomainModelVersion domainModelVersion)
-			=> $"{_context}-{eventName}-{domainModelVersion.ToStringWithWildcardMinorAndBuildVersions()}";
+			=> $"{_context}-{eventName}V{domainModelVersion.Major}";
 
 		public string TopicSubscriptionForEvent(IEvent theEvent)
 			=> TopicSubscriptionForEvent(theEvent.Header.Name, theEvent.Header.DomainModelVersion);

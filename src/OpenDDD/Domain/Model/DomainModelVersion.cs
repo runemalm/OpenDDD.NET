@@ -8,6 +8,10 @@ namespace OpenDDD.Domain.Model
 	{
 		private Version _version { get; set; }
 
+		public int Major => _version.Major;
+		public int Minor => _version.Minor;
+		public int Patch => _version.Build;
+
 		public DomainModelVersion(string dotString)
 		{
 			if (string.IsNullOrEmpty(dotString))

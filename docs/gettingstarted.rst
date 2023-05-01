@@ -2,7 +2,7 @@
 Installation
 ############
 
-Install the framework in an existing project using the package manager or the `dotnet CLI <https://learn.microsoft.com/en-us/nuget/consume-packages/install-use-packages-dotnet-cli>`_::
+You could install the package as a nuget into an existing project, using the dotnet CLI::
 
     $ dotnet add package OpenDDD.NET
 
@@ -11,41 +11,37 @@ Install the framework in an existing project using the package manager or the `d
 Project Template
 ################
 
-To get started quickest possible way, use the project template.
+The easiest way to get started with your bounded context is using the project template.
 
-First you need to install the project templates package. Then use the project template in there to create your actual project::
+By using the template, you will get the boilerplate code for free, which makes sure you create all configuration files and bootup code correctly.
+
+Get started by installing the project templates package::
 
     $ dotnet new install OpenDDD.NET-Templates
 
-    The following template packages will be installed:
-        OpenDDD.NET-Templates
+Then create your bounded context project::
 
-    Success: OpenDDD.NET-Templates::1.0.0 installed the following templates:
-    Template Name                 Short Name   Language  Tags
-    ----------------------------  -----------  --------  ----
-    OpenDDD.NET Project Template  openddd-net  [C#]
+    $ dotnet new openddd-net -n MyBoundedContext
 
-    $ dotnet new install openddd-net -n MyBoundedContext
+.. note:: Replace `MyBoundedContext` with the actual name of your project.
 
-After running the above two commands you will have the solution in a new folder called ``MyBoundedContext``.
+Your new project is now created in a folder named ``MyBoundedContext``.
 
 
-###################
-Example Application
-###################
+############
+Example Code
+############
 
-You can check out some code examples on the :doc:`start page<index>`.
+There is some example code on the :doc:`start page<index>`.
 
-Alternatively, create a project using the project template as described above.
-
-Your final option is to keep reading below where we go through the building blocks of the framework and also show you some code examples.
+Use the :ref:`project template <Project Template>` to quickly create a project with boiler plate code you can look at.
 
 
 ###############
 Building Blocks
 ###############
 
-We will now cover all the ``building blocks`` of the framework:
+We will now give you a walkthrough of the framework ``building blocks``:
 
 * :ref:`Env files`
 * :ref:`Domain Model Version`
