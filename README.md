@@ -74,216 +74,18 @@ Refer to the [user guide](https://opendddnet.readthedocs.io/en/latest/gettingsta
 
 ### Examples
 
-Here are some code examples of how your bounded context will look like. Starting with the configuration file.
-
-#### Env file
-
-```bash
-# Logging
-CFG_LOGGING_LEVEL_DOTNET=Information
-CFG_LOGGING_LEVEL=Debug
-
-# General
-CFG_GENERAL_CONTEXT=MyDomain
-
-# Auth
-CFG_AUTH_ENABLED=false
-CFG_AUTH_RBAC_PROVIDER=
-CFG_AUTH_RBAC_EXTERNAL_REALM_ID=
-CFG_AUTH_JWT_TOKEN_PRIVATE_KEY=
-CFG_AUTH_JWT_TOKEN_NAME=
-CFG_AUTH_JWT_TOKEN_LOCATION=
-CFG_AUTH_JWT_TOKEN_SCHEME=
-
-# Http Adapter
-CFG_HTTP_URLS=https://api.mydomain.com
-CFG_HTTP_CORS_ALLOWED_ORIGINS=https://www.mydomain.com:443,http://www.mydomain.com:80
-CFG_HTTP_DOCS_MAJOR_VERSIONS=1
-CFG_HTTP_DOCS_DEFINITIONS=
-CFG_HTTP_DOCS_ENABLED=true
-CFG_HTTP_DOCS_HTTP_ENABLED=true
-CFG_HTTP_DOCS_HTTPS_ENABLED=false
-CFG_HTTP_DOCS_HOSTNAME=http://api.mydomain.com/swagger
-CFG_HTTP_DOCS_AUTH_EXTRA_TOKENS=
-CFG_HTTP_DOCS_TITLE="My Domain API"
-
-# Persistence
-CFG_PERSISTENCE_PROVIDER=Memory
-CFG_PERSISTENCE_POOLING_ENABLED=true
-CFG_PERSISTENCE_POOLING_MIN_SIZE=0
-CFG_PERSISTENCE_POOLING_MAX_SIZE=100
-
-# Postgres
-CFG_POSTGRES_CONN_STR="Host=postgres.mydomain.com:5432;Username=some-username;Password=some-password;Database=mydomain"
-
-# PubSub
-CFG_PUBSUB_PROVIDER=Memory
-CFG_PUBSUB_MAX_DELIVERY_RETRIES=3
-CFG_PUBSUB_PUBLISHER_ENABLED=true
-
-# Monitoring
-CFG_MONITORING_PROVIDER=Memory
-
-# PowerIAM
-CFG_POWERIAM_URL=https://api.poweriam.com/mycompany/myapp
-
-# Rabbit
-CFG_RABBIT_HOST=rabbit.mydomain.com
-CFG_RABBIT_PORT=5672
-CFG_RABBIT_USERNAME=some-username
-CFG_RABBIT_PASSWORD=some-password
-
-# Email
-CFG_EMAIL_ENABLED=true
-CFG_EMAIL_PROVIDER=smtp
-CFG_EMAIL_SMTP_HOST=smtp.mydomain.com
-CFG_EMAIL_SMTP_PORT=25
-CFG_EMAIL_SMTP_USERNAME=some-username
-CFG_EMAIL_SMTP_PASSWORD=some-password
-```
-
-#### Program.cs
-
-```c#
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using OpenDDD.NET.Extensions;
-using Main.Extensions;
-
-namespace Main
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-            => CreateWebHostBuilder(args).Build().Run();
-        
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseKestrel()
-                .UseStartup<Startup>()
-                .AddEnvFile("ENV_FILE", "CFG_")
-                .AddSettings()
-                .AddCustomSettings()
-                .AddLogging();
-    }
-}
-```
-
-#### Startup.cs
-
-```c#
-/* ... */
-
-namespace Main
-{
-    public class Startup
-    {
-        private ISettings _settings;
-
-        public Startup(
-            ISettings settings)
-        {
-            _settings = settings;
-        }
-        
-        public void ConfigureServices(IServiceCollection services)
-        {
-            // OpenDDD.NET
-            services.AddAccessControl(_settings);
-            services.AddMonitoring(_settings);
-            services.AddPersistence(_settings);
-            services.AddPubSub(_settings);
-            services.AddTransactional(_settings);
-
-            // App
-            AddDomainServices(services);
-            AddApplicationService(services);
-            AddSecondaryAdapters(services);
-            AddPrimaryAdapters(services);
-            AddConversion(services);
-            AddHooks(services);
-        }
-
-        public void Configure(
-            IApplicationBuilder app, 
-            IWebHostEnvironment env,
-            IHostApplicationLifetime lifetime)
-        {
-            // OpenDDD.NET
-            app.AddAccessControl(_settings);
-            app.AddHttpAdapter(_settings);
-            app.AddControl(lifetime);
-        }
-
-        // App
-        
-        private void AddDomainServices(IServiceCollection services)
-        {
-            services.AddDomainService<IForecastDomainService, ForecastDomainService>();
-        }
-        
-        private void AddSecondaryAdapters(IServiceCollection services)
-        {
-            services.AddEmailAdapter(_settings);
-            AddRepositories(services);
-        }
-
-        private void AddPrimaryAdapters(IServiceCollection services)
-        {
-            AddHttpAdapters(services);
-            AddInterchangeEventAdapters(services);
-            AddDomainEventAdapters(services);
-        }
-
-        /* ... */
-
-        private void AddActions(IServiceCollection services)
-        {
-            services.AddAction<GetAverageTemperatureAction, GetAverageTemperatureCommand>();
-            services.AddAction<NotifyWeatherPredictedAction, NotifyWeatherPredictedCommand>();
-            services.AddAction<PredictWeatherAction, PredictWeatherCommand>();
-        }
-
-        private void AddHttpAdapterV1(IServiceCollection services, IMvcCoreBuilder mvcCoreBuilder)
-        {
-            mvcCoreBuilder.AddApplicationPart(Assembly.GetAssembly(typeof(HttpAdapter)));
-            services.AddTransient<HttpCommonTranslation.Commands.PredictWeatherCommandTranslator>();
-            services.AddTransient<HttpCommonTranslation.ForecastIdTranslator>();
-            services.AddTransient<HttpCommonTranslation.ForecastTranslator>();
-            services.AddTransient<HttpCommonTranslation.SummaryIdTranslator>();
-            services.AddTransient<HttpCommonTranslation.SummaryTranslator>();
-        }
-        
-        /* ... */
-        
-        private void AddDomainEventAdapters(IServiceCollection services)
-        {
-            services.AddListener<WeatherPredictedListener>();
-        }
-        
-        private void AddRepositories(IServiceCollection services)
-        {
-            if (_settings.Persistence.Provider == PersistenceProvider.Memory)
-            {
-                services.AddRepository<IForecastRepository, MemoryForecastRepository>();
-                services.AddRepository<ISummaryRepository, MemorySummaryRepository>();
-            }
-            else if (_settings.Persistence.Provider == PersistenceProvider.Postgres)
-            {
-                services.AddRepository<IForecastRepository, PostgresForecastRepository>();
-                services.AddRepository<ISummaryRepository, PostgresSummaryRepository>();
-            }
-            services.AddMigrator<ForecastMigrator>();
-            services.AddMigrator<SummaryMigrator>();
-        }
-    }
-}
-```
+Here are some code examples:
 
 #### CreateAccountAction.cs
 
 ```c#
-/* ... */
+using System.Threading;
+using System.Threading.Tasks;
+using OpenDDD.Application;
+using OpenDDD.Domain.Model.Error;
+using OpenDDD.Infrastructure.Ports.PubSub;
+using Application.Actions.Commands;
+using Domain.Model.User;
 
 namespace Application.Actions
 {
@@ -343,7 +145,22 @@ namespace Application.Actions
 #### User.cs
 
 ```c#
-/* ... */
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.WebUtilities;
+using OpenDDD.Application;
+using OpenDDD.Domain.Model.BuildingBlocks.Aggregate;
+using OpenDDD.Domain.Model.BuildingBlocks.Entity;
+using OpenDDD.Domain.Model.Error;
+using OpenDDD.Domain.Model.Validation;
+using OpenDDD.Infrastructure.Ports.Email;
+using OpenDDD.Infrastructure.Ports.PubSub;
+using Domain.Model.Realm;
+using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
+using SaltClass = Domain.Model.User.Salt;
 
 namespace Domain.Model.User
 {
@@ -364,6 +181,8 @@ namespace Domain.Model.User
         public DateTime? ResetPasswordCodeCreatedAt { get; set; }
         public bool IsSuperUser { get; set; }
         public ICollection<RealmId> RealmIds { get; set; }
+
+        public User() {}
 
         // Public
         
@@ -407,8 +226,69 @@ namespace Domain.Model.User
             return user;
         }
         
-        /* ... */
+        public static User CreateDefaultAccountAtIdpLogin(
+            UserId userId,
+            string firstName,
+            string lastName,
+            Email email,
+            ActionId actionId,
+            CancellationToken ct)
+        {
+            var user =
+                new User
+                {
+                    DomainModelVersion = ContextDomainModelVersion.Latest(),
+                    UserId = userId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Email = email,
+                    EmailVerifiedAt = null,
+                    EmailVerificationRequestedAt = null,
+                    EmailVerificationCodeCreatedAt = null,
+                    EmailVerificationCode = null,
+                    IsSuperUser = false,
+                    RealmIds = new List<RealmId>()
+                };
+            
+            user.SetPassword(Password.Generate(), actionId, ct);
 
+            user.Validate();
+
+            return user;
+        }
+        
+        public static User CreateRootAccountAtBoot(
+            UserId userId,
+            string firstName,
+            string lastName,
+            Email email,
+            string password,
+            ActionId actionId,
+            CancellationToken ct)
+        {
+            var user =
+                new User
+                {
+                    DomainModelVersion = ContextDomainModelVersion.Latest(),
+                    UserId = userId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Email = email,
+                    EmailVerifiedAt = null,
+                    EmailVerificationRequestedAt = null,
+                    EmailVerificationCodeCreatedAt = null,
+                    EmailVerificationCode = null,
+                    IsSuperUser = true,
+                    RealmIds = new List<RealmId>()
+                };
+            
+            user.SetPassword(password, actionId, ct);
+
+            user.Validate();
+
+            return user;
+        }
+        
         public bool IsEmailVerified()
             => EmailVerifiedAt != null;
         
@@ -501,7 +381,114 @@ namespace Domain.Model.User
                 ct);
         }
         
-        /* ... */
+        public bool IsInRealm(RealmId realmId)
+            => RealmIds.Contains(realmId);
+        
+        public bool IsValidPassword(string password)
+            => Salt != null && Password != null && (Password.CreateAndHash(password, Salt) == Password);
+        
+        public void RemoveFromRealm(RealmId realmId, ActionId actionId)
+        {
+            if (!IsInRealm(realmId))
+                throw DomainException.InvariantViolation($"User {UserId} doesn't belong to realm {realmId}.");
+            
+            RealmIds.Remove(realmId);
+        }
+        
+        public async Task ResetPassword(string newPassword, ActionId actionId, CancellationToken ct)
+        {
+            if (ResetPasswordCode == null)
+                throw DomainException.InvariantViolation(
+                    "Can't reset password, there's no reset password code.");
+            
+            if (DateTime.UtcNow.Subtract(ResetPasswordCodeCreatedAt.Value).TotalMinutes > 59)
+                throw DomainException.InvariantViolation(
+                    "The reset password link has expired. Please generate a new one and try again.");
+            
+            SetPassword(newPassword, actionId, ct);
+            
+            ResetPasswordCode = null;
+            ResetPasswordCodeCreatedAt = null;
+        }
+        
+        public void SetPassword(string password, ActionId actionId, CancellationToken ct)
+        {
+            Salt = SaltClass.Generate();
+            Password = Password.CreateAndHash(password, Salt);
+        }
+        
+        public void RequestEmailValidation(ActionId actionId, CancellationToken ct)
+        {
+            EmailVerifiedAt = null;
+            EmailVerificationRequestedAt = DateTime.UtcNow;
+            RegenerateEmailVerificationCode();
+        }
+
+        // Private
+        
+        private void RegenerateEmailVerificationCode()
+        {
+            EmailVerificationCode = EmailVerificationCode.Generate();
+            EmailVerificationCodeCreatedAt = DateTime.UtcNow;
+        }
+
+        protected void Validate()
+        {
+            var validator = new Validator<User>(this);
+
+            var errors = validator
+                .NotNull(bb => bb.UserId.Value)
+                .NotNullOrEmpty(bb => bb.FirstName)
+                .NotNullOrEmpty(bb => bb.LastName)
+                .NotNullOrEmpty(bb => bb.Email.Value)
+                .Errors()
+                .ToList();
+
+            if (errors.Any())
+            {
+                throw DomainException.InvariantViolation(
+                    $"User is invalid with errors: " +
+                    $"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
+            }
+        }
+
+        // Equality
+
+        public bool Equals(User? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return base.Equals(other) && UserId.Equals(other.UserId) && FirstName == other.FirstName && LastName == other.LastName && Email.Equals(other.Email) && Nullable.Equals(EmailVerifiedAt, other.EmailVerifiedAt) && Nullable.Equals(EmailVerificationRequestedAt, other.EmailVerificationRequestedAt) && Nullable.Equals(EmailVerificationCodeCreatedAt, other.EmailVerificationCodeCreatedAt) && Equals(EmailVerificationCode, other.EmailVerificationCode) && Password.Equals(other.Password) && Salt.Equals(other.Salt) && ResetPasswordCode == other.ResetPasswordCode && Nullable.Equals(ResetPasswordCodeCreatedAt, other.ResetPasswordCodeCreatedAt) && IsSuperUser == other.IsSuperUser && RealmIds.Equals(other.RealmIds);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((User)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = new HashCode();
+            hashCode.Add(base.GetHashCode());
+            hashCode.Add(UserId);
+            hashCode.Add(FirstName);
+            hashCode.Add(LastName);
+            hashCode.Add(Email);
+            hashCode.Add(EmailVerifiedAt);
+            hashCode.Add(EmailVerificationRequestedAt);
+            hashCode.Add(EmailVerificationCodeCreatedAt);
+            hashCode.Add(EmailVerificationCode);
+            hashCode.Add(Password);
+            hashCode.Add(Salt);
+            hashCode.Add(ResetPasswordCode);
+            hashCode.Add(ResetPasswordCodeCreatedAt);
+            hashCode.Add(IsSuperUser);
+            hashCode.Add(RealmIds);
+            return hashCode.ToHashCode();
+        }
     }
 }
 ```
