@@ -6,6 +6,10 @@ Version history
 
 .. tip:: Subscribe to the github repository to get notifications when we move into beta and rc phases!
 
+**1.0.0-alpha.15** - 2023-05-01
+
+- Re-enable previously disabled publisher service.
+
 **1.0.0-alpha.14** - 2023-04-30
 
 - Change listeners to wildcard both minor and patch versions.
