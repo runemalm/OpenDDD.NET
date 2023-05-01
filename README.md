@@ -39,6 +39,10 @@ The framework is based on the following design patterns:
 Big thanks to Eric Evans for his [seminal book on DDD](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215) and 
 Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon/IDDD_Samples) of DDD in Java.
 
+### Contribution
+  
+If you want to contribute to the code base, create a pull request on the develop branch. Feel very free to reach out to us by email or via social media.
+
 ### Supported .NET Versions
 
 - .NET 5
@@ -492,10 +496,6 @@ namespace Domain.Model.User
     }
 }
 ```
-
-### Contribution
-  
-If you want to contribute to the code base, create a pull request on the develop branch. Feel very free to reach out to us by email or via social media.
 
 ### Roadmap v1.0.0
 
