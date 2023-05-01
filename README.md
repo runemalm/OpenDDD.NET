@@ -66,7 +66,7 @@ First install the templates package:
 
 Then use the project template to setup a new project:
 
-    dotnet new install openddd-net -n MyBoundedContext
+    dotnet new openddd-net -n MyBoundedContext
 
 Replace *MyBoundedContext* with the name of your bounded context. A folder will be created with the same name and the solution inside will also get this name.
 
