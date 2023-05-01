@@ -560,6 +560,7 @@ If you want to contribute to the code base, create a pull request on the develop
 **1.0.0-alpha.15** - 2023-05-01
 
 - Re-enable previously disabled publisher service.
+- Change message bus topic name format for events.
 
 **1.0.0-alpha.14** - 2023-04-30
 
