@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>8</LangVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Weather' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'MyBoundedContext' " />
   <ItemGroup>
     <PackageReference Include="OpenDDD.NET" Version="1.*-*" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />

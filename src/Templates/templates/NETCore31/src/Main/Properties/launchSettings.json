@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "Weather": {
+    "MyBoundedContext": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "swagger",

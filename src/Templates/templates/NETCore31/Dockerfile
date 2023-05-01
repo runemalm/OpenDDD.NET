@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 WORKDIR /app
 EXPOSE 80
 
-COPY src/Weather.sln ./
+COPY src/MyBoundedContext.sln ./
 COPY src/Application/Application.csproj ./Application/
 COPY src/Domain/Domain.csproj ./Domain/
 COPY src/Infrastructure/Infrastructure.csproj ./Infrastructure/

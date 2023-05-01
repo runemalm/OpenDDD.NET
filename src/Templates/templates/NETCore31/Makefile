@@ -25,7 +25,7 @@ SRC_DIR := $(PROJECT_DIR)/src
 MAIN_DIR := $(SRC_DIR)/Main
 TESTS_DIR := $(SRC_DIR)/Tests
 
-IMAGE_NAME := my.azurecr.io/weather-backend
+IMAGE_NAME := my.azurecr.io/opendddsample31-backend
 IMAGE_TAG := 1.0.0-alpha.1
 
 TOOLS_IMAGE_NAME := runemalm/openddd-tools

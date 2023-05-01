@@ -1,5 +1,5 @@
 {
-  "solution": "Weather.sln",
+  "solution": "MyBoundedContext.sln",
   "solutionFolder": null,
   "mappings": {
     "OpenDDD.NET": "../../../OpenDDD/OpenDDD.csproj"
