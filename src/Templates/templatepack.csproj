@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageType>Template</PackageType>
-    <PackageVersion>1.0.0-alpha.1</PackageVersion>
+    <PackageVersion>1.0.0-alpha.2</PackageVersion>
     <PackageId>OpenDDD.NET-Templates</PackageId>
     <Title>OpenDDD.NET Project Templates</Title>
     <Authors>David Runemalm</Authors>
