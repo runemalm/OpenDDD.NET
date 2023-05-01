@@ -697,6 +697,13 @@ namespace Main
 
   gettingstarted
 
+.. advancedtopics-docs:
+.. toctree::
+  :maxdepth: 1
+  :caption: Advanced Topics
+
+  advancedtopics
+
 .. philosophy-docs:
 .. toctree::
   :maxdepth: 1

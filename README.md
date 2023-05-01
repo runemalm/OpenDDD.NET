@@ -10,21 +10,19 @@ Domain-driven design is an approach to software development where focus lies on 
 
 By utilizing the DDD principles and design patterns, hexagonal architecture and other well-known patterns, this framework is especially crafted for domain-driven design and implementing bounded contexts with C# and the .NET framework.
 
-If you're interested in becoming a contributor, please drop us a line or simply create a pull request and we'll see what we can do together.
+If you're interested in becoming a contributor, please drop us a line or simply create a pull request.
 
 ### Key Features
 
 - Domain model versioning.
-- Swagger docs auto-generation.
-- Bounded context code generation from yaml.
-- Event-driven architecture.
+- Swagger support.
+- Code generation support.
 - Domain- & Integration events.
 - Migration support.
-- Standard design patterns.
+- Based on industry standard design patterns.
 - Testing framework.
 - Extensible architecture through *ports and adapters*.
-- Project templates for getting started quickly.
-- Code examples.
+- Rider/VS Project templates.
 
 ### Design Patterns
 
@@ -41,30 +39,42 @@ The framework is based on the following design patterns:
 Big thanks to Eric Evans for his [seminal book on DDD](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215) and 
 Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon/IDDD_Samples) of DDD in Java.
 
-### Adapters
-
-Among the adapters we support so far are technologies such as PostgreSQL, RabbitMQ, SMTP and others.
-
-Since the framework is relatively new, this list will grow over time.
-
-If you find there's a technology missing that you'd like to see implemented as an adapter, please leave a recommendation and we'll add it to the backlog.
-
-If you're interested in becoming a contributor, the ports all have clearly defined interfaces and you're very welcome to send us a pull request.
-
 ### Supported .NET Versions
 
-- .NET Core 3.1
 - .NET 5
-  
+- .NET Core 3.1
+
+### Documentation
+
+Documentation is available at [readthedocs](https://opendddnet.readthedocs.io/). 
+
 ### Installation
+
+Install the nuget in an existing project using the package manager or the dotnet CLI:
 
     dotnet add package OpenDDD.NET
 
+NOTE: In most cases it's a better idea to use the project templates to get started quickly with some boilerplate code.
+
+### Create a project using project templates
+
+Use the project template to create a project with boiler plate code.
+
+First install the templates package:
+
+    $ dotnet new install OpenDDD.NET-Templates
+
+Then use the project template to setup a new project:
+
+    dotnet new install openddd-net -n MyBoundedContext
+
+Replace *MyBoundedContext* with the name of your bounded context. A folder will be created with the same name and the solution inside will also get this name.
+
+Refer to the [user guide](https://opendddnet.readthedocs.io/en/latest/gettingstarted.html) for more information on where to go from here.
+
 ### Examples
 
-By using the WeatherForecast [project templates](https://opendddnet.readthedocs.io/en/latest/gettingstarted.html#project-template), you can setup your new project and also get some boilerplate code to get your started quickly.
-
-This section will now continue with some code examples:
+Here are some code examples of how your bounded context will look like. Starting with the configuration file.
 
 #### Env file
 
@@ -162,28 +172,7 @@ namespace Main
 #### Startup.cs
 
 ```c#
-using System.Reflection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using OpenDDD.Application.Settings;
-using OpenDDD.Application.Settings.Persistence;
-using OpenDDD.NET.Extensions;
-using OpenDDD.NET.Hooks;
-using Main.Extensions;
-using Main.NET.Hooks;
-using Application.Actions;
-using Application.Actions.Commands;
-using Domain.Model.Forecast;
-using Domain.Model.Summary;
-using Infrastructure.Ports.Adapters.Domain;
-using Infrastructure.Ports.Adapters.Http.v1;
-using Infrastructure.Ports.Adapters.Interchange.Translation;
-using Infrastructure.Ports.Adapters.Repositories.Memory;
-using Infrastructure.Ports.Adapters.Repositories.Migration;
-using Infrastructure.Ports.Adapters.Repositories.Postgres;
-using HttpCommonTranslation = Infrastructure.Ports.Adapters.Http.Common.Translation;
+/* ... */
 
 namespace Main
 {
@@ -232,11 +221,6 @@ namespace Main
         {
             services.AddDomainService<IForecastDomainService, ForecastDomainService>();
         }
-
-        private void AddApplicationService(IServiceCollection services)
-        {
-            AddActions(services);
-        }
         
         private void AddSecondaryAdapters(IServiceCollection services)
         {
@@ -251,28 +235,13 @@ namespace Main
             AddDomainEventAdapters(services);
         }
 
-        private void AddHooks(IServiceCollection services)
-        {
-            services.AddTransient<IOnBeforePrimaryAdaptersStartedHook, OnBeforePrimaryAdaptersStartedHook>();
-        }
-
-        private void AddConversion(IServiceCollection services)
-        {
-            services.AddConversion(_settings);
-        }
+        /* ... */
 
         private void AddActions(IServiceCollection services)
         {
             services.AddAction<GetAverageTemperatureAction, GetAverageTemperatureCommand>();
             services.AddAction<NotifyWeatherPredictedAction, NotifyWeatherPredictedCommand>();
             services.AddAction<PredictWeatherAction, PredictWeatherCommand>();
-        }
-
-        private void AddHttpAdapters(IServiceCollection services)
-        {
-            var mvcCoreBuilder = services.AddHttpAdapter(_settings);
-            AddHttpAdapterCommon(services);
-            AddHttpAdapterV1(services, mvcCoreBuilder);
         }
 
         private void AddHttpAdapterV1(IServiceCollection services, IMvcCoreBuilder mvcCoreBuilder)
@@ -285,20 +254,7 @@ namespace Main
             services.AddTransient<HttpCommonTranslation.SummaryTranslator>();
         }
         
-        private void AddHttpAdapterCommon(IServiceCollection services)
-        {
-            services.AddHttpCommandTranslator<HttpCommonTranslation.Commands.PredictWeatherCommandTranslator>();
-
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ForecastIdTranslator>();
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.ForecastTranslator>();
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.SummaryIdTranslator>();
-            services.AddHttpBuildingBlockTranslator<HttpCommonTranslation.SummaryTranslator>();
-        }
-        
-        private void AddInterchangeEventAdapters(IServiceCollection services)
-        {
-            services.AddTransient<IIcForecastTranslator, IcForecastTranslator>();
-        }
+        /* ... */
         
         private void AddDomainEventAdapters(IServiceCollection services)
         {
@@ -327,13 +283,7 @@ namespace Main
 #### CreateAccountAction.cs
 
 ```c#
-using System.Threading;
-using System.Threading.Tasks;
-using OpenDDD.Application;
-using OpenDDD.Domain.Model.Error;
-using OpenDDD.Infrastructure.Ports.PubSub;
-using Application.Actions.Commands;
-using Domain.Model.User;
+/* ... */
 
 namespace Application.Actions
 {
@@ -393,22 +343,7 @@ namespace Application.Actions
 #### User.cs
 
 ```c#
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.WebUtilities;
-using OpenDDD.Application;
-using OpenDDD.Domain.Model.BuildingBlocks.Aggregate;
-using OpenDDD.Domain.Model.BuildingBlocks.Entity;
-using OpenDDD.Domain.Model.Error;
-using OpenDDD.Domain.Model.Validation;
-using OpenDDD.Infrastructure.Ports.Email;
-using OpenDDD.Infrastructure.Ports.PubSub;
-using Domain.Model.Realm;
-using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
-using SaltClass = Domain.Model.User.Salt;
+/* ... */
 
 namespace Domain.Model.User
 {
@@ -429,8 +364,6 @@ namespace Domain.Model.User
         public DateTime? ResetPasswordCodeCreatedAt { get; set; }
         public bool IsSuperUser { get; set; }
         public ICollection<RealmId> RealmIds { get; set; }
-
-        public User() {}
 
         // Public
         
@@ -474,69 +407,8 @@ namespace Domain.Model.User
             return user;
         }
         
-        public static User CreateDefaultAccountAtIdpLogin(
-            UserId userId,
-            string firstName,
-            string lastName,
-            Email email,
-            ActionId actionId,
-            CancellationToken ct)
-        {
-            var user =
-                new User
-                {
-                    DomainModelVersion = ContextDomainModelVersion.Latest(),
-                    UserId = userId,
-                    FirstName = firstName,
-                    LastName = lastName,
-                    Email = email,
-                    EmailVerifiedAt = null,
-                    EmailVerificationRequestedAt = null,
-                    EmailVerificationCodeCreatedAt = null,
-                    EmailVerificationCode = null,
-                    IsSuperUser = false,
-                    RealmIds = new List<RealmId>()
-                };
-            
-            user.SetPassword(Password.Generate(), actionId, ct);
+        /* ... */
 
-            user.Validate();
-
-            return user;
-        }
-        
-        public static User CreateRootAccountAtBoot(
-            UserId userId,
-            string firstName,
-            string lastName,
-            Email email,
-            string password,
-            ActionId actionId,
-            CancellationToken ct)
-        {
-            var user =
-                new User
-                {
-                    DomainModelVersion = ContextDomainModelVersion.Latest(),
-                    UserId = userId,
-                    FirstName = firstName,
-                    LastName = lastName,
-                    Email = email,
-                    EmailVerifiedAt = null,
-                    EmailVerificationRequestedAt = null,
-                    EmailVerificationCodeCreatedAt = null,
-                    EmailVerificationCode = null,
-                    IsSuperUser = true,
-                    RealmIds = new List<RealmId>()
-                };
-            
-            user.SetPassword(password, actionId, ct);
-
-            user.Validate();
-
-            return user;
-        }
-        
         public bool IsEmailVerified()
             => EmailVerifiedAt != null;
         
@@ -629,136 +501,10 @@ namespace Domain.Model.User
                 ct);
         }
         
-        public bool IsInRealm(RealmId realmId)
-            => RealmIds.Contains(realmId);
-        
-        public bool IsValidPassword(string password)
-            => Salt != null && Password != null && (Password.CreateAndHash(password, Salt) == Password);
-        
-        public void RemoveFromRealm(RealmId realmId, ActionId actionId)
-        {
-            if (!IsInRealm(realmId))
-                throw DomainException.InvariantViolation($"User {UserId} doesn't belong to realm {realmId}.");
-            
-            RealmIds.Remove(realmId);
-        }
-        
-        public async Task ResetPassword(string newPassword, ActionId actionId, CancellationToken ct)
-        {
-            if (ResetPasswordCode == null)
-                throw DomainException.InvariantViolation(
-                    "Can't reset password, there's no reset password code.");
-            
-            if (DateTime.UtcNow.Subtract(ResetPasswordCodeCreatedAt.Value).TotalMinutes > 59)
-                throw DomainException.InvariantViolation(
-                    "The reset password link has expired. Please generate a new one and try again.");
-            
-            SetPassword(newPassword, actionId, ct);
-            
-            ResetPasswordCode = null;
-            ResetPasswordCodeCreatedAt = null;
-        }
-        
-        public void SetPassword(string password, ActionId actionId, CancellationToken ct)
-        {
-            Salt = SaltClass.Generate();
-            Password = Password.CreateAndHash(password, Salt);
-        }
-        
-        public void RequestEmailValidation(ActionId actionId, CancellationToken ct)
-        {
-            EmailVerifiedAt = null;
-            EmailVerificationRequestedAt = DateTime.UtcNow;
-            RegenerateEmailVerificationCode();
-        }
-
-        // Private
-        
-        private void RegenerateEmailVerificationCode()
-        {
-            EmailVerificationCode = EmailVerificationCode.Generate();
-            EmailVerificationCodeCreatedAt = DateTime.UtcNow;
-        }
-
-        protected void Validate()
-        {
-            var validator = new Validator<User>(this);
-
-            var errors = validator
-                .NotNull(bb => bb.UserId.Value)
-                .NotNullOrEmpty(bb => bb.FirstName)
-                .NotNullOrEmpty(bb => bb.LastName)
-                .NotNullOrEmpty(bb => bb.Email.Value)
-                .Errors()
-                .ToList();
-
-            if (errors.Any())
-            {
-                throw DomainException.InvariantViolation(
-                    $"User is invalid with errors: " +
-                    $"{string.Join(", ", errors.Select(e => $"{e.Key} {e.Details}"))}");
-            }
-        }
-
-        // Equality
-
-        public bool Equals(User? other)
-        {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return base.Equals(other) && UserId.Equals(other.UserId) && FirstName == other.FirstName && LastName == other.LastName && Email.Equals(other.Email) && Nullable.Equals(EmailVerifiedAt, other.EmailVerifiedAt) && Nullable.Equals(EmailVerificationRequestedAt, other.EmailVerificationRequestedAt) && Nullable.Equals(EmailVerificationCodeCreatedAt, other.EmailVerificationCodeCreatedAt) && Equals(EmailVerificationCode, other.EmailVerificationCode) && Password.Equals(other.Password) && Salt.Equals(other.Salt) && ResetPasswordCode == other.ResetPasswordCode && Nullable.Equals(ResetPasswordCodeCreatedAt, other.ResetPasswordCodeCreatedAt) && IsSuperUser == other.IsSuperUser && RealmIds.Equals(other.RealmIds);
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((User)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            var hashCode = new HashCode();
-            hashCode.Add(base.GetHashCode());
-            hashCode.Add(UserId);
-            hashCode.Add(FirstName);
-            hashCode.Add(LastName);
-            hashCode.Add(Email);
-            hashCode.Add(EmailVerifiedAt);
-            hashCode.Add(EmailVerificationRequestedAt);
-            hashCode.Add(EmailVerificationCodeCreatedAt);
-            hashCode.Add(EmailVerificationCode);
-            hashCode.Add(Password);
-            hashCode.Add(Salt);
-            hashCode.Add(ResetPasswordCode);
-            hashCode.Add(ResetPasswordCodeCreatedAt);
-            hashCode.Add(IsSuperUser);
-            hashCode.Add(RealmIds);
-            return hashCode.ToHashCode();
-        }
+        /* ... */
     }
 }
 ```
-
-### Documentation
-
-Documentation is available at [readthedocs](https://opendddnet.readthedocs.io/).
-
-### Semantic versioning
-
-We have chosen the SemVer2.0 policy for versioning of the domain model and the primary http adapter of your bounded context.
-
-In SemVer2.0, *backwards compatible* changes increments the patch- and minor versions, whereas *backwards incompatible* changes increments the major version.
-
-See the table below for examples of when to increment which version.
-
-| Code Status                               | Stage         | Rule                                                               | Example Version |
-|-------------------------------------------|---------------|--------------------------------------------------------------------|-----------------|
-| First release                             | New product   | Start with 1.0.0                                                   | 1.0.0           |
-| Backward-compatible bug fixes             | Patch release | Increment the third digit                                          | 1.0.1           |
-| Backward compatible new features          | Minor release | Increment the middle digit and reset last digit to zero            | 1.1.0           |
-| Changes that break backward compatibility | Major release | Increment the first digit and reset middle and last digits to zero | 2.0.0           |
 
 ### Contribution
   
@@ -809,27 +555,18 @@ If you want to contribute to the code base, create a pull request on the develop
 - [x] Postgres Repository
 - [x] Memory Repository
 
-### Roadmap Future
+### Backlog
 
+- [ ] .NET 8 Support
 - [ ] .NET 7 Support
 - [ ] .NET 6 Support
 - [ ] Full Sample Project
 - [ ] Full Test Coverage
-- [ ] Monitoring
-- [ ] Tasks support
-- [ ] Migration of all aggregates not up-to-date
-- [ ] Periodic Jobs
-- [ ] Interval Jobs
-- [ ] One-off Jobs
+- [ ] Monitoring support
+- [ ] Migration of all aggregates not at latest domain model version
+- [ ] Tasks / Jobs support
 - [ ] Command Line Interface (CLI)
-- [ ] CLI Operation: Migrate
-- [ ] CLI Operation: Create Migration
-- [ ] CLI Operation: Increment Domain Model Version
 - [ ] Admin Dashboard
-- [ ] Admin Tool: Inspect Dead Letter Queue
-- [ ] Admin Tool: Republish Dead Letters
-- [ ] Administration
-- [ ] And more...
 
 ### Release Notes
 
