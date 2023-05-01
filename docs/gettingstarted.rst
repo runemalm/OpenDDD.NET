@@ -8,10 +8,10 @@ You could install the package as a nuget into an existing project, using the dot
 
 
 ################
-Project Template
+Create a project
 ################
 
-The easiest way to get started with your bounded context is using the project template.
+The easiest way to get started with your bounded context is using the ``project template``.
 
 By using the template, you will get the boilerplate code for free, which makes sure you create all configuration files and bootup code correctly.
 
@@ -28,20 +28,20 @@ Then create your bounded context project::
 Your new project is now created in a folder named ``MyBoundedContext``.
 
 
-############
-Example Code
-############
+###################
+Example Application
+###################
 
 There is some example code on the :doc:`start page<index>`.
 
-Use the :ref:`project template <Project Template>` to quickly create a project with boiler plate code you can look at.
+Use the :ref:`project template <Create a project>` to quickly create a project with boiler plate code you can look at.
 
 
-###############
-Building Blocks
-###############
+##############
+Basic Concepts
+##############
 
-We will now give you a walkthrough of the framework ``building blocks``:
+We will now give you a walkthrough of the framework's ``basic concepts``:
 
 * :ref:`Env files`
 * :ref:`Domain Model Version`
@@ -178,7 +178,7 @@ Program.cs
 
 Use the ``AddXxx()`` extension methods of the framework to properly configure the .NET host and application.
 
-.. tip:: Use the weather forecast :ref:`project template <Project Template>` and you won't need to create this file.
+.. tip:: Use the weather forecast :ref:`project template <Create a project>` and you won't need to create this file.
 
 Example Program.cs file::
 
@@ -211,7 +211,7 @@ Startup.cs
 
 Since part of the design philosophy behind this framwork is to follow the hexagonal architecture, and to make this intent clear through the structure of the code, the ``Startup.cs`` file is written according to a specific convention.
 
-.. tip:: Use the weather forecast :ref:`project template <Project Template>` and you won't need to create this file.
+.. tip:: Use the weather forecast :ref:`project template <Create a project>` and you won't need to create this file.
 
 See the example below and create your Startup.cs file.
 
@@ -1485,7 +1485,7 @@ You register your serializer settings with the DI container like this::
 
     services.AddTransient<OpenDddConversionSettings, ConversionSettings>();
 
-.. note:: The ``AddConversion()`` call in Startup.cs of the :ref:`project template <Project Template>` does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
+.. note:: The ``AddConversion()`` call in Startup.cs of the :ref:`project template <Create a project>` does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
 
 
 Migrators
