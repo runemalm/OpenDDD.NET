@@ -1,9 +1,9 @@
-using DDD.Application;
-using DDD.Domain.Model.BuildingBlocks.Aggregate;
-using DDD.Domain.Model.BuildingBlocks.Entity;
-using DDD.Domain.Model.Error;
-using DDD.Domain.Model.Validation;
-using XxxDomainModelVersion = Domain.Model.DomainModelVersion;
+using OpenDDD.Application;
+using OpenDDD.Domain.Model.BuildingBlocks.Aggregate;
+using OpenDDD.Domain.Model.BuildingBlocks.Entity;
+using OpenDDD.Domain.Model.Error;
+using OpenDDD.Domain.Model.Validation;
+using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
 
 namespace Domain.Model.{{ class_name }}
 {

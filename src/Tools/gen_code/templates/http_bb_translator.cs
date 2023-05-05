@@ -1,4 +1,4 @@
-using DDD.Infrastructure.Ports.Adapters.Common.Translation;
+using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation;
 using Domain.Model.{{ bb_name }};
 using Infrastructure.Ports.Adapters.Http.vX.Model;
 

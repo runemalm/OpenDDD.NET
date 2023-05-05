@@ -28,6 +28,6 @@
 			[{{param_location}}] {{command_name}}Command{{Vx}} command{{Vx}}, CancellationToken ct)
 		{
 			// var command = {{command_translator_var_name}}.From{{Vx}}(command{{Vx}});
-			// {{ 'var xxx = ' if return_type else '' }}await {{action_var_name}}.ExecuteAsync(command, actionId, ct);
+			// {{ 'var xxx = ' if return_type else '' }}await {{action_var_name}}.ExecuteAsync(command, ct);
 			{{ '// return Ok('+return_value_translator_var_name+'.To'+Vx+'(xxx));' if return_type != "null" else '// return Ok();' }}
 		}

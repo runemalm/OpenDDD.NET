@@ -1,13 +1,15 @@
 using System.Threading;
 using System.Threading.Tasks;
-using DDD.Application;
+using OpenDDD.Application;
 using Application.Actions.Commands;
 
 namespace Application.Actions
 {
     public class {{class_name}} : Action<{{command_name}}, bool>
     {
-        public {{class_name}}(ActionDependencies deps) : base(deps)
+        public {{class_name}}(
+            ITransactionalDependencies transactionalDependencies)
+            : base(transactionalDependencies)
         {
             
         }
