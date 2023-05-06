@@ -102,7 +102,22 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 					if (sub.DomainModelVersion.ToStringWithWildcardMinorAndBuildVersions() ==
 					    outboxEvent.DomainModelVersion.ToStringWithWildcardMinorAndBuildVersions())
 					{
-						await sub.Listener.Handle(message);
+						try
+						{
+							await sub.Listener.Handle(message);
+						}
+						catch (Exception e)
+						{
+							_logger.Log(
+								$"Memory event adapter received exception when " +
+								$"delegating event to listener for reaction. " +
+								$"Tried to publish on the " +
+								$"'{TopicForEvent(outboxEvent.EventName, outboxEvent.DomainModelVersion)}' " +
+								$"exchange.",
+								LogLevel.Error,
+								e);
+							throw;
+						}
 					}
 				}
 			}
