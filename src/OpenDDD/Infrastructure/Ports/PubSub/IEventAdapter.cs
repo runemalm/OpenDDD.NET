@@ -13,6 +13,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		Task StartAsync();
 		void Stop();
 		Task StopAsync();
+		IEnumerable<IEventListener> GetListeners(string eventName, string versionPattern);
 		Subscription Subscribe(IEventListener listener);
 		Task<Subscription> SubscribeAsync(IEventListener listener);
 		void Unsubscribe(IEventListener listener);

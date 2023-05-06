@@ -61,6 +61,16 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			_subscriptions.Add(subscription);
 		}
 
+		public IEnumerable<IEventListener> GetListeners(string eventName, string versionPattern)
+			=> GetSubscriptions().Where(s =>
+				s.EventName == eventName &&
+				s.DomainModelVersion.ToStringWithWildcardMinorAndBuildVersions() == versionPattern).Select(s => s.Listener);
+
+		protected IEnumerable<TSub> GetSubscriptions()
+		{
+			return _subscriptions;
+		}
+
 		protected TSub GetSubscription(IEventListener listener)
 			=> GetSubscription(listener.ListensTo, listener.ListensToVersion);
 
@@ -73,11 +83,6 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			return null;
 		}
 
-		protected IEnumerable<TSub> GetSubscriptions()
-		{
-			return _subscriptions;
-		}
-		
 		protected void RemoveSubscription(TSub subscription)
 		{
 			_subscriptions = 
