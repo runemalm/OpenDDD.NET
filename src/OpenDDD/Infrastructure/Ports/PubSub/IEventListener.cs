@@ -15,6 +15,6 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		void Stop();
 		Task StopAsync();
 		Task<bool> React(IPubSubMessage message);
-		Task Handle(IPubSubMessage message);
+		Task<bool> Handle(IPubSubMessage message);
 	}
 }

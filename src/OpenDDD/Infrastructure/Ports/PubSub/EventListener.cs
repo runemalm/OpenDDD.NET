@@ -64,8 +64,10 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 
 		// Handle
 		
-		public async Task Handle(IPubSubMessage message)
+		public async Task<bool> Handle(IPubSubMessage message)
 		{
+			var success = true;
+			
 			try
 			{
 				await React(message);
@@ -77,7 +79,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 				theEvent.AddDeliveryFailure($"The listener threw an exception when delegating to action: {e}");
 				
 				var maxRetries = _eventAdapter.MaxDeliveryRetries;
-				if (maxRetries == 0 || theEvent.Header.NumDeliveryRetries < maxRetries)
+				if (maxRetries > 0 && theEvent.Header.NumDeliveryRetries < maxRetries)
 				{
 					await AddToOutboxAsync(theEvent);
 				}
@@ -85,8 +87,12 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 				{
 					await DeadLetterAsync(theEvent);
 				}
+				
+				success = false;
 			}
 			await _eventAdapter.AckAsync(message);
+
+			return success;
 		}
 
 		private async Task AddToOutboxAsync(IEvent theEvent)
