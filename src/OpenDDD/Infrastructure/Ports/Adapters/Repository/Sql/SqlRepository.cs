@@ -128,6 +128,25 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 			return aggregates;
 		}
 		
+		public override T Get(EntityId entityId, ActionId actionId, CancellationToken ct)
+		{
+			var conn = _persistenceService.GetConnection(actionId);
+			
+			var stmt = $"SELECT * FROM {_tableName} WHERE id = @id";
+			
+			var parameters = new Dictionary<string, object>();
+			parameters.Add("@id", entityId.ToString());
+
+			var aggregates = conn.ExecuteQuery<T>(stmt, parameters);
+			aggregates = _migrator.Migrate(aggregates).ToList();
+			if (aggregates.Count() == 1)
+				return aggregates.First();
+			if (aggregates.Count() > 1)
+				throw new DddException($"Got {aggregates.Count()} aggregates from database for entity ID {entityId}. Expected exactly one.");
+
+			return default(T);
+		}
+		
 		public override async Task<T> GetAsync(EntityId entityId, ActionId actionId, CancellationToken ct)
 		{
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
