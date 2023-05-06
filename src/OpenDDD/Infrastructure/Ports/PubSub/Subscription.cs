@@ -1,5 +1,4 @@
-﻿using OpenDDD.Domain;
-using OpenDDD.Domain.Model;
+﻿using OpenDDD.Domain.Model;
 
 namespace OpenDDD.Infrastructure.Ports.PubSub
 {

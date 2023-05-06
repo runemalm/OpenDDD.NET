@@ -174,10 +174,10 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 		public override Subscription Subscribe(IEventListener listener)
 		{
 			/*
-			 * Subscribe a listener to an event.
+			 * Subscribes a listener to an event.
 			 * 
-			 * There's one exchange per event and the context has it's own 
-			 * queue on that exchange.
+			 * There's one exchange per event & reaction.
+			 * The context has it's own queue on that exchange.
 			 * 
 			 * We open a channel and use it for the listener to consume 
 			 * from the exchange queue.

@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using OpenDDD.Application;
 using Application.Actions.Commands;
+using OpenDDD.Application;
 
 namespace Application.Actions
 {
