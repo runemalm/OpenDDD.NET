@@ -13,6 +13,9 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.Positive
 
 		public Task<bool> HasPermissionsInRealmAsync(string realmId, string externalRealmId, IEnumerable<(string, string)> permissions, ActionId actionId, CancellationToken ct)
 			=> Task.FromResult(true);
+		
+		public Task<bool> HasPermissionsInRealmAsync(string realmId, string externalRealmId, IEnumerable<(string, string)> permissions, string userId, ActionId actionId, CancellationToken ct)
+			=> Task.FromResult(false);
 
 		public Task<bool> HasPermissionsInResourceGroupAsync(string resourceGroupId, string externalResourceGroupId, IEnumerable<(string, string)> permissions, ActionId actionId, CancellationToken ct)
 			=> Task.FromResult(true);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,6 +64,15 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 				permissions.Select(t => $"{t.Item1}:{t.Item2}").ToList(),
 				0,
 				ct);
+
+		public Task<bool> HasPermissionsInRealmAsync(
+			string realmId,
+			string externalRealmId,
+			IEnumerable<(string, string)> permissions,
+			string actorId,
+			ActionId actionId,
+			CancellationToken ct)
+			=> throw new NotImplementedException("Need to implement endpoint in api that allows passing the new 'actorId' argument.");
 
 		public Task<bool> HasPermissionsInResourceGroupAsync(
 			string resourceGroupId, 
