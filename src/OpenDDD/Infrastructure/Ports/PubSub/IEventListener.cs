@@ -8,6 +8,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 	{
 		public Context Context { get; }
 		public string ListensTo { get; }
+		public string ActionName { get; }
 		public DomainModelVersion ListensToVersion { get; }
 
 		void Start();

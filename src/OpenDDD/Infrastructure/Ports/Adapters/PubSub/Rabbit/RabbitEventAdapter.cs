@@ -235,7 +235,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 
 			subscription.ConsumerTag = 
 				channel.BasicConsume(
-					queue: QueueName(subscription.EventName, subscription.DomainModelVersion),
+					queue: QueueName(subscription.EventName, subscription.DomainModelVersion, subscription.ActionName),
 					autoAck: false,
 					consumer: consumer);
 		}
@@ -427,13 +427,13 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 			var channel = OpenChannel(subscription.EventName, subscription.DomainModelVersion);
 
 			channel.QueueDeclare(
-				QueueName(subscription.EventName, subscription.DomainModelVersion),
+				QueueName(subscription.EventName, subscription.DomainModelVersion, subscription.ActionName),
 				durable: true, // survive broker restart?
 				exclusive: false, // used by one connection and deleted when that closes?
 				autoDelete: false); // delete when last subscriber unsubscribes?
 
 			channel.QueueBind(
-				queue: QueueName(subscription.EventName, subscription.DomainModelVersion),
+				queue: QueueName(subscription.EventName, subscription.DomainModelVersion, subscription.ActionName),
 				exchange: TopicForEvent(subscription.EventName, subscription.DomainModelVersion),
 				routingKey: "");
 
@@ -443,13 +443,10 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Rabbit
 		}
 
 		private string QueueName(Subscription subscription)
-			=> TopicSubscriptionForEvent(subscription.EventName, subscription.DomainModelVersion);
+			=> TopicSubscriptionForEvent(subscription.EventName, subscription.DomainModelVersion, subscription.ActionName);
 
-		private string QueueName(IEvent theEvent)
-			=> TopicSubscriptionForEvent(theEvent.Header.Name, theEvent.Header.DomainModelVersion);
-
-		private string QueueName(string eventName, DomainModelVersion domainModelVersion)
-			=> TopicSubscriptionForEvent(eventName, domainModelVersion);
+		private string QueueName(string eventName, DomainModelVersion domainModelVersion, string actionName)
+			=> TopicSubscriptionForEvent(eventName, domainModelVersion, actionName);
 
 		public override Task AckAsync(IPubSubMessage message)
 		{

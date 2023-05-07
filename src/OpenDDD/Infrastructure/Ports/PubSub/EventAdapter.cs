@@ -72,13 +72,14 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		}
 
 		protected TSub GetSubscription(IEventListener listener)
-			=> GetSubscription(listener.ListensTo, listener.ListensToVersion);
+			=> GetSubscription(listener.ListensTo, listener.ListensToVersion, listener.ActionName);
 
-		protected TSub GetSubscription(string eventName, DomainModelVersion domainModelVersion)
+		private TSub GetSubscription(string eventName, DomainModelVersion domainModelVersion, string actionName)
 		{
 			foreach (var subscription in _subscriptions)
 				if (subscription.EventName == eventName &&
-					subscription.DomainModelVersion == domainModelVersion)
+					subscription.DomainModelVersion == domainModelVersion &&
+					subscription.ActionName == actionName)
 					return subscription;
 			return null;
 		}
@@ -88,7 +89,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			_subscriptions = 
 				_subscriptions
 					.Where(s =>
-						!(s.EventName == subscription.EventName && s.DomainModelVersion == subscription.DomainModelVersion))
+						!(s.EventName == subscription.EventName && s.DomainModelVersion == subscription.DomainModelVersion && s.ActionName == subscription.ActionName))
 					.ToList();
 		}
 
@@ -205,16 +206,13 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			=> TopicForEvent(listener.ListensTo, listener.ListensToVersion);
 
 		public string TopicForEvent(string eventName, DomainModelVersion domainModelVersion)
-			=> $"{_context}-{eventName}V{domainModelVersion.Major}";
-
-		public string TopicSubscriptionForEvent(IEvent theEvent)
-			=> TopicSubscriptionForEvent(theEvent.Header.Name, theEvent.Header.DomainModelVersion);
+			=> $"{_context}.{eventName}V{domainModelVersion.Major}";
 
 		public string TopicSubscriptionForEvent(IEventListener listener)
-			=> TopicSubscriptionForEvent(listener.ListensTo, listener.ListensToVersion);
+			=> TopicSubscriptionForEvent(listener.ListensTo, listener.ListensToVersion, listener.ActionName);
 
-		public string TopicSubscriptionForEvent(string eventName, DomainModelVersion domainModelVersion)
-			=> $"{TopicForEvent(eventName, domainModelVersion)}-{_client}";
+		public string TopicSubscriptionForEvent(string eventName, DomainModelVersion domainModelVersion, string actionName)
+			=> $"{TopicForEvent(eventName, domainModelVersion)}->{_client}.{actionName}";
 
 		public string GetContext()
 			=> _context;

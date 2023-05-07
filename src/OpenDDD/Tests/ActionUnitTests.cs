@@ -183,7 +183,8 @@ namespace OpenDDD.Tests
             {
                 var success = await listener.Handle(message);
                 if (!success)
-                    throw new DddException("Couldn't receive domain event, exception in reaction. See log for reason.");
+                    throw new DddException(
+                        "An exception occured when reacting to the domain event. See the debug log for details.");
             }
         }
 

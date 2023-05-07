@@ -17,6 +17,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 	{
 		public Context Context { get; }
 		public string ListensTo { get; }
+		public string ActionName { get; }
 		public DomainModelVersion ListensToVersion { get; }
 
 		private readonly IEventAdapter _eventAdapter;
@@ -39,6 +40,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		{
 			Context = context;
 			ListensTo = listensTo;
+			ActionName = action.GetType().Name.EndsWith("Action") ? action.GetType().Name.Substring(0, action.GetType().Name.Length - "Action".Length) : action.GetType().Name;
 			ListensToVersion = listensToVersion;
 			_action = action;
 			_eventAdapter = eventAdapter;
