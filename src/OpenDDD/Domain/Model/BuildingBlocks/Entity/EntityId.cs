@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using OpenDDD.Application.Error;
 using OpenDDD.Domain.Model.Error;
 using OpenDDD.Domain.Model.Validation;
 
@@ -11,6 +12,8 @@ namespace OpenDDD.Domain.Model.BuildingBlocks.Entity
 		
 		public EntityId(string value)
 		{
+			if (value == null)
+				throw new DddException("An entity ID can't be null.");
 			Value = value;
 		}
 

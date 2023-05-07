@@ -102,6 +102,30 @@ namespace OpenDDD.Domain.Services.Auth
 				throw AuthorizeException.Forbidden();
 		}
 
+		public async Task AssurePermissionsInRealmAsync(
+			string? realmId,
+			string? externalRealmId, 
+			IEnumerable<(string, string)> permissions,
+			string actorId,
+			ActionId actionId, 
+			CancellationToken ct)
+		{
+			if (!_settings.Auth.Enabled) return;
+			
+			await AssureAuthenticatedAsync(actionId, ct);
+			
+			var hasPermissions = 
+				await _iamAdapter.HasPermissionsInRealmAsync(
+					realmId,
+					externalRealmId,
+					permissions,
+					actorId,
+					actionId,
+					ct);
+
+			if (!hasPermissions)
+				throw AuthorizeException.Forbidden();
+		}
 
 		public async Task AssurePermissionsInResourceGroupAsync(
 			string resourceGroupId,

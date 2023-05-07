@@ -9,7 +9,7 @@
 
   <PropertyGroup>
     <PackageId>OpenDDD.NET</PackageId>
-    <Version>1.0.0-alpha.15</Version>
+    <Version>1.0.0-alpha.16</Version>
     <Authors>David Runemalm</Authors>
     <Company></Company>
     <PackageTags>DDD,Domain-Driven-Design,Hexagonal-Architecture</PackageTags>
@@ -23,12 +23,12 @@
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.26" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
     <PackageReference Include="Npgsql" Version="6.0.4" />
-    <PackageReference Include="PowerIAM" Version="2.0.0" />
+    <PackageReference Include="PowerIAM" Version="2.3.0" />
     <PackageReference Include="RabbitMQ.Client" Version="6.2.2" />
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.5.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
     <PackageReference Include="dotenv.net" Version="3.1.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.20.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.ApplicationInsights" Version="2.20.0" />

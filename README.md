@@ -6,23 +6,18 @@ Star and/or follow the project to get notifications on new releases.
 
 ### Purpose
 
-Domain-driven design is an approach to software development where focus lies on an ever-evolving domain model.
+Domain-driven design is an approach to software development where focus lies on an evolving domain model.
 
-By utilizing the DDD principles and design patterns, hexagonal architecture and other well-known patterns, this framework is especially crafted for domain-driven design and implementing bounded contexts with C# and the .NET framework.
-
-If you're interested in becoming a contributor, please drop us a line or simply create a pull request.
+By utilizing the DDD principles and patterns, this framework is suitable for applying domain-driven design to your projects and implementing the bounded contexts with C# and the .NET framework.
 
 ### Key Features
 
-- Domain model versioning.
-- Swagger support.
-- Code generation support.
-- Domain- & Integration events.
-- Migration support.
-- Based on industry standard design patterns.
-- Testing framework.
-- Extensible architecture through *ports and adapters*.
-- Rider/VS Project templates.
+- Built for domain modelling focus.
+- Near-infinite scaling using the entity pattern.
+- Easy configuration of bounded contexts to multiple environments.
+- A (growing) list of secondary adapters for multiple technologies.
+- Full test coverage of your domain actions using the built-in testing framework.
+- Easy to get started using project templates.
 
 ### Design Patterns
 
@@ -41,8 +36,8 @@ Vaughn Vernon for his [reference implementation](https://github.com/VaughnVernon
 
 ### Supported .NET Versions
 
-- .NET 5
 - .NET Core 3.1
+- .NET 5
 
 ### Documentation
 
@@ -50,27 +45,23 @@ Documentation is available at [readthedocs](https://opendddnet.readthedocs.io/).
 
 ### Installation
 
-Install the nuget in an existing project using the package manager or the dotnet CLI:
+Install the nuget in an existing project:
 
     dotnet add package OpenDDD.NET
 
-NOTE: In most cases it's a better idea to use the project templates to get started quickly with some boilerplate code.
+### Create a project
 
-### Create a project using project templates
+The quickest way to get started is using the project templates.
 
-Use the project template to create a project with boiler plate code.
-
-First install the templates package:
+Start with installing the project templates:
 
     $ dotnet new install OpenDDD.NET-Templates
 
-Then use the project template to setup a new project:
+Then create the project:
 
-    dotnet new install openddd-net -n MyBoundedContext
+    dotnet new openddd-net -n MyBoundedContext # replace with actual context name
 
-Replace *MyBoundedContext* with the name of your bounded context. A folder will be created with the same name and the solution inside will also get this name.
-
-Refer to the [user guide](https://opendddnet.readthedocs.io/en/latest/gettingstarted.html) for more information on where to go from here.
+Refer to the [user guide](https://opendddnet.readthedocs.io/en/latest/gettingstarted.html) for more details and next steps.
 
 ### Examples
 
@@ -493,49 +484,36 @@ namespace Domain.Model.User
 }
 ```
 
-### Contribution
-  
-If you want to contribute to the code base, create a pull request on the develop branch. Feel very free to reach out to us by email or via social media.
-
 ### Roadmap v1.0.0
 
 - [x] GitHub README
 - [x] NuGet README
-- [x] Quickstart Guide
-- [x] Visual Studio Project Templates
-- [x] .NET 5 Support
+- [x] User Guide
+- [x] Project Templates
 - [x] .NET Core 3.1 Support
+- [x] .NET 5 Support
 - [x] Start Context
 - [x] Stop Context
-- [x] Control
-- [x] On-the-fly aggregate migration
-- [x] Auto-code Generation from domain.yml File
-- [x] Postgres Dead Letter Queue
-- [x] Memory Dead Letter Queue
-- [x] Dead Letter Queue
-- [x] Handle Poisonous Messages
-- [x] Re-publish Failed Events
-- [x] Postgres Outbox
-- [x] Memory Outbox
-- [x] Outbox
+- [x] On-the-fly Aggregate Migration
+- [x] Auto-Code Generation
+- [x] Transactional Outbox
 - [x] Domain Event Publishing
 - [x] Integration Event Publishing
 - [x] Rabbit Event Adapter
 - [x] Memory Event Adapter
-- [x] PubSub
-- [x] Auth Domain Service
-- [x] Auth
+- [x] Authentication Domain Service
 - [x] Aggregate
 - [x] Entity
 - [x] Value Object
 - [x] Domain Event
 - [x] Integration Event
 - [x] Repository
-- [x] Building Blocks
+- [x] Application Service
 - [x] Domain Service
 - [x] Infrastructure Service
-- [x] Application Service
-- [x] Auto-Generated Swagger HTTP Adapter Documentation
+- [x] Postgres Repository
+- [x] Memory Repository
+- [x] Swagger Documentation (auto-generated)
 - [x] HTTP Adapter
 - [x] Email Adapter
 - [x] Persistence Service
@@ -547,15 +525,21 @@ If you want to contribute to the code base, create a pull request on the develop
 - [ ] .NET 8 Support
 - [ ] .NET 7 Support
 - [ ] .NET 6 Support
-- [ ] Full Sample Project
+- [ ] Full Reference/Sample Project
 - [ ] Full Test Coverage
-- [ ] Monitoring support
-- [ ] Migration of all aggregates not at latest domain model version
-- [ ] Tasks / Jobs support
+- [ ] Monitoring
+- [ ] All-At-Once Migration
+- [ ] Tasks/Jobs Support
 - [ ] Command Line Interface (CLI)
 - [ ] Admin Dashboard
 
 ### Release Notes
+
+**1.0.0-alpha.16** - 2023-05-07
+
+- Add support for multiple listeners per event.
+- Setting *MaxDeliveryRetries* of '0' now means '0 retries' (not infinite retries).
+- Add test method to simulate receiving a domain event.
 
 **1.0.0-alpha.15** - 2023-05-01
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenDDD.Application.Error;
+using OpenDDD.Domain.Model.BuildingBlocks.Entity;
 
 namespace OpenDDD.Domain.Model.Error
 {
@@ -9,6 +10,9 @@ namespace OpenDDD.Domain.Model.Error
     {
         public IEnumerable<IDomainError> Errors;
         
+        public static DomainException NotFound(string entityName, EntityId entityId)
+            => NotFound(entityName, entityId.ToString());
+
         public static DomainException NotFound(string entityName, string entityId)
             => new DomainException(DomainError.Domain_NotFound(entityName, entityId));
         

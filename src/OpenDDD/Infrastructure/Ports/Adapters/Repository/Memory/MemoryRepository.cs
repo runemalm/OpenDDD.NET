@@ -60,8 +60,11 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Memory
 		public override async Task<IEnumerable<T>> GetAllAsync(ActionId actionId, CancellationToken ct)
 			=> await Task.FromResult(GetAll(actionId, ct));
 		
+		public override T Get(EntityId entityId, ActionId actionId, CancellationToken ct)
+			=> Items.FirstOrDefault(i => i.Id == entityId);
+
 		public override async Task<T> GetAsync(EntityId entityId, ActionId actionId, CancellationToken ct)
-			=> await Task.FromResult(Items.FirstOrDefault(i => i.Id == entityId));
+			=> await Task.FromResult(Get(entityId, actionId, ct));
 		
 		public override async Task<IEnumerable<T>> GetAsync(IEnumerable<EntityId> entityIds, ActionId actionId, CancellationToken ct)
 			=> await Task.FromResult(Items.Where(i => entityIds.Contains(i.Id)));

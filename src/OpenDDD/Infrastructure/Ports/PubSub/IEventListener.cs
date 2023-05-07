@@ -8,6 +8,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 	{
 		public Context Context { get; }
 		public string ListensTo { get; }
+		public string ActionName { get; }
 		public DomainModelVersion ListensToVersion { get; }
 
 		void Start();
@@ -15,6 +16,6 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		void Stop();
 		Task StopAsync();
 		Task<bool> React(IPubSubMessage message);
-		Task Handle(IPubSubMessage message);
+		Task<bool> Handle(IPubSubMessage message);
 	}
 }

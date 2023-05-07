@@ -15,11 +15,13 @@ using NJsonSchema.Infrastructure;
 using dotenv.net;
 using WireMock.Server;
 using OpenDDD.Application;
+using OpenDDD.Application.Error;
 using OpenDDD.Application.Settings;
 using OpenDDD.Domain.Model.Auth.Exceptions;
 using OpenDDD.Domain.Model.BuildingBlocks.Event;
 using OpenDDD.Domain.Model.Error;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory;
 using OpenDDD.Infrastructure.Ports.Email;
 using OpenDDD.Infrastructure.Ports.PubSub;
 using OpenDDD.Infrastructure.Services.Persistence;
@@ -161,10 +163,30 @@ namespace OpenDDD.Tests
         public IDomainPublisher DomainPublisher => TestServer.Host.Services.GetRequiredService<IDomainPublisher>();
         public IInterchangePublisher InterchangePublisher => TestServer.Host.Services.GetRequiredService<IInterchangePublisher>();
         
+        public IDomainEventAdapter DomainEventAdapter => TestServer.Host.Services.GetRequiredService<IDomainEventAdapter>();
+        public IInterchangeEventAdapter InterchangeEventAdapter => TestServer.Host.Services.GetRequiredService<IInterchangeEventAdapter>();
+        
         protected void EnableDomainEvents() => DomainPublisher.SetEnabled(true);
         protected void DisableDomainEvents() => DomainPublisher.SetEnabled(false);
         protected void EnableIntegrationEvents() => InterchangePublisher.SetEnabled(true);
         protected void DisableIntegrationEvents() => InterchangePublisher.SetEnabled(false);
+        
+        protected async Task ReceiveDomainEventAsync(IEvent theEvent)
+        {
+            var outboxEvent = new OutboxEvent(theEvent, ConversionSettings);
+            var message = new MemoryMessage(outboxEvent.JsonPayload);
+            var listeners = DomainEventAdapter.GetListeners(
+                outboxEvent.EventName,
+                outboxEvent.DomainModelVersion.ToStringWithWildcardMinorAndBuildVersions());
+
+            foreach (var listener in listeners)
+            {
+                var success = await listener.Handle(message);
+                if (!success)
+                    throw new DddException(
+                        "An exception occured when reacting to the domain event. See the debug log for details.");
+            }
+        }
 
         // Repositories
         

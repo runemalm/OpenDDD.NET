@@ -17,6 +17,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 	{
 		public Context Context { get; }
 		public string ListensTo { get; }
+		public string ActionName { get; }
 		public DomainModelVersion ListensToVersion { get; }
 
 		private readonly IEventAdapter _eventAdapter;
@@ -39,6 +40,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		{
 			Context = context;
 			ListensTo = listensTo;
+			ActionName = action.GetType().Name.EndsWith("Action") ? action.GetType().Name.Substring(0, action.GetType().Name.Length - "Action".Length) : action.GetType().Name;
 			ListensToVersion = listensToVersion;
 			_action = action;
 			_eventAdapter = eventAdapter;
@@ -64,8 +66,10 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 
 		// Handle
 		
-		public async Task Handle(IPubSubMessage message)
+		public async Task<bool> Handle(IPubSubMessage message)
 		{
+			var success = true;
+			
 			try
 			{
 				await React(message);
@@ -77,7 +81,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 				theEvent.AddDeliveryFailure($"The listener threw an exception when delegating to action: {e}");
 				
 				var maxRetries = _eventAdapter.MaxDeliveryRetries;
-				if (maxRetries == 0 || theEvent.Header.NumDeliveryRetries < maxRetries)
+				if (maxRetries > 0 && theEvent.Header.NumDeliveryRetries < maxRetries)
 				{
 					await AddToOutboxAsync(theEvent);
 				}
@@ -85,8 +89,12 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 				{
 					await DeadLetterAsync(theEvent);
 				}
+				
+				success = false;
 			}
 			await _eventAdapter.AckAsync(message);
+
+			return success;
 		}
 
 		private async Task AddToOutboxAsync(IEvent theEvent)

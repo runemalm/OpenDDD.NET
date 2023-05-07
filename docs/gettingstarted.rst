@@ -8,10 +8,10 @@ You could install the package as a nuget into an existing project, using the dot
 
 
 ################
-Project Template
+Create a project
 ################
 
-The easiest way to get started with your bounded context is using the project template.
+The easiest way to get started with your bounded context is using the ``project template``.
 
 By using the template, you will get the boilerplate code for free, which makes sure you create all configuration files and bootup code correctly.
 
@@ -23,25 +23,25 @@ Then create your bounded context project::
 
     $ dotnet new openddd-net -n MyBoundedContext
 
+Your project will be created in a folder with the name ``MyBoundedContext``.
+
 .. note:: Replace `MyBoundedContext` with the actual name of your project.
 
-Your new project is now created in a folder named ``MyBoundedContext``.
 
-
-############
-Example Code
-############
+###################
+Example Application
+###################
 
 There is some example code on the :doc:`start page<index>`.
 
-Use the :ref:`project template <Project Template>` to quickly create a project with boiler plate code you can look at.
+Use the :ref:`project template <Create a project>` to quickly create a project with boiler plate code you can look at.
 
 
-###############
-Building Blocks
-###############
+##############
+Basic Concepts
+##############
 
-We will now give you a walkthrough of the framework ``building blocks``:
+We will now give you a walkthrough of the framework's ``basic concepts``:
 
 * :ref:`Env files`
 * :ref:`Domain Model Version`
@@ -74,13 +74,13 @@ You will have one env file for each of your environments:
 - env.local
 - env.test
 
-.. tip:: In each of the directories that you need to create an env file there is a ``.sample`` file that you can copy and edit accordingly.
+Load your configuration at boot time using the ``ENV_FILE`` environment variable. Set the value to the env file's filename. This way it will be read and loaded at boot.
 
-Load your env file using the ``ENV_FILE`` environment variable. In this variable, you either specify the env file filename, or put it's content directly in it (serialized as a json string).
+Some hosting environments don't support files accessible to the deployed code package. In this case, you can put the (serialized json content of) the env file directly in the ``ENV_FILE`` variable.
 
-If you load this variable with a filename, the framwork will look for an env file with that name in the current directory, or any of the parent directories. If you on the other hand specify the actual contents of the env file in this variable, remember to first serialize it into a json string. The framework is smart enough to detect if the ``ENV_FILE`` variable value is a filename or a json encoded string with it's contents.
+.. tip:: In each of the directories that you need to create an env file there is a ``*.sample`` file that you can duplicate, rename and edit accordingly.
 
-.. note:: The example env file below is not suitable for production. It has authentication disabled and uses memory implementation of adapters to get you started quickly.
+.. note:: The example env file below has memory adapters and authentication disabled. This helps you get started quickly. However, it also makes it not suitable for production environments.
 
 Example env file::
 
@@ -153,7 +153,7 @@ Since this framework is all about focusing on an evolving and up-to-date domain 
 
 Create this class by subclassing the ``DomainModelVersion`` base class.
 
-As your model evolves, you will increment the ``LatestString`` and add appropriate migration methods to the entity migrators. More on :ref:`migrators in a later section <Migrators>`.
+As your model evolves, you will increment the ``LatestString`` and add appropriate migration methods to the entity migrators. More on :ref:`migrators <Migrators>` in a later section.
 
 Example domain model version::
 
@@ -178,7 +178,7 @@ Program.cs
 
 Use the ``AddXxx()`` extension methods of the framework to properly configure the .NET host and application.
 
-.. tip:: Use the weather forecast :ref:`project template <Project Template>` and you won't need to create this file.
+.. tip:: Use the weather forecast :ref:`project template <Create a project>` and you won't need to create this file.
 
 Example Program.cs file::
 
@@ -211,9 +211,9 @@ Startup.cs
 
 Since part of the design philosophy behind this framwork is to follow the hexagonal architecture, and to make this intent clear through the structure of the code, the ``Startup.cs`` file is written according to a specific convention.
 
-.. tip:: Use the weather forecast :ref:`project template <Project Template>` and you won't need to create this file.
-
 See the example below and create your Startup.cs file.
+
+.. tip:: Use the weather forecast :ref:`project template <Create a project>` and you won't need to create this file.
 
 Example Startup.cs file::
 
@@ -442,13 +442,13 @@ If your aggregates or domain services need to publish events or use any adapter,
 
 Remember that an aggregate is only allowed to change the state of a single aggregate at a time. It must also delegate all domain logic to the aggregates and/or domain services. Domain logic doesn't belong in the application layer.
 
-.. warning:: Delegate all domain logic to aggregates or domain services.
-
-.. warning:: Only act upon one aggregate per action.
-
 You register your action classes with the DI container like this::
 
     services.AddAction<CreateAccountAction, CreateAccountCommand>();
+
+.. warning:: Delegate all domain logic to aggregates or domain services.
+
+.. warning:: Only act upon one aggregate per action.
 
 Example action::
 
@@ -937,6 +937,8 @@ There are two classes for implementing events, ``DomainEvent`` and ``Integration
 
 Subclass the appropriate one depending on the type of event you're implementing.
 
+.. note:: Integration event names are prefixed with ``Ic`` to easily separate them from domain events.
+
 Example domain event::
 
     using System;
@@ -982,8 +984,6 @@ Example domain event::
             }
         }
     }
-
-.. note:: Integration event names are prefixed with ``Ic`` to easily separate them from possible domain events with the same name.
 
 Example integration event::
 
@@ -1048,6 +1048,10 @@ Your listeners will basically just create a command and pass it to the action th
 
 In the example below you can see how the ``AccountCreated`` event is reacted to by calling the ``SendEmailVerification`` action.
 
+Subscribe to an event by registering the listener with the DI container::
+
+    services.AddListener<AccountCreatedListener>();
+
 Example domain event listener::
 
     using Application.Actions;
@@ -1098,15 +1102,15 @@ Example domain event listener::
         }
     }
 
-Subscribe to an event by registering the listener with the DI container::
-
-    services.AddListener<AccountCreatedListener>();
-
 
 Domain Services
 ---------------
 
 All domain service classes need to subclass the ``DomainService`` class.
+
+You register your domain services with the DI container like this::
+
+    services.AddDomainService<IRoleDomainService, RoleDomainService>();
 
 Example domain service::
 
@@ -1256,10 +1260,6 @@ Example domain service::
         }
     }
 
-You register your domain services with the DI container like this::
-
-    services.AddDomainService<IRoleDomainService, RoleDomainService>();
-
 
 Errors
 ------
@@ -1279,6 +1279,8 @@ The ``Message`` should contain a message with a description useful and aimed tow
 The ``User Message`` should contain a message with a description useful and aimed towards understanding the error in a frontend by an end user.
 
 .. tip:: It's recommeded that the frontend development team utilizes the ``Code`` to craft the most helpful and precise user message, instead of simply relying on the more generic ``User Message``.
+
+.. note:: The generic domain errors are to be found in the ``DomainError`` base class of the framework.
 
 Example domain error::
 
@@ -1327,8 +1329,6 @@ Example domain error::
             public static IDomainError VerifyEmail_UserHasNoEmail() => Create(VerifyEmail_UserHasNoEmail_Code, VerifyEmail_UserHasNoEmail_Msg, VerifyEmail_UserHasNoEmail_UsrMsg);
         }
     }
-
-.. note:: The generic domain errors are to be found in the ``DomainError`` base class of the framework.
 
 
 Exceptions
@@ -1421,9 +1421,9 @@ However, for all the entities and value objects that are ``unique`` to your doma
 
 You create a converter by subclassing the ``Converter<T>`` base class.
 
-.. note:: Don't mistake the Converter<T> class for the class with the same name in the Json.NET framework.
-
 .. tip:: Utilize the ``ReadJsonUsingMethod()`` method of the OpenDDD framework base class to conveniently deserialize strings using your entity- and value object classes static factory methods.
+
+.. note:: Don't mistake the Converter<T> class for the class with the same name in the Json.NET framework.
 
 Example converter::
 
@@ -1485,7 +1485,7 @@ You register your serializer settings with the DI container like this::
 
     services.AddTransient<OpenDddConversionSettings, ConversionSettings>();
 
-.. note:: The ``AddConversion()`` call in Startup.cs of the :ref:`project template <Project Template>` does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
+.. note:: The ``AddConversion()`` call in Startup.cs of the :ref:`project template <Create a project>` does almost all of this work for you. You just need to create your converters and add them to the collection in the constructor.
 
 
 Migrators
@@ -1496,6 +1496,10 @@ Whenver you bump your domain model version, you need to create a migration for a
 Subclass the ``Migrator`` base class and implement the ``FromVX_X_X()`` method for all your entities affected by the change.
 
 Domain model versioning is a first-class citizen in this DDD framework. Thus, migration should be as easy as possible so that the domain model can be evolved continuously with minimal effort.
+
+You register your migrator classes with the DI container like this::
+
+    services.AddMigrator<UserMigrator>();
 
 .. note:: Entities will migrate on-the-fly next time they are fetched and saved by the repositories.
 
@@ -1543,21 +1547,17 @@ Example migrator::
         }
     }
 
-You register your migrator classes with the DI container like this::
-
-    services.AddMigrator<UserMigrator>();
-
 
 Unit Tests
 ----------
 
 To achieve full test coverage of your bounded context, you need to implement a full suite of unit tests for each of your domain model actions.
 
-.. note:: You need to create your own action unit tests base class. See the :ref:`section below <The ActionUnitTests class>` on how to do this.
-
 Subclass ``ActionUnitTests`` for each of your action unit test suites. Then add your test methods to cover all paths.
 
 The test methods are based on the standard ``xUnit`` testing model, so you will be familiar with the ``Arrange``, ``Act`` and ``Assert`` sections.
+
+.. note:: You need to create your own action unit tests base class. See the :ref:`section below <The ActionUnitTests class>` on how to do this.
 
 .. warning:: Remember that the unit tests need to reflect the domain model and ubiquitous language.
 

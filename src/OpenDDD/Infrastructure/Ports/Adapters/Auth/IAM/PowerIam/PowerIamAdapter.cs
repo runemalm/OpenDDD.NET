@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using PowerIAM.Api;
-using PowerIAM.Client;
 using OpenDDD.Application;
 using OpenDDD.Application.Settings;
 using OpenDDD.Domain.Model.Auth;
 using OpenDDD.Infrastructure.Ports.Auth;
 using OpenDDD.Logging;
+using PowerIAM.Api;
+using PowerIAM.Client;
 
 namespace OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 {
@@ -48,6 +49,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 				null,
 				null,
 				permissions.Select(t => $"{t.Item1}:{t.Item2}").ToList(),
+				null,
 				0,
 				ct);
 
@@ -57,10 +59,26 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Auth.IAM.PowerIam
 			IEnumerable<(string, string)> permissions,
 			ActionId actionId,
 			CancellationToken ct)
+			=> HasPermissionsInRealmAsync(
+				realmId,
+				externalRealmId,
+				permissions,
+				null,
+				actionId,
+				ct);
+
+		public Task<bool> HasPermissionsInRealmAsync(
+			string realmId,
+			string externalRealmId,
+			IEnumerable<(string, string)> permissions,
+			string? userId,
+			ActionId actionId,
+			CancellationToken ct)
 			=> _accessApi.AssurePermissionsAsync(
 				realmId,
 				externalRealmId,
 				permissions.Select(t => $"{t.Item1}:{t.Item2}").ToList(),
+				userId,
 				0,
 				ct);
 

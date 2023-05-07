@@ -23,6 +23,7 @@ namespace OpenDDD.Infrastructure.Ports.Repository
         public abstract Task DeleteAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
         public abstract IEnumerable<T> GetAll(ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetAllAsync(ActionId actionId, CancellationToken ct);
+        public abstract T Get(EntityId entityId, ActionId actionId, CancellationToken ct);
         public abstract Task<T> GetAsync(EntityId entityId, ActionId actionId, CancellationToken ct);
         public abstract Task<IEnumerable<T>> GetAsync(IEnumerable<EntityId> entityIds, ActionId actionId, CancellationToken ct);
         public abstract T GetFirstOrDefaultWith(Expression<Func<T, bool>> where, ActionId actionId, CancellationToken ct);

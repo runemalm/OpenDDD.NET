@@ -1,4 +1,4 @@
-using DDD.Infrastructure.Ports.Adapters.Http.Common;
+using OpenDDD.Infrastructure.Ports.Adapters.Http.Common;
 using Application.Actions.Commands;
 using Infrastructure.Ports.Adapters.Http.vX.Model.Commands;
 
