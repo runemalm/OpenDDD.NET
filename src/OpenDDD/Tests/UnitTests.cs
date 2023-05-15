@@ -80,12 +80,27 @@ namespace OpenDDD.Tests
 		protected void AssertCount(int expected, int actual)
 			=> AssertEqual(expected, actual);
 		
+		protected void AssertGreater(int greaterThan, int actual)
+			=> Assert.True(actual > greaterThan, $"Expected actual count to be greater than {greaterThan}.");
+		
 		protected void AssertCount<T>(int expected, IEnumerable<T> collection)
 			=> AssertCount(expected, collection.Count());
 		
 		protected void AssertContains<T>(T expected, IEnumerable<T> collection)
 			=> Assert.Contains(expected, collection);
-        
+
+		protected void AssertContains<T>(IEnumerable<T> expected, IEnumerable<T> collection)
+		{
+			var missing = new List<T>();
+			foreach (var e in expected)
+				if (!collection.Contains(e))
+					missing.Add(e);
+			if (missing.Count > 0)
+			{
+				Assert.True(false, $"The collection doesn't contain {missing.Count} missing item(s): {String.Join(", ", missing.Select(m => m.ToString()))}");
+			}
+		}
+
 		protected void AssertEqual<T>(T expected, T actual) 
 			=> Assert.Equal(expected, actual);
 		
