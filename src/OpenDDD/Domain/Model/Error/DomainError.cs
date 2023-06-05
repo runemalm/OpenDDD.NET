@@ -23,19 +23,19 @@ namespace OpenDDD.Domain.Model.Error
         
         // Domain errors
         
-        public const int Domain_ModelError_Code = 201;
+        public const int Domain_ModelError_Code = 501;
         public const string Domain_ModelError_Msg = "Domain model error: '{0}'.";
         public const string Domain_ModelError_UsrMsg = "The system has a bug. Please try again later and if the error persists, please contact customer support. Model error: '{0}'.";
         
-        public const int Domain_NotFound_Code = 202;
+        public const int Domain_NotFound_Code = 502;
         public const string Domain_NotFound_Msg = "The {0} with ID '{1}' couldn't be found.";
         public const string Domain_NotFound_UsrMsg = "Couldn't perform the action. The {0} with ID '{1}' couldn't be found. Please try again later or contact customer support if the problem persists.";
         
-        public const int Domain_AlreadyExists_Code = 203;
+        public const int Domain_AlreadyExists_Code = 03;
         public const string Domain_AlreadyExists_Msg = "An {0} with {1} '{2}' already exists.";
         public const string Domain_AlreadyExists_UsrMsg = "Couldn't perform the action. An {0} with {1} '{2}' already exists. Please choose a unique value and try again.";
         
-        public const int Domain_InvariantViolation_Code = 204;
+        public const int Domain_InvariantViolation_Code = 504;
         public const string Domain_InvariantViolation_Msg = "Invariant violation: {0}";
         public const string Domain_InvariantViolation_UsrMsg = "A business rule was violated: {0}";
 
@@ -46,15 +46,15 @@ namespace OpenDDD.Domain.Model.Error
 
         // Auth errors
         
-        public const int Authorize_Forbidden_Code = 301;
+        public const int Authorize_Forbidden_Code = 601;
         public const string Authorize_Forbidden_Msg = "The user is lacking permissions.";
         public const string Authorize_Forbidden_UsrMsg = "It seems you tried to do something you are not authorized to do. Ask your manager for the permissions needed to execute the task and try again.";
         
-        public const int Authorize_InvalidCredentials_Code = 302;
+        public const int Authorize_InvalidCredentials_Code = 602;
         public const string Authorize_InvalidCredentials_Msg = "The credentials was invalid.";
         public const string Authorize_InvalidCredentials_UsrMsg = "The following was wrong with the credentials you provided: {0}";
         
-        public const int Authorize_MissingCredentials_Code = 303;
+        public const int Authorize_MissingCredentials_Code = 603;
         public const string Authorize_MissingCredentials_Msg = "Missing credentials.";
         public const string Authorize_MissingCredentials_UsrMsg = "Couldn't perform your request because you seem not to be logged in? Couldn't find any credentials: '{0}'. Please logout and login again or try again later.";
         
@@ -62,7 +62,7 @@ namespace OpenDDD.Domain.Model.Error
         public const string Authorize_NotAuthenticated_Msg = "Not authenticated.";
         public const string Authorize_NotAuthenticated_UsrMsg = "You must be logged in to perform the action.";
         
-        public const int Authorize_InvalidRequest_Code = 305;
+        public const int Authorize_InvalidRequest_Code = 606;
         public const string Authorize_InvalidRequest_Msg = "Invalid authorization request.";
         public const string Authorize_InvalidRequest_UsrMsg = "You tried to perform an invalid authorization request. The following was wrong with your request: {0}";
         
