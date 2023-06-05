@@ -98,6 +98,20 @@ namespace OpenDDD.Domain.Model.Validation
 			
 			return this;
 		}
+		
+		public Validator<TModel> EitherOr(Expression<Func<TModel, object?>> field1, Expression<Func<TModel, object?>> field2)
+		{
+			var key1 = GetKey(field1);
+			var value1 = GetValue(field1);
+			
+			var key2 = GetKey(field2);
+			var value2 = GetValue(field2);
+
+			if (!(value1 != null ^ value2 != null))
+				AddError(key1+", "+key2, "Exactly one of the arguments has to be provided.");
+			
+			return this;
+		}
 
 		public Validator<TModel> NotNullAndPositive(Expression<Func<TModel, decimal?>> field)
 		{

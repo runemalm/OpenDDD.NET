@@ -6,6 +6,7 @@
 		FormPost,
 		AzureOidc,
 		FacebookOidc,
+		MockOidc,
 		SimpleOidc
 	}
 }

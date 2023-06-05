@@ -9,6 +9,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 	{
 		Task PublishAsync(IEvent theEvent);
 		Task FlushAsync(OutboxEvent outboxEvent);
+		bool IsEnabled();
 		void SetEnabled(bool enabled);
 		bool HasPublished(IEvent theEvent);
 		bool HasFlushed(IEvent outboxEvent);

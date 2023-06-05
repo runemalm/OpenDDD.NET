@@ -219,6 +219,7 @@ namespace OpenDDD.Tests
                 if (_testServer == null)
                 {
                     // We move the blocking TestServer constructor outside of the xUnit synchronization context.
+                    // See: https://www.strathweb.com/2021/05/the-curious-case-of-asp-net-core-integration-test-deadlock/
                     var builder = CreateWebHostBuilder();
                     Task.Run(() => _testServer = new TestServer(builder)).GetAwaiter().GetResult();
                 }

@@ -45,6 +45,9 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			await _eventAdapter.FlushAsync(outboxEvent);
 		}
 
+		public bool IsEnabled()
+			=> _enabled;
+
 		public void SetEnabled(bool enabled)
 		{
 			_enabled = enabled;
