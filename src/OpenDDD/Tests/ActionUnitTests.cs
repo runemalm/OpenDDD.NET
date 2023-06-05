@@ -306,9 +306,25 @@ namespace OpenDDD.Tests
             EnableEmails();
         }
         
+        protected async Task DoWithEventsDisabled(Func<Task> actionsAsync)
+        {
+            var prevDomainEventsEnabled = DomainPublisher.IsEnabled();
+            var prevIntegrationEventsEnabled = InterchangePublisher.IsEnabled();
+            
+            DisableDomainEvents();
+            DisableIntegrationEvents();
+            await actionsAsync();
+            
+            if (prevDomainEventsEnabled)
+                EnableDomainEvents();
+            
+            if (prevIntegrationEventsEnabled)
+                EnableIntegrationEvents();
+        }
+        
         protected void EnableEmails() => EmailAdapter.SetEnabled(true);
         protected void DisableEmails() => EmailAdapter.SetEnabled(false);
-
+        
         // Assertions
         
         public void AssertDomainEventPublished(Event event_)
