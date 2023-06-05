@@ -26,6 +26,8 @@ using OpenDDD.Infrastructure.Ports.Email;
 using OpenDDD.Infrastructure.Ports.PubSub;
 using OpenDDD.Infrastructure.Services.Persistence;
 using OpenDDD.Logging;
+using OpenDDD.NET;
+using ApplicationException = OpenDDD.Application.Error.ApplicationException;
 
 namespace OpenDDD.Tests
 {
@@ -317,7 +319,17 @@ namespace OpenDDD.Tests
                 await Assert.ThrowsAsync<AuthorizeException>(actionAsync);
         }
 
-        public async Task AssertFailure<T>(T expected, Task actionTask) where T : DomainException
+        public async Task AssertCommandValidationFailure(ICommand command, IEnumerable<(string, string)> expectedErrors)
+        {
+            var exc = Assert.Throws<ApplicationException>(command.Validate);
+            AssertCount(1, exc.Errors);
+            AssertEqual(ApplicationError.Application_InvalidCommand_Code, exc.Errors.Single().Code);
+            AssertEqual(
+                $"Invalid command: {string.Join(". ", expectedErrors.Select(e => $"Field: '{command.GetType().Name}.{e.Item1}', Message: '{e.Item2}'"))}", 
+                exc.Errors.Single().Message);
+        }
+
+        public async Task AssertFailure<T>(T expected, Task actionTask) where T : DddException
         {
             var actual = await Assert.ThrowsAsync<T>(async () => await actionTask);
             Assert.Equal(expected, actual);

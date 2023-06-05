@@ -90,6 +90,7 @@ namespace OpenDDD.NET.Extensions
                         .Get<IExceptionHandlerPathFeature>()
                         .Error;
 
+                    var isApplicationException = exception.IsOrIsSubType(typeof(ApplicationException));
                     var isDomainException = exception.IsOrIsSubType(typeof(DomainException));
                     var isAuthorizeException = exception.IsOrIsSubType(typeof(AuthorizeException));
                     var isUnauthorizedException = isAuthorizeException &&
@@ -102,7 +103,11 @@ namespace OpenDDD.NET.Extensions
                     var isNotFoundException = isDomainException &&
                                               ((DomainException)exception).Errors.Any(e =>
 	                                              e.Code == DomainError.Domain_NotFound_Code);
-                    var isInvalidCommandException = exception.IsOrIsSubType(typeof(InvalidCommandException));
+                    var isOldInvalidCommandException = exception.IsOrIsSubType(typeof(InvalidCommandException));
+                    var isInvalidCommandException = isOldInvalidCommandException || (
+														isApplicationException &&
+														((ApplicationException)exception).Errors.Any(e =>
+															e.Code == ApplicationError.Application_InvalidCommand_Code));
                     var isInvariantException = isDomainException &&
                                                ((DomainException)exception).Errors.Any(e =>
 	                                               e.Code == DomainError.Domain_InvariantViolation_Code);
@@ -116,7 +121,12 @@ namespace OpenDDD.NET.Extensions
 					// Create failure response
 					Failure failureResponse;
 
-					if (isDomainException)
+					if (isApplicationException)
+					{
+						failureResponse = new Failure(
+							((ApplicationException)exception).Errors);
+					}
+					else if (isDomainException)
 					{
 						failureResponse = new Failure(
 							((DomainException)exception).Errors);
@@ -124,7 +134,7 @@ namespace OpenDDD.NET.Extensions
 					else
 					{
 						failureResponse = new Failure(
-							ApplicationError.System_UnknownError(exception.Message)); }
+							ApplicationError.System_InternalError(exception.Message)); }
 
 					// Set http status code
 					if (isNotFoundException)
