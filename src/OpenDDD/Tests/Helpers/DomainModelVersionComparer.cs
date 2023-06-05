@@ -20,6 +20,8 @@ namespace OpenDDD.Tests.Helpers
 
 		public override bool IsTypeMatch(Type type1, Type type2)
 		{
+			if (type1 != null ^ type2 != null)
+				return false;
 			var theType = typeof(DomainModelVersion);
 			var isMatch =
 				(type1 == theType || type1.IsSubclassOf(theType)) &&
