@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using OpenDDD.Domain.Model.Auth.Exceptions;
 using OpenDDD.Domain.Model.Error;
 using OpenDDD.Domain.Model.Validation;
+using OpenDDD.NET;
 
 namespace OpenDDD.Domain.Model.Auth
 {
@@ -231,7 +232,7 @@ namespace OpenDDD.Domain.Model.Auth
 		
 		private void CheckExpired()
 		{
-			var now = DateTime.UtcNow;
+			var now = DateTimeProvider.Now;
 		
 			var expired = ValidTo < now;
 			var periodStarted = ValidFrom < now;

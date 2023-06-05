@@ -41,6 +41,7 @@ namespace OpenDDD.Tests
             ActionName = GetType().Name.Replace("Tests", "");
             ActionId = ActionId.Create();
             UnsetConfigEnvironmentVariables();
+            DateTimeProvider.Reset();
         }
         
         public async ValueTask DisposeAsync()
@@ -54,6 +55,11 @@ namespace OpenDDD.Tests
             // We move the blocking TestServer Dispose method outside of the xUnit synchronization context.
             PersistenceService.ReleaseConnection(ActionId);
             Task.Run(() => TestServer.Dispose()).GetAwaiter().GetResult();
+        }
+
+        public void JumpMinutes(int minutes)
+        {
+            DateTimeProvider.Set(() => DateTime.UtcNow.AddMinutes(minutes));
         }
 
         // Configuration
