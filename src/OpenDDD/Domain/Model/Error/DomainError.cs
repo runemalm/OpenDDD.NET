@@ -58,7 +58,11 @@ namespace OpenDDD.Domain.Model.Error
         public const string Authorize_MissingCredentials_Msg = "Missing credentials.";
         public const string Authorize_MissingCredentials_UsrMsg = "Couldn't perform your request because you seem not to be logged in? Couldn't find any credentials: '{0}'. Please logout and login again or try again later.";
         
-        public const int Authorize_NotAuthenticated_Code = 304;
+        public const int Authorize_EmailNotVerified_Code = 604;
+        public const string Authorize_EmailNotVerified_Msg = "Email not verified.";
+        public const string Authorize_EmailNotVerified_UsrMsg = "You can't login before you have verified your email. Check your inbox for a verification email and click the link in it.";
+
+        public const int Authorize_NotAuthenticated_Code = 605;
         public const string Authorize_NotAuthenticated_Msg = "Not authenticated.";
         public const string Authorize_NotAuthenticated_UsrMsg = "You must be logged in to perform the action.";
         
@@ -69,6 +73,7 @@ namespace OpenDDD.Domain.Model.Error
         public static IDomainError Authorize_Forbidden() => Create(Authorize_Forbidden_Code, Authorize_Forbidden_Msg, Authorize_Forbidden_UsrMsg);
         public static IDomainError Authorize_InvalidCredentials(string reason) => Create(Authorize_InvalidCredentials_Code, Authorize_InvalidCredentials_Msg, String.Format(Authorize_InvalidCredentials_UsrMsg, reason));
         public static IDomainError Authorize_MissingCredentials(string spec) => Create(Authorize_MissingCredentials_Code, Authorize_MissingCredentials_Msg, String.Format(Authorize_MissingCredentials_UsrMsg, spec));
+        public static IDomainError Authorize_EmailNotVerified() => Create(Authorize_EmailNotVerified_Code, Authorize_EmailNotVerified_Msg, Authorize_EmailNotVerified_UsrMsg);
         public static IDomainError Authorize_NotAuthenticated() => Create(Authorize_NotAuthenticated_Code, Authorize_NotAuthenticated_Msg, Authorize_NotAuthenticated_UsrMsg);
         public static IDomainError Authorize_InvalidRequest(string spec) => Create(Authorize_InvalidRequest_Code, Authorize_InvalidRequest_Msg, String.Format(Authorize_InvalidRequest_UsrMsg, spec));
 

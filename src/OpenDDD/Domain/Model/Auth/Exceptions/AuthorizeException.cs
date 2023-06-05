@@ -13,6 +13,9 @@ namespace OpenDDD.Domain.Model.Auth.Exceptions
         public static AuthorizeException MissingCredentials(string spec)
             => new AuthorizeException(DomainError.Authorize_MissingCredentials(spec));
         
+        public static AuthorizeException EmailNotVerified()
+            => new AuthorizeException(DomainError.Authorize_EmailNotVerified());
+        
         public static AuthorizeException NotAuthenticated()
             => new AuthorizeException(DomainError.Authorize_NotAuthenticated());
         
