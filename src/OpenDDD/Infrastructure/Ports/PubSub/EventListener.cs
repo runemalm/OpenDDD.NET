@@ -7,6 +7,7 @@ using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.BuildingBlocks.Event;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using OpenDDD.Logging;
+using OpenDDD.NET;
 
 namespace OpenDDD.Infrastructure.Ports.PubSub
 {
@@ -26,6 +27,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		private readonly TAction _action;
 		private readonly ILogger _logger;
 		private readonly ConversionSettings _conversionSettings;
+		private readonly IDateTimeProvider _dateTimeProvider;
 
 		public EventListener(
 			Context context, 
@@ -36,7 +38,8 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			IOutbox outbox,
 			IDeadLetterQueue deadLetterQueue,
 			ILogger logger,
-			ConversionSettings conversionSettings)
+			ConversionSettings conversionSettings,
+			IDateTimeProvider dateTimeProvider)
 		{
 			Context = context;
 			ListensTo = listensTo;
@@ -48,6 +51,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			_deadLetterQueue = deadLetterQueue;
 			_logger = logger;
 			_conversionSettings = conversionSettings;
+			_dateTimeProvider = dateTimeProvider;
 		}
 
 		public void Start()
@@ -78,7 +82,7 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 			{
 				_logger.Log($"Action threw exception on event: {e}", LogLevel.Debug, e);
 				var theEvent = MessageToEvent(message);
-				theEvent.AddDeliveryFailure($"The listener threw an exception when delegating to action: {e}");
+				theEvent.AddDeliveryFailure($"The listener threw an exception when delegating to action: {e}", _dateTimeProvider);
 				
 				var maxRetries = _eventAdapter.MaxDeliveryRetries;
 				if (maxRetries > 0 && theEvent.Header.NumDeliveryRetries < maxRetries)

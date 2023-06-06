@@ -4,6 +4,7 @@ using OpenDDD.Application;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.BuildingBlocks.Event;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
+using OpenDDD.NET;
 
 namespace OpenDDD.Infrastructure.Ports.PubSub
 {
@@ -20,20 +21,22 @@ namespace OpenDDD.Infrastructure.Ports.PubSub
 		public int NumDeliveryFailures { get; set; }
 		public string JsonPayload { get; set; }
 
-		public OutboxEvent() { }
-
-		public OutboxEvent(IEvent theEvent, ConversionSettings conversionSettings)
+		public static OutboxEvent Create(IEvent theEvent, ConversionSettings conversionSettings, IDateTimeProvider dateTimeProvider)
 		{
-			Id = Guid.NewGuid().ToString();
-			EventId = theEvent.Header.EventId;
-			ActionId = theEvent.Header.ActionId;
-			EventName = theEvent.Header.Name;
-			DomainModelVersion = theEvent.Header.DomainModelVersion;
-			IsDomainEvent = theEvent.Header.EventType == EventType.DomainEvent;
-			AddedAt = DateTime.UtcNow;
-			IsPublishing = false;
-			NumDeliveryFailures = theEvent.Header.NumDeliveryFailures;
-			JsonPayload = JsonConvert.SerializeObject(theEvent, conversionSettings);
+			var outboxEvent = new OutboxEvent
+			{
+				Id = Guid.NewGuid().ToString(),
+				EventId = theEvent.Header.EventId,
+				ActionId = theEvent.Header.ActionId,
+				EventName = theEvent.Header.Name,
+				DomainModelVersion = theEvent.Header.DomainModelVersion,
+				IsDomainEvent = theEvent.Header.EventType == EventType.DomainEvent,
+				AddedAt = dateTimeProvider.Now,
+				IsPublishing = false,
+				NumDeliveryFailures = theEvent.Header.NumDeliveryFailures,
+				JsonPayload = JsonConvert.SerializeObject(theEvent, conversionSettings)
+			};
+			return outboxEvent;
 		}
 		
 		// Equality

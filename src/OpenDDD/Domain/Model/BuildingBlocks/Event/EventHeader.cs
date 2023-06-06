@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenDDD.Application;
+using OpenDDD.NET;
 
 namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 {
@@ -50,9 +51,9 @@ namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 			ActorName = actorName;
 		}
 
-		public void AddDeliveryFailure(string error)
+		public void AddDeliveryFailure(string error, IDateTimeProvider dateTimeProvider)
 		{
-			DeliveryFailures.Add(EventFailure.Create(error));
+			DeliveryFailures.Add(EventFailure.Create(error, dateTimeProvider));
 		}
 		
 		// Equality

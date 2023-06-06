@@ -10,6 +10,7 @@ using OpenDDD.Infrastructure.Ports.Adapters.Common.Exceptions;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using OpenDDD.Infrastructure.Ports.PubSub;
 using OpenDDD.Infrastructure.Services.Persistence;
+using OpenDDD.NET;
 
 namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Postgres
 {
@@ -17,11 +18,13 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Postgres
     {
         private readonly IPersistenceService _persistenceService;
         private readonly ConversionSettings _conversionSettings;
+        private readonly IDateTimeProvider _dateTimeProvider;
         
-        public PostgresOutbox(IPersistenceService persistenceService, ConversionSettings conversionSettings)
+        public PostgresOutbox(IPersistenceService persistenceService, ConversionSettings conversionSettings, IDateTimeProvider dateTimeProvider)
         {
             _persistenceService = persistenceService;
             _conversionSettings = conversionSettings;
+            _dateTimeProvider = dateTimeProvider;
         }
 		
         public void Start(CancellationToken ct)
@@ -82,7 +85,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Postgres
             var count = 0;
             foreach (var theEvent in events)
             {
-                var outboxEvent = new OutboxEvent(theEvent, _conversionSettings);
+                var outboxEvent = OutboxEvent.Create(theEvent, _conversionSettings, _dateTimeProvider);
                 values.Add($"(@id_{count}, @data_{count})");
                 parameters.Add($"@id_{count}", outboxEvent.Id);
                 parameters.Add($"@data_{count}", JsonDocument.Parse(JsonConvert.SerializeObject(outboxEvent, _conversionSettings)));

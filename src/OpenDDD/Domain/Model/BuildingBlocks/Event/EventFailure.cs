@@ -1,4 +1,5 @@
 ﻿using System;
+using OpenDDD.NET;
 
 namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 {
@@ -9,15 +10,15 @@ namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 
 		public EventFailure() { }
 
-		public EventFailure(string message)
+		public EventFailure(string message, IDateTimeProvider dateTimeProvider)
 		{
-			DateTime = DateTime.UtcNow;
+			DateTime = dateTimeProvider.Now;
 			Message = message;
 		}
 
-		public static EventFailure Create(string message)
+		public static EventFailure Create(string message, IDateTimeProvider dateTimeProvider)
 		{
-			var eventFailure = new EventFailure(message);
+			var eventFailure = new EventFailure(message, dateTimeProvider);
 			return eventFailure;
 		}
 		

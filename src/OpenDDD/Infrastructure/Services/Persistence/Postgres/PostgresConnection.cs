@@ -2,6 +2,7 @@
 using System.Data;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Npgsql;
 
 namespace OpenDDD.Infrastructure.Services.Persistence.Postgres

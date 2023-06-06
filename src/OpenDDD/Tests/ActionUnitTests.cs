@@ -41,7 +41,7 @@ namespace OpenDDD.Tests
             ActionName = GetType().Name.Replace("Tests", "");
             ActionId = ActionId.Create();
             UnsetConfigEnvironmentVariables();
-            DateTimeProvider.Reset();
+            // DateTimeProvider.Reset();
         }
         
         public async ValueTask DisposeAsync()
@@ -167,6 +167,10 @@ namespace OpenDDD.Tests
         }
 
         // PubSub
+                
+        public IDateTimeProvider DateTimeProvider => TestServer.Host.Services.GetRequiredService<IDateTimeProvider>();
+
+        // PubSub
         
         public IDomainPublisher DomainPublisher => TestServer.Host.Services.GetRequiredService<IDomainPublisher>();
         public IInterchangePublisher InterchangePublisher => TestServer.Host.Services.GetRequiredService<IInterchangePublisher>();
@@ -181,7 +185,7 @@ namespace OpenDDD.Tests
         
         protected async Task ReceiveDomainEventAsync(IEvent theEvent)
         {
-            var outboxEvent = new OutboxEvent(theEvent, ConversionSettings);
+            var outboxEvent = OutboxEvent.Create(theEvent, ConversionSettings, DateTimeProvider);
             var message = new MemoryMessage(outboxEvent.JsonPayload);
             var listeners = DomainEventAdapter.GetListeners(
                 outboxEvent.EventName,
@@ -327,6 +331,9 @@ namespace OpenDDD.Tests
         protected void DisableEmails() => EmailAdapter.SetEnabled(false);
         
         // Assertions
+        
+        protected void AssertNow(DateTime? actual)
+            => AssertDateWithin200Ms(DateTimeProvider.Now, actual, "The date wasn't equal or close to 'now'.");
         
         public void AssertDomainEventPublished(Event event_)
             => Assert.True(DomainPublisher.HasPublished(event_), $"Expected domain event to have been published: {event_.Header.Name}.");

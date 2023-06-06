@@ -12,6 +12,7 @@ using OpenDDD.Domain.Model.BuildingBlocks.Aggregate;
 using OpenDDD.Domain.Model.BuildingBlocks.Entity;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using OpenDDD.Infrastructure.Ports.Repository;
+using OpenDDD.NET;
 
 namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Memory
 {
@@ -20,11 +21,13 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Memory
 		protected ConcurrentDictionary<string, string> Data = new ConcurrentDictionary<string, string>();
 		private IMigrator<T> _migrator;
 		private readonly ConversionSettings _conversionSettings;
+		protected readonly IDateTimeProvider _dateTimeProvider;
 
-		public MemoryRepository(IMigrator<T> migrator, ConversionSettings conversionSettings)
+		public MemoryRepository(IMigrator<T> migrator, ConversionSettings conversionSettings, IDateTimeProvider dateTimeProvider)
 		{
 			_migrator = migrator;
 			_conversionSettings = conversionSettings;
+			_dateTimeProvider = dateTimeProvider;
 		}
 
 		public override void Start(CancellationToken ct)

@@ -33,7 +33,8 @@ namespace OpenDDD.Domain.Model.Auth
 			DateTime validTo,
 			IEnumerable<string> roles,
 			IEnumerable<string> rolesClaimsTypes,
-			string privateKey)
+			string privateKey,
+			IDateTimeProvider dateTimeProvider)
 		{
 			var token = new JwtToken()
 			{
@@ -47,7 +48,7 @@ namespace OpenDDD.Domain.Model.Auth
 				Roles = roles
 			};
 			token.Write(privateKey, rolesClaimsTypes);
-			token.Validate(privateKey);
+			token.Validate(privateKey, dateTimeProvider);
   
 			return token;
 		}
@@ -172,16 +173,16 @@ namespace OpenDDD.Domain.Model.Auth
 
 		// Validation
 
-		public void Validate(string privateKey)
+		public void Validate(string privateKey, IDateTimeProvider dateTimeProvider)
 		{
 			CheckSignature(privateKey);
-			CheckExpired();
+			CheckExpired(dateTimeProvider);
 		}
 
-		public void Validate(string privateKey, IEnumerable<IEnumerable<string>> roles)
+		public void Validate(string privateKey, IEnumerable<IEnumerable<string>> roles, IDateTimeProvider dateTimeProvider)
 		{
 			CheckSignature(privateKey);
-			CheckExpired();
+			CheckExpired(dateTimeProvider);
 			
 			var validator = new Validator<AccessToken>(this);
   
@@ -230,9 +231,9 @@ namespace OpenDDD.Domain.Model.Auth
 			}
 		}
 		
-		private void CheckExpired()
+		private void CheckExpired(IDateTimeProvider dateTimeProvider)
 		{
-			var now = DateTimeProvider.Now;
+			var now = dateTimeProvider.Now;
 		
 			var expired = ValidTo < now;
 			var periodStarted = ValidFrom < now;

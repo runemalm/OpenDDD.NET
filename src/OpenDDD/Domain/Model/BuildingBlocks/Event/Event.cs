@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using OpenDDD.Application;
+using OpenDDD.NET;
 
 namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 {
@@ -17,7 +18,8 @@ namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 			ActionId actionId,
 			IEnumerable<string> corrIds,
 			string actorId,
-			string actorName)
+			string actorName,
+			IDateTimeProvider dateTimeProvider)
 		{
 			var eventType = 
 				contextName.ToLower() == "interchange" 
@@ -28,7 +30,7 @@ namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 				new EventHeader(
 					eventName, 
 					contextName, 
-					DateTime.UtcNow, 
+					dateTimeProvider.Now,
 					eventType, 
 					domainModelVersion,
 					actionId,
@@ -38,9 +40,9 @@ namespace OpenDDD.Domain.Model.BuildingBlocks.Event
 					actorName);
 		}
 
-		public void AddDeliveryFailure(string error)
+		public void AddDeliveryFailure(string error, IDateTimeProvider dateTimeProvider)
 		{
-			Header.AddDeliveryFailure(error);
+			Header.AddDeliveryFailure(error, dateTimeProvider);
 		}
 
 		// Equality

@@ -125,9 +125,6 @@ namespace OpenDDD.Tests
 			Assert.Equal(expected, actual, comparer);
 		}
 
-		protected void AssertNow(DateTime? actual)
-			=> AssertDateWithin400Ms(DateTimeProvider.Now, actual, "The date wasn't equal or close to 'now'.");
-		
 		protected void AssertDateApproximately(DateTime expected, DateTime actual)
 			=> AssertDateWithin200Ms(expected, actual, "The date wasn't approximately what was expected.");
 

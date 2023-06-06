@@ -5,14 +5,20 @@ using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql;
 using OpenDDD.Infrastructure.Ports.Repository;
 using OpenDDD.Infrastructure.Services.Persistence;
+using OpenDDD.NET;
 
 namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Postgres
 {
 	public class PostgresRepository<T, TId> : SqlRepository<T, TId> where T : IAggregate where TId : EntityId
 	{
-		public PostgresRepository(ISettings settings, string tableName, IMigrator<T> migrator,
-			IPersistenceService persistenceService, ConversionSettings conversionSettings) :
-			base(settings, tableName, migrator, persistenceService, conversionSettings)
+		public PostgresRepository(
+			ISettings settings, 
+			string tableName, 
+			IMigrator<T> migrator,
+			IPersistenceService persistenceService, 
+			ConversionSettings conversionSettings, 
+			IDateTimeProvider dateTimeProvider) : 
+			base(settings, tableName, migrator, persistenceService, conversionSettings, dateTimeProvider)
 		{
 			
 		}
