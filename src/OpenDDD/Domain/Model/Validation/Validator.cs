@@ -99,6 +99,14 @@ namespace OpenDDD.Domain.Model.Validation
 			return this;
 		}
 		
+		public Validator<TModel> NoneOrEitherOr(Expression<Func<TModel, object?>> field1, Expression<Func<TModel, object?>> field2)
+		{
+			if (GetValue(field1) == null && GetValue(field2) == null)
+				return this;
+			
+			return EitherOr(field1, field2);
+		}
+		
 		public Validator<TModel> EitherOr(Expression<Func<TModel, object?>> field1, Expression<Func<TModel, object?>> field2)
 		{
 			var key1 = GetKey(field1);
