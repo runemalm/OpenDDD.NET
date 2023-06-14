@@ -45,6 +45,9 @@ namespace OpenDDD.Domain.Services.Auth
 			if (_credentials.JwtToken.UserId == null)
 				throw AuthorizeException.NotAuthenticated();
 			
+			if (_credentials.JwtToken.IsExpired(_dateTimeProvider))
+				throw AuthorizeException.TokenExpired();
+			
 			return Task.CompletedTask;
 		}
 		

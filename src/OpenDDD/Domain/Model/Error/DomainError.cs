@@ -70,12 +70,17 @@ namespace OpenDDD.Domain.Model.Error
         public const string Authorize_InvalidRequest_Msg = "Invalid authorization request.";
         public const string Authorize_InvalidRequest_UsrMsg = "You tried to perform an invalid authorization request. The following was wrong with your request: {0}";
         
+        public const int Authorize_TokenExpired_Code = 607;
+        public const string Authorize_TokenExpired_Msg = "The access token has expired.";
+        public const string Authorize_TokenExpired_UsrMsg = "The access token has expired. This happens after a longer period without activity. Please re-login and try again.";
+        
         public static IDomainError Authorize_Forbidden() => Create(Authorize_Forbidden_Code, Authorize_Forbidden_Msg, Authorize_Forbidden_UsrMsg);
         public static IDomainError Authorize_InvalidCredentials(string reason) => Create(Authorize_InvalidCredentials_Code, Authorize_InvalidCredentials_Msg, String.Format(Authorize_InvalidCredentials_UsrMsg, reason));
         public static IDomainError Authorize_MissingCredentials(string spec) => Create(Authorize_MissingCredentials_Code, Authorize_MissingCredentials_Msg, String.Format(Authorize_MissingCredentials_UsrMsg, spec));
         public static IDomainError Authorize_EmailNotVerified() => Create(Authorize_EmailNotVerified_Code, Authorize_EmailNotVerified_Msg, Authorize_EmailNotVerified_UsrMsg);
         public static IDomainError Authorize_NotAuthenticated() => Create(Authorize_NotAuthenticated_Code, Authorize_NotAuthenticated_Msg, Authorize_NotAuthenticated_UsrMsg);
         public static IDomainError Authorize_InvalidRequest(string spec) => Create(Authorize_InvalidRequest_Code, Authorize_InvalidRequest_Msg, String.Format(Authorize_InvalidRequest_UsrMsg, spec));
+        public static IDomainError Authorize_TokenExpired() => Create(Authorize_TokenExpired_Code, Authorize_TokenExpired_Msg, String.Format(Authorize_TokenExpired_UsrMsg));
 
         // Equality
 

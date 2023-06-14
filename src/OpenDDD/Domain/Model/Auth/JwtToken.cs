@@ -24,7 +24,11 @@ namespace OpenDDD.Domain.Model.Auth
 
 		// Public
 		
-		public static JwtToken Create(
+		public bool IsExpired(IDateTimeProvider dateTimeProvider)
+			=> ValidTo != null && ValidTo < dateTimeProvider.Now;
+
+
+		 public static JwtToken Create(
 			string userId,
 			AuthMethod authMethod,
 			IEnumerable<string> audiences,
