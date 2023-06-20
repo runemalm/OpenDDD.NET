@@ -17,7 +17,7 @@ namespace Infrastructure.Ports.Adapters.Http.Common.Translation
 
             // return new {{ bb_name }}
             // {
-            //     {{ bb_name }}Id = {{ bb_name }}Id.Create({{ obj_var_name }}VX.{{ bb_name }}Id),
+            //     {{ bb_name }}Id = {{ object_var_name }}IdTranslator.FromVX({{ object_var_name }}VX.{{ bb_name }}Id),
             //     Name = {{ obj_var_name }}VX.Name,
             //     Description = {{ obj_var_name }}VX.Description
             // };
@@ -29,7 +29,7 @@ namespace Infrastructure.Ports.Adapters.Http.Common.Translation
 
             // return new {{ bb_name }}VX
             // {
-            //     {{ bb_name }}Id = {{ obj_var_name }}.{{ bb_name }}Id.Value,
+            //     {{ bb_name }}Id = {{ object_var_name }}IdTranslator.ToVX({{ object_var_name }}.{{ bb_name }}Id),
             //     Name = {{ obj_var_name }}.Name,
             //     Description = {{ obj_var_name }}.Description
             // };
