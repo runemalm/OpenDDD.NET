@@ -4,7 +4,7 @@ Welcome to OpenDDD.NET! We appreciate your interest in contributing to our open-
 
 ## Code of Conduct
 
-Before getting started, please read and adhere to our [Code of Conduct](https://github.com/opendddnet/opendddnet/blob/main/CODE_OF_CONDUCT.md). We expect all contributors to follow the guidelines outlined there to ensure a respectful environment for everyone, where ideas are being treated on their own merit and not by e.g. the color of their skin.
+Before getting started, please read and adhere to our [Code of Conduct](https://github.com/runemalm/OpenDDD.NET/blob/master/CODE_OF_CONDUCT.md). We expect all contributors to follow the guidelines outlined there to ensure a respectful environment for everyone, where ideas are being treated on their own merit and not by e.g. the color of their skin.
 
 ## Getting Started
 
@@ -12,7 +12,7 @@ To contribute to OpenDDD.NET, you'll need to have a GitHub account. If you don't
 
 ## Reporting Issues
 
-If you encounter a bug, have a suggestion, or want to request a new feature, please check if the issue has already been reported by searching through the [issue tracker](https://github.com/OpenDDD.NET/OpenDDD.NET/issues). If it hasn't been reported yet, feel free to open a new issue with all the necessary details.
+If you encounter a bug, have a suggestion, or want to request a new feature, please check if the issue has already been reported by searching through the [issue tracker](https://github.com/runemalm/OpenDDD.NET/issues). If it hasn't been reported yet, feel free to open a new issue with all the necessary details.
 
 When reporting an issue, please provide a clear and concise description, along with any relevant information, such as error messages, steps to reproduce the issue, or sample code. This will help us understand and address the problem more effectively.
 
@@ -43,7 +43,7 @@ Our team will review your pull request as soon as possible. We may provide feedb
 
 ## Code Licensing
 
-By contributing to OpenDDD.NET, you agree to license your contributions under the project's [GPLv3 License](https://github.com/opendddnet/opendddnet/blob/main/LICENSE.md). This means that your code will be available to others under the same license terms.
+By contributing to OpenDDD.NET, you agree to license your contributions under the project's [GPLv3 License](https://www.gnu.org/licenses/gpl-3.0.html). This means that your code will be available to others under the same license terms.
 
 ## Conclusion
 

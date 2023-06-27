@@ -51,7 +51,7 @@ dotnet new openddd-net -n "MyContext"
 7. **Wire up dependencies**: Use the built-in dependency injection support in .NET Core to wire up your domain objects and application services.
 8. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
 
-For detailed documentation and code examples, please refer to the [user guide](https://opendddnet.readthedocs.io/en/latest/index.html) of this repository.
+For detailed documentation and code examples, please refer to the [User Guide](https://opendddnet.readthedocs.io/en/latest/index.html) of this repository.
 
 ## Example Code
 
@@ -76,7 +76,7 @@ We welcome contributions from the community. To contribute to OpenDDD.NET, pleas
 5. Commit your changes and push them to your fork.
 6. Submit a pull request with a clear description of your changes and the problem they solve.
 
-Please make sure to review our [Contributing Guidelines](https://github.com/opendddnet/opendddnet/blob/main/CONTRIBUTING.md) before submitting a pull request.
+Please make sure to review our [Contributing Guidelines](https://github.com/runemalm/OpenDDD.NET/blob/master/CONTRIBUTING.md) before submitting a pull request.
 
 ## License
 
@@ -88,6 +88,6 @@ OpenDDD.NET is inspired by the principles and ideas of Domain-Driven Design (DDD
 
 ## Get in Touch
 
-If you have any questions, suggestions, or feedback, please don't hesitate to reach out to us. You can find more information and ways to contact us on our [website](https://www.openddd.net).
+If you have any questions, suggestions, or feedback, please don't hesitate to reach out to us. You can find more information and ways to contact us on our [Website](https://www.openddd.net).
 
 Let's build better software together with OpenDDD.NET!
