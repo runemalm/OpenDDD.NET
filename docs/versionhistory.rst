@@ -6,6 +6,12 @@ Version history
 
 .. tip:: Subscribe to the github repository to get notifications when we move into beta and rc phases!
 
+**1.0.0-alpha.17** - 2023-06-27
+
+- Add DateTimeProvider and support time traveling in tests.
+- Add some test convenience- and assertion methods.
+- Refactor error code numbers.
+
 **1.0.0-alpha.16** - 2023-05-07
 
 - Add support for multiple listeners per event.
