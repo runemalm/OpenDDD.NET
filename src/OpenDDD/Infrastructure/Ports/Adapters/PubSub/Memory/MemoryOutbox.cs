@@ -2,10 +2,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model.BuildingBlocks.Event;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using OpenDDD.Infrastructure.Ports.PubSub;
+using OpenDDD.NET;
 
 namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 {
@@ -14,11 +16,13 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 		private IDictionary<ActionId, ICollection<OutboxEvent>> _events;
 		private object _lock = new{};
 		private readonly ConversionSettings _conversionSettings;
+		private readonly IDateTimeProvider _dateTimeProvider;
 		
-		public MemoryOutbox(ConversionSettings conversionSettings)
+		public MemoryOutbox(ConversionSettings conversionSettings, IDateTimeProvider dateTimeProvider)
 		{
 			_events = new Dictionary<ActionId, ICollection<OutboxEvent>>();
 			_conversionSettings = conversionSettings;
+			_dateTimeProvider = dateTimeProvider;
 		}
 		
 		public void Start(CancellationToken ct)
@@ -51,7 +55,7 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.PubSub.Memory
 				if (!_events.ContainsKey(actionId))
 					_events.Add(actionId, new List<OutboxEvent>());
 				var es = _events[actionId].ToList();
-				es.AddRange(events.Select(e => new OutboxEvent(e, _conversionSettings)));
+				es.AddRange(events.Select(e => OutboxEvent.Create(e, _conversionSettings, _dateTimeProvider)));
 				_events[actionId] = es;
 				return Task.CompletedTask;
 			}

@@ -7,26 +7,30 @@ using OpenDDD.Domain.Model.Auth;
 using OpenDDD.Domain.Model.Auth.Exceptions;
 using OpenDDD.Infrastructure.Ports.Auth;
 using OpenDDD.Logging;
+using OpenDDD.NET;
 
 namespace OpenDDD.Domain.Services.Auth
 {
 	public class AuthDomainService : IAuthDomainService
 	{
 		private readonly ICredentials _credentials;
-		private readonly ISettings _settings;
-		private readonly ILogger _logger;
+		private readonly IDateTimeProvider _dateTimeProvider;
 		private readonly IIamPort _iamAdapter;
+		private readonly ILogger _logger;
+		private readonly ISettings _settings;
 
 		public AuthDomainService(
 			ICredentials credentials,
 			ISettings settings,
 			ILogger logger,
-			IIamPort iamAdapter)
+			IIamPort iamAdapter,
+			IDateTimeProvider dateTimeProvider)
 		{
 			_credentials = credentials;
-			_settings = settings;
-			_logger = logger;
+			_dateTimeProvider = dateTimeProvider;
 			_iamAdapter = iamAdapter;
+			_logger = logger;
+			_settings = settings;
 		}
 		
 		// Authenticated
@@ -40,6 +44,9 @@ namespace OpenDDD.Domain.Services.Auth
 			
 			if (_credentials.JwtToken.UserId == null)
 				throw AuthorizeException.NotAuthenticated();
+			
+			if (_credentials.JwtToken.IsExpired(_dateTimeProvider))
+				throw AuthorizeException.TokenExpired();
 			
 			return Task.CompletedTask;
 		}
@@ -55,7 +62,7 @@ namespace OpenDDD.Domain.Services.Auth
 			
 			await AssureAuthenticatedAsync(actionId, ct);
 
-			_credentials.JwtToken.Validate(_settings.Auth.JwtToken.PrivateKey, roles);
+			_credentials.JwtToken.Validate(_settings.Auth.JwtToken.PrivateKey, roles, _dateTimeProvider);
 		}
 		
 		// RBAC

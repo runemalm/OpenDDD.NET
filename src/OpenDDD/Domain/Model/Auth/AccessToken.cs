@@ -5,6 +5,8 @@ namespace OpenDDD.Domain.Model.Auth
 {
 	public abstract class AccessToken : ValueObject, IAccessToken, IEquatable<AccessToken>
 	{
+		public static readonly int ExpirationMinutes = 120;
+
 		public AuthMethod AuthMethod { get; set; }
 		public TokenType TokenType { get; set; }
 		public string RawString { get; set; }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using OpenDDD.Domain.Model.Validation;
 
 namespace OpenDDD.Application.Error
 {
@@ -8,6 +9,12 @@ namespace OpenDDD.Application.Error
     {
         public IEnumerable<IApplicationError> Errors;
         
+        public static ApplicationException InvalidCommand(string reason)
+            => new ApplicationException(ApplicationError.Application_InvalidCommand(reason));
+        
+        public static ApplicationException InvalidCommand(IEnumerable<ValidationError> errors)
+            => new ApplicationException(ApplicationError.Application_InvalidCommand(errors));
+
         public ApplicationException(IApplicationError error)
             : base($"Application exception with error: {error.Code} ({error.Message})")
         {
@@ -33,7 +40,7 @@ namespace OpenDDD.Application.Error
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Errors.Equals(other.Errors);
+            return Errors.SequenceEqual(other.Errors);
         }
 
         public override bool Equals(object? obj)

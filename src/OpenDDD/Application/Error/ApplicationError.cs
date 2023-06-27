@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using OpenDDD.Domain.Model.Validation;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable MemberCanBePrivate.Global
@@ -73,6 +76,15 @@ namespace OpenDDD.Application.Error
         public static IApplicationError Settings_UnsupportedJwtTokenLocationSetting(string location) => Create(Settings_UnsupportedJwtTokenLocationSetting_Code, String.Format(Settings_UnsupportedJwtTokenLocationSetting_Msg, location), String.Format(Settings_UnsupportedJwtTokenLocationSetting_UsrMsg, location));
         public static IApplicationError Settings_AuthEnabledButNoPrivateKey() => Create(Settings_AuthEnabledButNoPrivateKey_Code, Settings_AuthEnabledButNoPrivateKey_Msg, Settings_AuthEnabledButNoPrivateKey_UsrMsg);
         
+        // Command errors
+		
+        public const int Application_InvalidCommand_Code = 201;
+        public const string Application_InvalidCommand_Msg = "Invalid command: {0}";
+        public const string Application_InvalidCommand_UsrMsg = "Couldn't perform your action because you had the following command errors: {0}";
+
+        public static IApplicationError Application_InvalidCommand(string spec) => Create(Application_InvalidCommand_Code, String.Format(Application_InvalidCommand_Msg, spec), String.Format(Application_InvalidCommand_UsrMsg, spec));
+        public static IApplicationError Application_InvalidCommand(IEnumerable<ValidationError> errors) => Create(Application_InvalidCommand_Code, String.Format(Application_InvalidCommand_Msg, $"{string.Join(". ", errors.Select(e => $"Field: '{e.Key}', Message: '{e.Details}'"))}"), String.Format(Application_InvalidCommand_UsrMsg, $"{string.Join(". ", errors.Select(e => $"Field: '{e.Key}', Message: '{e.Details}'"))}"));
+
         // Equality
 
         public bool Equals(ApplicationError? other)

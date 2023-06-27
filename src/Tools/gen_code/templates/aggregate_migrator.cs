@@ -1,37 +1,26 @@
 using System.Collections.Generic;
-using System.Linq;
-using DDD.Domain.Model;
-using DDD.Infrastructure.Ports.Repository;
+using OpenDDD.Infrastructure.Ports.Adapters.Repository;
 using Domain.Model.{{ aggregate_name }};
-// using XxxDomainModelVersion = Domain.Model.DomainModelVersion;
+using ContextDomainModelVersion = Domain.Model.DomainModelVersion;
 
-namespace Infrastructure.Ports.Adapters.Migration
+namespace Infrastructure.Ports.Adapters.Repository.Migration
 {
-    public class {{ aggregate_name }}Migrator : IMigrator<{{ aggregate_name }}>
+    public class {{ aggregate_name }}Migrator : Migrator<{{ aggregate_name }}>
     {
-        private readonly DomainModelVersion _latestVersion;
-        
-        public {{ aggregate_name }}Migrator()
+        public {{ aggregate_name }}Migrator() : base(IamDomainModelVersion.Latest())
         {
-            // _latestVersion = XxxDomainModelVersion.Latest();
+            
         }
 
-        public {{ aggregate_name }} Migrate({{ aggregate_name }} {{ obj_var_name }})
+        public {{ aggregate_name }} FromV1_0_X({{ aggregate_name }} {{ obj_var_name }}V1_0_X)
         {
-            DomainModelVersion at = {{ obj_var_name }}.DomainModelVersion;
+            var nextVersion = userV1_0_Y;
+            
+            nextVersion.DomainModelVersion = new ContextDomainModelVersion("1.0.Y");
 
-            while (at < _latestVersion)
-            {
-                var methodName = $"From_v{at.ToString().Replace('.', '_')}";
-                var method = GetType().GetMethod(methodName, new [] {typeof({{ aggregate_name }})});
-                {{ obj_var_name }} = ({{ aggregate_name }})method.Invoke(this, new object[]{% raw %}{{% endraw %}{{ obj_var_name }}{% raw %}}{% endraw %});
-                at = {{ obj_var_name }}.DomainModelVersion;
-            }
-
-            return {{ obj_var_name }};
+            nextVersion.SomeNewProperty = null;
+            
+            return nextVersion;
         }
-        
-        public IEnumerable<{{ aggregate_name }}> Migrate(IEnumerable<{{ aggregate_name }}> {{ obj_var_name }}s)
-            => {{ obj_var_name }}s.Select(Migrate);
     }
 }

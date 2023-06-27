@@ -11,7 +11,7 @@ class AggregateMigratorTemplate(Template):
 
 	def render(self, definition):
 		filename = f"{definition.name}Migrator.cs"
-		path = f"{self.src_path}/Infrastructure/Ports/Adapters/Migration/{filename}"
+		path = f"{self.src_path}/Infrastructure/Ports/Adapters/Repository/Migrators/{filename}"
 		code = super().render(
 			"aggregate_migrator", 
 			f"aggregate_migrator.cs", 

@@ -15,6 +15,7 @@ using OpenDDD.Infrastructure.Ports.Adapters.Common.Exceptions;
 using OpenDDD.Infrastructure.Ports.Adapters.Common.Translation.Converters;
 using OpenDDD.Infrastructure.Ports.Repository;
 using OpenDDD.Infrastructure.Services.Persistence;
+using OpenDDD.NET;
 
 namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 {
@@ -25,14 +26,22 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 		private readonly IMigrator<T> _migrator;
 		private readonly IPersistenceService _persistenceService;
 		private readonly ConversionSettings _conversionSettings;
+		protected readonly IDateTimeProvider _dateTimeProvider;
 
-		public SqlRepository(ISettings settings, string tableName, IMigrator<T> migrator, IPersistenceService persistenceService, ConversionSettings  conversionSettings)
+		public SqlRepository(
+			ISettings settings, 
+			string tableName, 
+			IMigrator<T> migrator, 
+			IPersistenceService persistenceService, 
+			ConversionSettings  conversionSettings,
+			IDateTimeProvider dateTimeProvider)
 		{
 			_settings = settings;
 			_tableName = tableName;
 			_migrator = migrator;
 			_persistenceService = persistenceService;
 			_conversionSettings = conversionSettings;
+			_dateTimeProvider = dateTimeProvider;
 		}
 		
 		public override void Start(CancellationToken ct)
@@ -149,6 +158,9 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Repository.Sql
 		
 		public override async Task<T> GetAsync(EntityId entityId, ActionId actionId, CancellationToken ct)
 		{
+			if (entityId == null)
+				return default(T);
+
 			var conn = await _persistenceService.GetConnectionAsync(actionId);
 			
 			var stmt = $"SELECT * FROM {_tableName} WHERE id = @id";

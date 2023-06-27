@@ -26,6 +26,8 @@ using OpenDDD.Infrastructure.Ports.Email;
 using OpenDDD.Infrastructure.Ports.PubSub;
 using OpenDDD.Infrastructure.Services.Persistence;
 using OpenDDD.Logging;
+using OpenDDD.NET;
+using ApplicationException = OpenDDD.Application.Error.ApplicationException;
 
 namespace OpenDDD.Tests
 {
@@ -39,6 +41,7 @@ namespace OpenDDD.Tests
             ActionName = GetType().Name.Replace("Tests", "");
             ActionId = ActionId.Create();
             UnsetConfigEnvironmentVariables();
+            // DateTimeProvider.Reset();
         }
         
         public async ValueTask DisposeAsync()
@@ -52,6 +55,11 @@ namespace OpenDDD.Tests
             // We move the blocking TestServer Dispose method outside of the xUnit synchronization context.
             PersistenceService.ReleaseConnection(ActionId);
             Task.Run(() => TestServer.Dispose()).GetAwaiter().GetResult();
+        }
+
+        public void JumpMinutes(int minutes)
+        {
+            DateTimeProvider.Set(() => DateTime.UtcNow.AddMinutes(minutes));
         }
 
         // Configuration
@@ -159,6 +167,10 @@ namespace OpenDDD.Tests
         }
 
         // PubSub
+                
+        public IDateTimeProvider DateTimeProvider => TestServer.Host.Services.GetRequiredService<IDateTimeProvider>();
+
+        // PubSub
         
         public IDomainPublisher DomainPublisher => TestServer.Host.Services.GetRequiredService<IDomainPublisher>();
         public IInterchangePublisher InterchangePublisher => TestServer.Host.Services.GetRequiredService<IInterchangePublisher>();
@@ -173,7 +185,7 @@ namespace OpenDDD.Tests
         
         protected async Task ReceiveDomainEventAsync(IEvent theEvent)
         {
-            var outboxEvent = new OutboxEvent(theEvent, ConversionSettings);
+            var outboxEvent = OutboxEvent.Create(theEvent, ConversionSettings, DateTimeProvider);
             var message = new MemoryMessage(outboxEvent.JsonPayload);
             var listeners = DomainEventAdapter.GetListeners(
                 outboxEvent.EventName,
@@ -211,6 +223,7 @@ namespace OpenDDD.Tests
                 if (_testServer == null)
                 {
                     // We move the blocking TestServer constructor outside of the xUnit synchronization context.
+                    // See: https://www.strathweb.com/2021/05/the-curious-case-of-asp-net-core-integration-test-deadlock/
                     var builder = CreateWebHostBuilder();
                     Task.Run(() => _testServer = new TestServer(builder)).GetAwaiter().GetResult();
                 }
@@ -298,10 +311,29 @@ namespace OpenDDD.Tests
             EnableEmails();
         }
         
+        protected async Task DoWithEventsDisabled(Func<Task> actionsAsync)
+        {
+            var prevDomainEventsEnabled = DomainPublisher.IsEnabled();
+            var prevIntegrationEventsEnabled = InterchangePublisher.IsEnabled();
+            
+            DisableDomainEvents();
+            DisableIntegrationEvents();
+            await actionsAsync();
+            
+            if (prevDomainEventsEnabled)
+                EnableDomainEvents();
+            
+            if (prevIntegrationEventsEnabled)
+                EnableIntegrationEvents();
+        }
+        
         protected void EnableEmails() => EmailAdapter.SetEnabled(true);
         protected void DisableEmails() => EmailAdapter.SetEnabled(false);
-
+        
         // Assertions
+        
+        protected void AssertNow(DateTime? actual)
+            => AssertDateWithin200Ms(DateTimeProvider.Now, actual, "The date wasn't equal or close to 'now'.");
         
         public void AssertDomainEventPublished(Event event_)
             => Assert.True(DomainPublisher.HasPublished(event_), $"Expected domain event to have been published: {event_.Header.Name}.");
@@ -317,7 +349,17 @@ namespace OpenDDD.Tests
                 await Assert.ThrowsAsync<AuthorizeException>(actionAsync);
         }
 
-        public async Task AssertFailure<T>(T expected, Task actionTask) where T : DomainException
+        public async Task AssertCommandValidationFailure(ICommand command, IEnumerable<(string, string)> expectedErrors)
+        {
+            var exc = Assert.Throws<ApplicationException>(command.Validate);
+            AssertCount(1, exc.Errors);
+            AssertEqual(ApplicationError.Application_InvalidCommand_Code, exc.Errors.Single().Code);
+            AssertEqual(
+                $"Invalid command: {string.Join(". ", expectedErrors.Select(e => $"Field: '{command.GetType().Name}.{e.Item1}', Message: '{e.Item2}'"))}", 
+                exc.Errors.Single().Message);
+        }
+
+        public async Task AssertFailure<T>(T expected, Task actionTask) where T : DddException
         {
             var actual = await Assert.ThrowsAsync<T>(async () => await actionTask);
             Assert.Equal(expected, actual);

@@ -177,6 +177,12 @@ namespace OpenDDD.NET.Extensions
 			services.AddTransient<ITransactionalDependencies, TransactionalDependencies>();
 			return services;
 		}
+		
+		public static IServiceCollection AddDateTime(this IServiceCollection services, ISettings settings)
+		{
+			services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+			return services;
+		}
 
 		public static IServiceCollection AddAction<TAction, TCommand>(this IServiceCollection services)
 		{
