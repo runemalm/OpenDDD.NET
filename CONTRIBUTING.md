@@ -4,7 +4,7 @@ Welcome to OpenDDD.NET! We appreciate your interest in contributing to our open-
 
 ## Code of Conduct
 
-Before getting started, please read and adhere to our [Code of Conduct](https://github.com/runemalm/OpenDDD.NET/blob/master/CODE_OF_CONDUCT.md). We expect all contributors to follow the guidelines outlined there to ensure a respectful environment for everyone, where ideas are being treated on their own merit and not by e.g. the color of their skin.
+Before getting started, please read and adhere to our [Code of Conduct](https://github.com/runemalm/OpenDDD.NET/blob/master/CODE_OF_CONDUCT.md). We expect all contributors to follow the guidelines. There's no special treatment, everyone's ideas are evaluated equally.
 
 ## Getting Started
 
