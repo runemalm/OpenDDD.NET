@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![NuGet](https://img.shields.io/nuget/v/OpenDDD.NET.svg)](https://www.nuget.org/packages/OpenDDD.NET/)
 
-OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET Core. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
+OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
 ## Key Features
 
@@ -12,16 +12,16 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
 - **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
 - **Application Services**: Use application services to coordinate the execution of domain logic and manage transactions.
-- **Dependency Injection**: Leverage the built-in dependency injection support in .NET Core for easy integration with your application.
+- **Dependency Injection**: Leverage the built-in dependency injection support in .NET for easy integration with your application.
 - **Testability**: OpenDDD.NET promotes testability by providing interfaces and abstractions that allow for easy mocking and unit testing.
 - **Hexagonal Architecture**: OpenDDD.NET is based on the hexagonal architecture, promoting a clear separation between the core domain and external dependencies.
 - **Expand and Contract**: The framework follows the expand and contract design pattern, making it easy to add new features without modifying existing code.
 - **Dotenv**: OpenDDD.NET supports the dotenv pattern for managing configuration and environment-specific settings.
 
-## Supported .NET Versions
+## Supported Versions
 
-- .NET Core 3.1
 - .NET 5
+- .NET Core 3.1
 
 ## Getting Started
 
@@ -55,7 +55,7 @@ For detailed documentation and code examples, please refer to the [User Guide](h
 
 ## Example Code
 
-You can find example code and usage scenarios in the [PowerIAM](https://github.com/poweriam) project, which is an open-source identity and access management system built using OpenDDD.NET.
+You can find example code in the project templates described above. We'll also link to other apps and projects built using OpenDDD.NET as they are built and made available by the community.
 
 ## Release History
 
