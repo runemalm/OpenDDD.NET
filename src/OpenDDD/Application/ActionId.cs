@@ -1,7 +1,10 @@
 ﻿using System;
+using Newtonsoft.Json;
+using OpenDDD.Infrastructure.Ports.Adapters.Translation.Translators;
 
 namespace OpenDDD.Application
 {
+	[JsonConverter(typeof(ActionIdTranslator))]
 	public class ActionId : IEquatable<ActionId>
 	{
 		public string Value;

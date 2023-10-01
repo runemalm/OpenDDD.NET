@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
-using Microsoft.IdentityModel.Tokens;
 
 namespace OpenDDD.Domain.Model.Validation
 {
@@ -84,21 +83,7 @@ namespace OpenDDD.Domain.Model.Validation
 
 			return this;
 		}
-		
-		public Validator<TModel> NotBothNullOrEmpty<TProperty>(Expression<Func<TModel, IEnumerable<TProperty>>> field1, Expression<Func<TModel, IEnumerable<TProperty>>> field2)
-		{
-			var key1 = GetKey(field1);
-			var value1 = GetValue(field1);
-			
-			var key2 = GetKey(field2);
-			var value2 = GetValue(field2);
 
-			if (value1.IsNullOrEmpty() && value2.IsNullOrEmpty())
-				AddError(key1+", "+key2, "Both values can't be null or empty.");
-			
-			return this;
-		}
-		
 		public Validator<TModel> NoneOrEitherOr(Expression<Func<TModel, object?>> field1, Expression<Func<TModel, object?>> field2)
 		{
 			if (GetValue(field1) == null && GetValue(field2) == null)

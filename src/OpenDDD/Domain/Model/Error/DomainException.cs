@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenDDD.Application.Error;
-using OpenDDD.Domain.Model.BuildingBlocks.Entity;
+using OpenDDD.Domain.Model.Entity;
 
 namespace OpenDDD.Domain.Model.Error
 {

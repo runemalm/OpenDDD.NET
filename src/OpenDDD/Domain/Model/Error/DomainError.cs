@@ -46,41 +46,41 @@ namespace OpenDDD.Domain.Model.Error
 
         // Auth errors
         
-        public const int Authorize_Forbidden_Code = 601;
-        public const string Authorize_Forbidden_Msg = "The user is lacking permissions.";
-        public const string Authorize_Forbidden_UsrMsg = "It seems you tried to do something you are not authorized to do. Ask your manager for the permissions needed to execute the task and try again.";
+        public const int Authorization_Forbidden_Code = 601;
+        public const string Authorization_Forbidden_Msg = "The user is lacking permissions.";
+        public const string Authorization_Forbidden_UsrMsg = "It seems you tried to do something you are not authorized to do. Ask your manager for the permissions needed to execute the task and try again.";
         
-        public const int Authorize_InvalidCredentials_Code = 602;
-        public const string Authorize_InvalidCredentials_Msg = "The credentials was invalid.";
-        public const string Authorize_InvalidCredentials_UsrMsg = "The following was wrong with the credentials you provided: {0}";
+        public const int Authorization_InvalidCredentials_Code = 602;
+        public const string Authorization_InvalidCredentials_Msg = "The credentials was invalid.";
+        public const string Authorization_InvalidCredentials_UsrMsg = "The following was wrong with the credentials you provided: {0}";
         
-        public const int Authorize_MissingCredentials_Code = 603;
-        public const string Authorize_MissingCredentials_Msg = "Missing credentials.";
-        public const string Authorize_MissingCredentials_UsrMsg = "Couldn't perform your request because you seem not to be logged in? Couldn't find any credentials: '{0}'. Please logout and login again or try again later.";
+        public const int Authorization_MissingCredentials_Code = 603;
+        public const string Authorization_MissingCredentials_Msg = "Missing credentials.";
+        public const string Authorization_MissingCredentials_UsrMsg = "Couldn't perform your request because you seem not to be logged in? Couldn't find any credentials: '{0}'. Please logout and login again or try again later.";
         
-        public const int Authorize_EmailNotVerified_Code = 604;
-        public const string Authorize_EmailNotVerified_Msg = "Email not verified.";
-        public const string Authorize_EmailNotVerified_UsrMsg = "You can't login before you have verified your email. Check your inbox for a verification email and click the link in it.";
+        public const int Authorization_EmailNotVerified_Code = 604;
+        public const string Authorization_EmailNotVerified_Msg = "Email not verified.";
+        public const string Authorization_EmailNotVerified_UsrMsg = "You can't login before you have verified your email. Check your inbox for a verification email and click the link in it.";
 
-        public const int Authorize_NotAuthenticated_Code = 605;
-        public const string Authorize_NotAuthenticated_Msg = "Not authenticated.";
-        public const string Authorize_NotAuthenticated_UsrMsg = "You must be logged in to perform the action.";
+        public const int Authorization_NotAuthenticated_Code = 605;
+        public const string Authorization_NotAuthenticated_Msg = "Not authenticated.";
+        public const string Authorization_NotAuthenticated_UsrMsg = "You must be logged in to perform the action.";
         
-        public const int Authorize_InvalidRequest_Code = 606;
-        public const string Authorize_InvalidRequest_Msg = "Invalid authorization request.";
-        public const string Authorize_InvalidRequest_UsrMsg = "You tried to perform an invalid authorization request. The following was wrong with your request: {0}";
+        public const int Authorization_InvalidRequest_Code = 606;
+        public const string Authorization_InvalidRequest_Msg = "Invalid authorization request.";
+        public const string Authorization_InvalidRequest_UsrMsg = "You tried to perform an invalid authorization request. The following was wrong with your request: {0}";
         
-        public const int Authorize_TokenExpired_Code = 607;
-        public const string Authorize_TokenExpired_Msg = "The access token has expired.";
-        public const string Authorize_TokenExpired_UsrMsg = "The access token has expired. This happens after a longer period without activity. Please re-login and try again.";
+        public const int Authorization_TokenExpired_Code = 607;
+        public const string Authorization_TokenExpired_Msg = "The access token has expired.";
+        public const string Authorization_TokenExpired_UsrMsg = "The access token has expired. This happens after a longer period without activity. Please re-login and try again.";
         
-        public static IDomainError Authorize_Forbidden() => Create(Authorize_Forbidden_Code, Authorize_Forbidden_Msg, Authorize_Forbidden_UsrMsg);
-        public static IDomainError Authorize_InvalidCredentials(string reason) => Create(Authorize_InvalidCredentials_Code, Authorize_InvalidCredentials_Msg, String.Format(Authorize_InvalidCredentials_UsrMsg, reason));
-        public static IDomainError Authorize_MissingCredentials(string spec) => Create(Authorize_MissingCredentials_Code, Authorize_MissingCredentials_Msg, String.Format(Authorize_MissingCredentials_UsrMsg, spec));
-        public static IDomainError Authorize_EmailNotVerified() => Create(Authorize_EmailNotVerified_Code, Authorize_EmailNotVerified_Msg, Authorize_EmailNotVerified_UsrMsg);
-        public static IDomainError Authorize_NotAuthenticated() => Create(Authorize_NotAuthenticated_Code, Authorize_NotAuthenticated_Msg, Authorize_NotAuthenticated_UsrMsg);
-        public static IDomainError Authorize_InvalidRequest(string spec) => Create(Authorize_InvalidRequest_Code, Authorize_InvalidRequest_Msg, String.Format(Authorize_InvalidRequest_UsrMsg, spec));
-        public static IDomainError Authorize_TokenExpired() => Create(Authorize_TokenExpired_Code, Authorize_TokenExpired_Msg, String.Format(Authorize_TokenExpired_UsrMsg));
+        public static IDomainError Authorization_Forbidden() => Create(Authorization_Forbidden_Code, Authorization_Forbidden_Msg, Authorization_Forbidden_UsrMsg);
+        public static IDomainError Authorization_InvalidCredentials(string reason) => Create(Authorization_InvalidCredentials_Code, Authorization_InvalidCredentials_Msg, String.Format(Authorization_InvalidCredentials_UsrMsg, reason));
+        public static IDomainError Authorization_MissingCredentials(string spec) => Create(Authorization_MissingCredentials_Code, Authorization_MissingCredentials_Msg, String.Format(Authorization_MissingCredentials_UsrMsg, spec));
+        public static IDomainError Authorization_EmailNotVerified() => Create(Authorization_EmailNotVerified_Code, Authorization_EmailNotVerified_Msg, Authorization_EmailNotVerified_UsrMsg);
+        public static IDomainError Authorization_NotAuthenticated() => Create(Authorization_NotAuthenticated_Code, Authorization_NotAuthenticated_Msg, Authorization_NotAuthenticated_UsrMsg);
+        public static IDomainError Authorization_InvalidRequest(string spec) => Create(Authorization_InvalidRequest_Code, Authorization_InvalidRequest_Msg, String.Format(Authorization_InvalidRequest_UsrMsg, spec));
+        public static IDomainError Authorization_TokenExpired() => Create(Authorization_TokenExpired_Code, Authorization_TokenExpired_Msg, String.Format(Authorization_TokenExpired_UsrMsg));
 
         // Equality
 

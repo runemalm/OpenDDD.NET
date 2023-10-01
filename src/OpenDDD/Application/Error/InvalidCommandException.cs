@@ -7,21 +7,21 @@ namespace OpenDDD.Application.Error
 {
 	public class InvalidCommandException : Exception
 	{
-		public readonly Command Command;
+		public readonly CommandBase CommandBase;
 		public readonly IEnumerable<ValidationError> Errors;
 
 		public InvalidCommandException(
-			Command command, IEnumerable<ValidationError> errors)
-			: this(command, errors, null)
+			CommandBase commandBase, IEnumerable<ValidationError> errors)
+			: this(commandBase, errors, null)
 		{
 		}
 
 		public InvalidCommandException(
-			Command command, IEnumerable<ValidationError> errors, Exception inner)
-			: base($"The {command.GetType().Name} command contained errors: " +
+			CommandBase commandBase, IEnumerable<ValidationError> errors, Exception inner)
+			: base($"The {commandBase.GetType().Name} command contained errors: " +
 				   $"{string.Join(", ", errors.Select(e => e.ToString()))}", inner)
 		{
-			Command = command;
+			CommandBase = commandBase;
 			Errors = errors;
 		}
 	}

@@ -1,32 +1,24 @@
 ﻿using System;
 using System.Linq;
-using OpenDDD.Application.Settings.Http;
 using NSwag.Generation.Processors;
 using NSwag.Generation.Processors.Contexts;
-using OpenDDD.Application.Settings;
 using OpenDDD.Infrastructure.Ports.Adapters.Http.Common;
 
 namespace OpenDDD.NET.Extensions.Swagger
 {
 	public class DocumentProcessor : IDocumentProcessor
 	{
-		private ISettings _settings;
-		private int _majorVersion;
-
-		public DocumentProcessor(ISettings settings, int majorVersion)
+		public DocumentProcessor()
 		{
-			_settings = settings;
-			_majorVersion = majorVersion;
+			
 		}
 
 		public void Process(DocumentProcessorContext context)
 		{
 			context.Document.Info.Version = GetVersion(context);
 			context.Document.Info.Description =
-				"The API follows the contract/expand strategy." +
-				"This means the versioning policy is additive.<br>" +
-				"Within the same major version, all endpoints are backwards compatible.<br>" +
-				"Only the APIs with the latest patch version of each major version are defined below.";
+				"The API provides endpoints for searching and retrieving available properties for rent in Thailand.<br>" +
+				"SemVer2.0 versioning policy is in effect.";
 		}
 		
 		private string GetVersion(DocumentProcessorContext context)
