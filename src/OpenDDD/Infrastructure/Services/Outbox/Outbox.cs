@@ -1,9 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using KellermanSoftware.CompareNetObjects;
+using KellermanSoftware.CompareNetObjects.TypeComparers;
 using Microsoft.Extensions.Logging;
 using OpenDDD.Domain.Model.Event;
 using OpenDDD.Infrastructure.Ports.Database;
 using OpenDDD.Infrastructure.Ports.Events;
+using OpenDDD.Tests.Helpers;
 
 namespace OpenDDD.Infrastructure.Services.Outbox
 {
@@ -33,6 +36,11 @@ namespace OpenDDD.Infrastructure.Services.Outbox
 			compareLogic.Config.IgnoreCollectionOrder = true;
 			compareLogic.Config.MembersToIgnore.Add("EventId");
 			compareLogic.Config.MembersToIgnore.Add("ActionId");
+			compareLogic.Config.CustomComparers = 
+				new List<BaseTypeComparer>
+				{
+					new DomainModelVersionComparer(RootComparerFactory.GetRootComparer())
+				};
 			
 			foreach (var e in _databaseConnection.GetAll<IEvent>(DatabaseCollectionName))
 			{
