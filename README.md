@@ -11,16 +11,17 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
 - **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
 - **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
+- **Integration Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
 - **Application Services**: Use application services to coordinate the execution of domain logic and manage transactions.
 - **Dependency Injection**: Leverage the built-in dependency injection support in .NET for easy integration with your application.
-- **Testability**: OpenDDD.NET promotes testability by providing interfaces and abstractions that allow for easy mocking and unit testing.
-- **Hexagonal Architecture**: OpenDDD.NET is based on the hexagonal architecture, promoting a clear separation between the core domain and external dependencies.
-- **Expand and Contract**: The framework follows the expand and contract design pattern, making it easy to add new features without modifying existing code.
-- **Dotenv**: OpenDDD.NET supports the dotenv pattern for managing configuration and environment-specific settings.
+- **First Principles Modeling**: We use the fundamental concepts in the modeling.
+
+## Concept Map
+
+![Concept Map](https://github.com/runemalm/OpenDDD.NET/blob/develop/concept-map.png)
 
 ## Supported Versions
 
-- .NET 5
 - .NET Core 3.1
 
 ## Getting Started
@@ -42,20 +43,16 @@ dotnet new install OpenDDD.NET-Templates
 3. **Create a new project**: Use the OpenDDD.NET project template to create a new project with the necessary files, folder structure, and initial configuration already set up.
 
 ```bash
-dotnet new openddd-net -n "MyContext"
+dotnet new openddd-net -n "YOUR_SOLUTION_NAME"
 ```
 
-4. **Define your domain model**: Create domain aggregates, entities, value objects, and repositories according to your domain requirements.
-5. **Implement domain logic**: Encapsulate your domain logic within aggregates and entities, utilizing domain events when necessary.
-6. **Use application services**: Create application services to orchestrate the execution of domain logic and manage transactions.
-7. **Wire up dependencies**: Use the built-in dependency injection support in .NET Core to wire up your domain objects and application services.
-8. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
+4. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
 
 For detailed documentation and code examples, please refer to the [User Guide](https://opendddnet.readthedocs.io/en/latest/index.html) of this repository.
 
 ## Example Code
 
-You can find example code in the project templates described above. We'll also link to other apps and projects built using OpenDDD.NET as they are built and made available by the community.
+Sample code can be discovered within the project templates detailed above. Additionally, we will provide links to other applications and projects that utilize OpenDDD.NET as they are developed and shared by the community.
 
 ## Release History
 
