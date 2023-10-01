@@ -11,12 +11,14 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
 - **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
 - **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
-- **Integration Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
+- **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
 - **Application Services**: Use application services to coordinate the execution of domain logic and manage transactions.
 - **Dependency Injection**: Leverage the built-in dependency injection support in .NET for easy integration with your application.
-- **First Principles Modeling**: We use the fundamental concepts in the modeling.
+- **Testing**: Use base test classes for efficient and powerful unit testing of actions.
 
-## Concept Map
+## Basic Concepts
+
+The map below visually represents the key concepts and their interrelationships in a clear and concise manner.
 
 ![Concept Map](https://github.com/runemalm/OpenDDD.NET/blob/develop/concept-map.png)
 
