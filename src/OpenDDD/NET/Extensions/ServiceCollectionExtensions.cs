@@ -142,50 +142,6 @@ namespace OpenDDD.NET.Extensions
 			return services;
 		}
 
-		// public static IServiceCollection AddAction<TAction, TCommand>(this IServiceCollection services)
-		// {
-		// 	services.AddTransient(typeof(TAction));
-		// 	services.AddTransient(typeof(TCommand));
-		// 	return services;
-		// }
-		//
-
-		// public static IServiceCollection AddListener<TImplementation>(this IServiceCollection services)
-		// 	where TImplementation : class, IListener
-		// {
-		// 	services.AddSingleton(typeof(IListener), typeof(TImplementation));
-		// 	return services;
-		// }
-
-		// public static IServiceCollection AddSerializerSettings<TImplementation>(this IServiceCollection services)
-		// 	where TImplementation : SerializerSettingsBase, new()
-		// {
-		// 	services.AddTransient<ISerializerSettings, TImplementation>();
-		// 	return services;
-		// }
-
-		// public static IServiceCollection AddEventProcessor<TConnection>(this IServiceCollection services)
-		// where TConnection : IConnection
-		// {
-		// 	services.AddSingleton<IEventProcessor, EventProcessorService<TConnection>>();
-		// 	services.AddHostedService<EventProcessorService>();
-		// 	return services;
-		// }
-		
-		// public static IServiceCollection AddConnection<TConnection, TImplementation>(this IServiceCollection services)
-		// 	where TConnection : IDbConnection
-		// {
-		// 	services.AddSingleton(typeof(TConnection), typeof(TImplementation));
-		// 	return services;
-		// }
-		//
-		// public static IServiceCollection AddRepository<TInterface, TImplementation>(this IServiceCollection services)
-		// 	where TImplementation : class
-		// {
-		// 	services.AddSingleton(typeof(TInterface), typeof(TImplementation));
-		// 	return services;
-		// }
-		
 		public static IServiceCollection AddSwaggerDocuments(this IServiceCollection services, IEnumerable<int> majorVersions, ISerializer serializer)
 		{
 			/*
