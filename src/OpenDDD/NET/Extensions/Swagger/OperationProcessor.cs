@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using NSwag;
 using NSwag.Generation.Processors;
 using NSwag.Generation.Processors.Contexts;
-using OpenDDD.Domain.Model.Auth;
 using OpenDDD.Infrastructure.Ports.Adapters.Http.Common;
-using OpenDDD.Infrastructure.Ports.Adapters.Http.NETCore;
+using OpenDDD.Infrastructure.Ports.Adapters.Http.NET;
 
 namespace OpenDDD.NET.Extensions.Swagger
 {
@@ -48,7 +48,7 @@ namespace OpenDDD.NET.Extensions.Swagger
 
 		public bool Process(OperationProcessorContext context)
 		{
-			var isFromHttpAdapter = context.ControllerType.IsSubclassOf(typeof(NETCoreHttpAdapter));
+			var isFromHttpAdapter = context.ControllerType.IsSubclassOf(typeof(NetHttpAdapter));
 
 			var isCorrectVersion = GetMajorVersion(context) == _majorVersion;
 
@@ -203,55 +203,5 @@ namespace OpenDDD.NET.Extensions.Swagger
 			var majorVersion = Int32.Parse(version.Split('.').First());
 			return majorVersion;
 		}
-
-		// private ICollection<string> OrderVersions(ICollection<string> versions)
-		// {
-		// 	var ordered = new List<Version>();
-		// 	var hasV1 = false;
-		//
-		// 	foreach (var s in versions)
-		// 	{
-		// 		Version semantic = null;
-		//
-		// 		if (s == "v1")
-		// 			hasV1 = true;   // Exception for v1
-		// 		else
-		// 		{
-		// 			try
-		// 			{
-		// 				semantic = new Version(s.Replace("v", ""));
-		// 			}
-		// 			catch (Exception)
-		// 			{
-		// 				throw new Exception(
-		// 					$"You must use semantic API versions " +
-		// 					$"in your http adapters (vx.y.z). " +
-		// 					$"Invalid version: {s}");
-		// 			}
-		//
-		// 			ordered.Add(semantic);
-		// 		}
-		// 	}
-		//
-		// 	ordered.Sort();
-		// 	ordered.Reverse();
-		//
-		// 	var result = ordered.Select(o => $"v{o}").ToList();
-		//
-		// 	if (hasV1)
-		// 		result.Insert(ordered.Count(), "v1");
-		//
-		// 	return result;
-		// }
-
-		// private string FirstCharToUpper(string input)
-		// {
-		// 	switch (input)
-		// 	{
-		// 		case null: throw new ArgumentNullException(nameof(input));
-		// 		case "": throw new ArgumentException($"{nameof(input)} cannot be empty", nameof(input));
-		// 		default: return input[0].ToString().ToUpper() + input.Substring(1);
-		// 	}
-		// }
 	}
 }

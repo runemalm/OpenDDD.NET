@@ -1,13 +1,10 @@
-﻿using OpenDDD.Infrastructure.Ports.PubSub;
-using OpenDDD.Infrastructure.Services.Persistence;
-
-namespace OpenDDD.Application
+﻿namespace OpenDDD.Application
 {
 	public interface ITransactionalDependencies
 	{
-		IDomainPublisher DomainPublisher { get; }
-		IInterchangePublisher InterchangePublisher { get; }
-		IOutbox Outbox { get; }
-		IPersistenceService PersistenceService { get; }
+		// IDomainPublisher DomainPublisher { get; }
+		// IInterchangePublisher InterchangePublisher { get; }
+		// IOutbox Outbox { get; }
+		// IPersistenceService PersistenceService { get; }
 	}
 }

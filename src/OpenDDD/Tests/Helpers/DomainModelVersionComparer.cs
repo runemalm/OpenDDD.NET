@@ -1,5 +1,4 @@
 ﻿using System;
-using OpenDDD.Domain;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
 using OpenDDD.Domain.Model;
@@ -22,7 +21,7 @@ namespace OpenDDD.Tests.Helpers
 		{
 			if (type1 != null ^ type2 != null)
 				return false;
-			var theType = typeof(DomainModelVersion);
+			var theType = typeof(BaseDomainModelVersion);
 			var isMatch =
 				(type1 == theType || type1.IsSubclassOf(theType)) &&
 				(type2 == theType || type2.IsSubclassOf(theType));
@@ -31,8 +30,8 @@ namespace OpenDDD.Tests.Helpers
 
 		public override void CompareType(CompareParms parms)
 		{
-			DomainModelVersion casted1 = (DomainModelVersion)parms.Object1;
-			DomainModelVersion casted2 = (DomainModelVersion)parms.Object2;
+			BaseDomainModelVersion casted1 = (BaseDomainModelVersion)parms.Object1;
+			BaseDomainModelVersion casted2 = (BaseDomainModelVersion)parms.Object2;
 
 			if (!casted1.Equals(casted2))
 			{

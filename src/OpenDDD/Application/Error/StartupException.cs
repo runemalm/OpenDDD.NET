@@ -2,7 +2,7 @@
 
 namespace OpenDDD.Application.Error
 {
-    public class StartupException : ApplicationException
+    public class StartupException : Application.Error.ApplicationException
     {
         public static StartupException Failed(string reason)
             => new StartupException(ApplicationError.Startup_Failed(reason));
