@@ -4,7 +4,7 @@ using OpenDDD.Tests;
 
 namespace Tests.Infrastructure.Ports.PubSub
 {
-	public class EventListenerTests : UnitTests
+	public class EventListenerTests : UnitTestsBase
 	{
 		[Fact]
 		public async Task TestSomething()
