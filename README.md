@@ -5,6 +5,14 @@
 
 OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
+**Note:** This project is currently in its alpha stage of development. While we strive to provide a comprehensive experience, please be aware of the following:
+
+- Not all links or features may be fully functional at this stage.
+- Some code sections may still be in progress or incomplete.
+
+We appreciate your understanding as we work towards further enhancing and stabilizing the project. Your feedback and contributions are invaluable in helping us reach a more polished state.
+
+
 ## Key Features
 
 - **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
