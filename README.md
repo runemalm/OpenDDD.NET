@@ -26,7 +26,7 @@ The map below visually represents the key concepts and their interrelationships.
 ## Supported Versions
 
 - .NET Core 3.1
-- .NET 5 (upcoming)
+- .NET 5
 - .NET 6 (upcoming)
 - .NET 7 (upcoming)
 - .NET 8 (upcoming)
@@ -50,7 +50,7 @@ dotnet new install OpenDDD.NET-Templates
 3. **Create a new project**: Use the OpenDDD.NET project template to create a new project with the necessary files, folder structure, and initial configuration already set up.
 
 ```bash
-dotnet new openddd-sln -n "YOUR_SOLUTION_NAME"
+dotnet new opendddnet-sln-netcore31 -n "YOUR_SOLUTION_NAME"
 ```
 
 4. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
