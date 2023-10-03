@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Event;
+using OpenDDD.Infrastructure.Services.Outbox;
 
-namespace OpenDDD.Infrastructure.Ports.Events
+namespace OpenDDD.Infrastructure.Services.Publisher
 {
 	public abstract class BasePublisher<T> : IPublisher<T> 
 		where T : IEvent

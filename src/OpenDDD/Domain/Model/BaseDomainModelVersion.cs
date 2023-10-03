@@ -33,7 +33,7 @@ namespace OpenDDD.Domain.Model
 		public override string ToString()
 			=> _version.ToString();
 		
-		public string ToStringWithWildcardMinorAndBuildVersions()
+		public string ToStringWithWildcardMinorAndPatchVersions()
 			=> $"{_version.Major}.*.*";
 
 		// Equality

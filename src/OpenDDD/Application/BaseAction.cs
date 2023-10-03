@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using OpenDDD.Infrastructure.Ports.Events;
+using OpenDDD.Infrastructure.Services.Outbox;
 using OpenDDD.NET.Services.DatabaseConnection;
 
 namespace OpenDDD.Application

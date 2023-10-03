@@ -5,7 +5,6 @@ using KellermanSoftware.CompareNetObjects.TypeComparers;
 using Microsoft.Extensions.Logging;
 using OpenDDD.Domain.Model.Event;
 using OpenDDD.Infrastructure.Ports.Database;
-using OpenDDD.Infrastructure.Ports.Events;
 using OpenDDD.Tests.Helpers;
 
 namespace OpenDDD.Infrastructure.Services.Outbox
