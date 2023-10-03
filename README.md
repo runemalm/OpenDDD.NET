@@ -5,14 +5,6 @@
 
 OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
-**Note:** This project is currently in its alpha stage of development. While we strive to provide a comprehensive experience, please be aware of the following:
-
-- Not all links or features may be fully functional at this stage.
-- Some code sections may still be in progress or incomplete.
-
-We appreciate your understanding as we work towards further enhancing and stabilizing the project. Your feedback and contributions are invaluable in helping us reach a more polished state.
-
-
 ## Key Features
 
 - **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
@@ -22,17 +14,22 @@ We appreciate your understanding as we work towards further enhancing and stabil
 - **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
 - **Application Services**: Use application services to coordinate the execution of domain logic and manage transactions.
 - **Dependency Injection**: Leverage the built-in dependency injection support in .NET for easy integration with your application.
-- **Testing**: Use base test classes for efficient and powerful unit testing of actions.
+- **Testability**: Comes prepared with base test classes for efficient and simple unit testing of actions.
+- **Horizontal Scaling**: Seamlessly scale your application horizontally to handle increased traffic and demand.
 
 ## Basic Concepts
 
-The map below visually represents the key concepts and their interrelationships in a clear and concise manner.
+The map below visually represents the key concepts and their interrelationships.
 
 ![Concept Map](https://github.com/runemalm/OpenDDD.NET/blob/develop/concept-map.png)
 
 ## Supported Versions
 
 - .NET Core 3.1
+- .NET 5 (upcoming)
+- .NET 6 (upcoming)
+- .NET 7 (upcoming)
+- .NET 8 (upcoming)
 
 ## Getting Started
 
@@ -53,16 +50,145 @@ dotnet new install OpenDDD.NET-Templates
 3. **Create a new project**: Use the OpenDDD.NET project template to create a new project with the necessary files, folder structure, and initial configuration already set up.
 
 ```bash
-dotnet new openddd-net -n "YOUR_SOLUTION_NAME"
+dotnet new openddd-sln -n "YOUR_SOLUTION_NAME"
 ```
 
 4. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
 
-For detailed documentation and code examples, please refer to the [User Guide](https://opendddnet.readthedocs.io/en/latest/index.html) of this repository.
+## Example Usage
 
-## Example Code
+In your `Startup.cs` file, you'll need to register various services and configure the middleware pipeline to set up your project for OpenDDD.NET.
 
-Sample code can be discovered within the project templates detailed above. Additionally, we will provide links to other applications and projects that utilize OpenDDD.NET as they are developed and shared by the community.
+Here's an example of how to typically configure your application in Startup.cs: 
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using OpenDDD.Infrastructure.Services.Serialization;
+using YourCrawlingContext.Domain.Model.Property;
+using YourCrawlingContext.Infrastructure.Ports.Adapters.Site.ThailandProperty;
+
+namespace YourCrawlingContext.Main
+{
+    public class Startup
+    {
+        // ... (existing code)
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+        
+            // ... (other service configurations)
+
+            // Event processor  
+            services.AddEventProcessorHostedService(Configuration);
+            services.AddEventProcessorDatabaseConnection(Configuration);  
+            services.AddEventProcessorMessageBrokerConnection(Configuration);  
+            services.AddEventProcessorOutbox();  
+              
+            // Action services
+            services.AddActionDatabaseConnection(Configuration);  
+            services.AddActionMessageBrokerConnection(Configuration);  
+            services.AddActionOutbox();  
+
+            // Actions            
+            services.AddAction<CrawlSearchPage.Action, CrawlSearchPage.Command>();  
+            services.AddAction<GetProperties.Action, GetProperties.Command>();  
+              
+            // Publishers  
+            services.AddDomainPublisher();  
+            services.AddIntegrationPublisher();  
+              
+            // Listeners  
+            services.AddDomainEventListener(SearchPageCrawledListener);  
+            services.AddIntegrationEventListener(IcAccountCreatedListener);  
+              
+            // Repositories  
+            services.AddRepository<IPropertyRepository, PropertyRepository>();  
+            services.AddRepository<ISiteRepository, SiteRepository>();  
+        }
+
+        // ... (existing code)
+    }
+}
+```
+
+**Example:** 
+Implement one of the `Actions` that collectively form your `Application Service`:
+
+```csharp
+using OpenDDD.Application;  
+using OpenDDD.Domain.Model.Event;  
+using YourCrawlingContext.Domain.Model;
+
+// ... (other imports)
+
+namespace YourCrawlingContext.Application
+{
+    public class CrawlSearchPageAction : BaseAction<Command, SearchResults>  
+    {  
+        private readonly ISiteRepository _siteRepository;  
+          
+        public CrawlSearchPageAction(  
+            IActionDatabaseConnection actionDatabaseConnection,  
+            IActionOutbox outbox,  
+            ISiteRepository siteRepository,  
+            ISomeWebSitePort someWebSiteAdapter,
+            IDomainPublisher domainPublisher,  
+            ILogger<CrawlSearchPageAction> logger)  
+            : base(actionDatabaseConnection, outbox, someWebSiteAdapter, domainPublisher, logger)  
+        {  
+            _siteRepository = siteRepository;  
+        }
+
+        public override async Task<SearchResults> ExecuteAsync(Command command, ActionId actionId, CancellationToken ct)  
+        {  
+            var site = await GetAggregateOrThrowAsync(command.SiteId, _siteRepository, actionId, ct);  
+              
+            var siteAdapter = GetSiteAdapterOrThrow(command.SiteId);  
+              
+            var searchResults = await site.CrawlSearchPageAsync(siteAdapter, _domainPublisher, actionId, ct);  
+              
+            await _siteRepository.SaveAsync(site, actionId, ct);  
+              
+            return searchResults;  
+        }
+    }
+}
+```
+
+**Example:** 
+Publish an `Domain Event` from an `Aggregate Root`:
+
+```csharp
+using OpenDDD.Application;  
+using OpenDDD.Domain.Model.AggregateRoot;  
+using OpenDDD.Domain.Model.Entity;
+using OpenDDD.Domain.Model.Event;
+
+// ... (other imports)
+  
+namespace YourCrawlingContext.Domain.Model.Site  
+{  
+    public class Site : AggregateRoot, IAggregateRoot, IEquatable<Site>  
+    {  
+        public SiteId SiteId { get; set; }    
+  
+        public string Name { get; set; }  
+  
+        // ... (other methods)
+
+        public async Task<SearchResults.SearchResults> CrawlSearchPageAsync(ISitePort siteAdapter, IDomainPublisher domainPublisher, ActionId actionId, CancellationToken ct)  
+        {  
+            var searchResults = await siteAdapter.CrawlSearchPageAsync(ct);  
+  
+            await domainPublisher.PublishAsync(new SearchPageCrawled(SiteId, searchResults, actionId));  
+  
+            return searchResults;  
+        }
+
+        // ... (other methods)
+    }
+}
+```
 
 ## Release History
 
@@ -71,6 +197,8 @@ Sample code can be discovered within the project templates detailed above. Addit
 - **v1.0.0-alpha.3** (2022-11-20): Refactor JwtToken and add IdToken.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
+
+**Note**: We have just released an alpha version of major version 2 of this framework, and some features are still under development. Avoid using it in production environments and expect some code to not be implemented still.
 
 ## Contributing
 
