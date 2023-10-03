@@ -1,28 +1,33 @@
 {
   "author": "David Runemalm",
-  "name": "OpenDDD.NET Project Template",
-  "description": "A project template for creating bounded contexts using the OpenDDD.NET framework.",
-  "identity": "OpenDDD.NET Project Template",
-  "shortName": "openddd-net",
+  "name": "OpenDDD.NET Template Pack",
+  "description": "A collection of templates for creating OpenDDD.NET solutions.",
+  "identity": "OpenDDD.NET Template Pack",
+  "shortName": "opendddnet-sln-netcore31",
   "tags": {
     "language": "C#",
     "type": "project"
   },
   "sourceName": "MyBoundedContext",
   "symbols": {
-    "Framework": {
+    "framework": {
       "type": "parameter",
-      "description": "The target framework for the project.",
+      "description": "The target framework for the solution.",
       "datatype": "choice",
+      "enableQuotelessLiterals": true,
+      "isRequired": false,
       "choices": [
         {
-          "choice": "netcoreapp3.1"
+          "choice": "netcoreapp3.1",
+          "description": "Target .NET Core 3.1"
         },
         {
-          "choice": "net5.0"
+          "choice": "net5.0",
+          "description": "Target .NET 5"
         }
       ],
-      "defaultValue": "net5.0"
+      "replaces": "$targetFramework$",
+      "defaultValue": "netcoreapp3.1"
     }
   },
   "preferNameDirectory": true

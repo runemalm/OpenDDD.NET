@@ -17,18 +17,16 @@ export $(shell sed 's/=.*//' env.make)
 ##########################################################################
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
-NETWORK := opendddsample31
+NETWORK := opendddnet-sln-netcore31-myboundedcontext
+
+IMAGE_NAME := myboundedcontext.azurecr.io/myboundedcontext-backend
+IMAGE_TAG := 1.0.0-alpha.1
 
 PROJECT_DIR := $(PWD)
 SCRIPTS_DIR := $(PROJECT_DIR)/scripts
 SRC_DIR := $(PROJECT_DIR)/src
-MAIN_DIR := $(SRC_DIR)/Main
-TESTS_DIR := $(SRC_DIR)/Tests
-
-IMAGE_NAME := my.azurecr.io/opendddsample31-backend
-IMAGE_TAG := 1.0.0-alpha.1
-
-TOOLS_IMAGE_NAME := runemalm/openddd-tools
+VERTICAL_DIR := $(SRC_DIR)/MyBoundedContext/Vertical
+TESTS_DIR := $(SRC_DIR)/MyBoundedContext/Tests
 
 BLUE      := $(shell tput -Txterm setaf 4)
 GREEN     := $(shell tput -Txterm setaf 2)
@@ -93,24 +91,24 @@ help:: ##@Other Show this help.
 ##########################################################################
 .PHONY: test
 test: ##@Test	 run all unit tests
-	ENV_FILE=env.test dotnet test $(TESTS_DIR)
+	ENV_FILE=env.test dotnet test $(SRC_DIR)
 
 ##########################################################################
 # BUILD
 ##########################################################################
 .PHONY: clean
-clean: ##@Build	 clean the solution
+clean: ##@Build	 Clean the solution
 	find . $(SRC_DIR) -iname "bin" | xargs rm -rf
 	find . $(SRC_DIR) -iname "obj" | xargs rm -rf
-
-.PHONY: build
-build: ##@Build	 Build the docker image
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
 
 .PHONY: clean-and-restore
 clean-and-restore: ##@Build	 Clean and restore the project
 	make clean
 	make restore
+
+.PHONY: build
+build: ##@Build	 Build the docker image
+	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
 
 .PHONY: deep-rebuild
 deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
@@ -119,92 +117,30 @@ deep-rebuild: ##@Build	 clean, clear nuget caches, restore and build the project
 	make restore
 	make build
 
-##########################################################################
-# .NET Core
-##########################################################################
 .PHONY: restore
 restore: ##@Build	 restore the solution
-	cd $(SRC_DIR) && \
-	dotnet restore
+	cd $(SRC_DIR) && dotnet restore
 
 .PHONY: clear-nuget-caches
 clear-nuget-caches: ##@Build	 clean all nuget caches
 	nuget locals all -clear
 
 ##########################################################################
-# CODE GENERATION
+# RELEASE
 ##########################################################################
-.PHONY: gen-code
-gen-code: ##@Code Generation	Generate code (uses COMMAND)
-	docker run \
-		--rm \
-		-it \
-		--name gen-code \
-		-v "$(PROJECT_DIR)/domain.yml:/tools/gen_code/domain.yml" \
-		-v "$(SRC_DIR):/context/src" \
-		$(TOOLS_IMAGE_NAME) \
-		gen_code $(COMMAND)
-
-.PHONY: gen-action
-gen-action: ##@Code Generation	Generate an action class (uses NAME)
-	make gen-code COMMAND="gen action $(NAME)"
-
-.PHONY: gen-aggregate
-gen-aggregate: ##@Code Generation	Generate an aggregate class (uses NAME)
-	make gen-code COMMAND="gen aggregate $(NAME)"
-	make gen-code COMMAND="gen entity_id $(NAME)Id"
-
-.PHONY: gen-aggregate-migrator
-gen-aggregate-migrator: ##@Code Generation	Generate an aggregate migrator class (uses NAME)
-	make gen-code COMMAND="gen aggregate_migrator $(NAME)"
-
-.PHONY: gen-command
-gen-command: ##@Code Generation	Generate a command class (uses NAME)
-	make gen-code COMMAND="gen command $(NAME)"
-
-.PHONY: gen-entity-id
-gen-entity-id: ##@Code Generation	Generate an entity ID class (uses NAME)
-	make gen-code COMMAND="gen entity_id $(NAME)"
-
-.PHONY: gen-http-command
-gen-http-command: ##@Code Generation	Generate a http adapter command class (uses NAME, VERSION)
-	make gen-code COMMAND="gen http_command $(NAME) $(VERSION)"
-
-.PHONY: gen-http-bb-translator
-gen-http-bb-translator: ##@Code Generation	Generate a http building block translator class (uses NAME)
-	make gen-code COMMAND="gen http_bb_translator $(NAME)"
-
-.PHONY: gen-http-command-translator
-gen-http-command-translator: ##@Code Generation	Generate a command translator class (uses NAME, VERSION)
-	make gen-code COMMAND="gen http_command_translator $(NAME) $(VERSION)"
-
-.PHONY: gen-http-endpoint
-gen-http-endpoint: ##@Code Generation	Generate an endpoint class (uses NAME)
-	make gen-code COMMAND="gen http_endpoint $(NAME)"
-
-.PHONY: gen-all-code-for-action
-gen-all-code-for-action: ##@Code Generation	Generate all code for an action (uses NAME, HTTP_VERSION)
-	make gen-action NAME=$(NAME)
-	make gen-command NAME=$(NAME)
-	make gen-http-command NAME=$(NAME) VERSION=$(HTTP_VERSION)
-	make gen-http-command-translator NAME=$(NAME) VERSION=$(HTTP_VERSION)
-	make gen-http-endpoint NAME=$(NAME)
-
-.PHONY: gen-all-code-for-aggregate
-gen-all-code-for-aggregate: ##@Code Generation	Generate all code for an aggregate (uses NAME, HTTP_VERSION)
-	make gen-aggregate NAME=$(NAME)
-	make gen-aggregate-migrator NAME=$(NAME)
-	make gen-http-bb-translator NAME=$(NAME) VERSION=$(HTTP_VERSION)
+.PHONY: push
+push: ##@Build	 Push the docker image
+	docker push $(IMAGE_NAME):$(IMAGE_TAG)
 
 ##########################################################################
-# TEMP (remove before creating project template)
+# LOCAL NUGET REFERENCES
 ##########################################################################
 .PHONY: use-projects
-use-projects: ##@Build	 Switch to using local project references
-	cd src && \
+use-projects: ##@Build	 Switch to using local ddd project reference
+	cd $(SRC_DIR) && \
 	dnt switch-to-projects
 
 .PHONY: use-nugets
-use-nugets: ##@Build	 Switch to using nugets
-	cd src && \
+use-nugets: ##@Build	 Switch to using ddd nuget
+	cd $(SRC_DIR) && \
 	dnt switch-to-packages

@@ -3,12 +3,7 @@ WORKDIR /app
 EXPOSE 80
 
 COPY src/MyBoundedContext.sln ./
-COPY src/Application/Application.csproj ./Application/
-COPY src/Domain/Domain.csproj ./Domain/
-COPY src/Infrastructure/Infrastructure.csproj ./Infrastructure/
-COPY src/Main/Main.csproj ./Main/
-COPY src/Interchange/Interchange.csproj ./Interchange/
-COPY src/Tests/Tests.csproj ./Tests/
+COPY src/MyBoundedContext/MyBoundedContext.csproj ./MyBoundedContext/
 
 RUN dotnet restore
 
