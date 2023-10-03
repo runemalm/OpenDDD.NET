@@ -1,4 +1,4 @@
-﻿using OpenDDD.Infrastructure.Ports.Events;
+﻿using OpenDDD.Infrastructure.Services.Outbox;
 
 namespace OpenDDD.NET.Services.Outbox
 {

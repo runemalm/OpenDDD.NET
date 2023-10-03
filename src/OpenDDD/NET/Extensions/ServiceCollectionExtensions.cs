@@ -7,7 +7,8 @@ using NSwag.Generation.Processors.Security;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Event;
 using OpenDDD.Infrastructure.Ports.Adapters.Database.Memory;
-using OpenDDD.Infrastructure.Ports.Events;
+using OpenDDD.Infrastructure.Services.EventProcessor;
+using OpenDDD.Infrastructure.Services.Publisher;
 using OpenDDD.Infrastructure.Services.Serialization;
 using OpenDDD.Main;
 using OpenDDD.NET.Extensions.Swagger;
@@ -51,11 +52,17 @@ namespace OpenDDD.NET.Extensions
 		
 		public static IServiceCollection AddEventProcessor(this IServiceCollection services, IConfiguration configuration)
 		{
+			// services.AddEventProcessorHostedService(Configuration);
 			// services.AddEventProcessorDatabaseConnection(Configuration);
 			// services.AddEventProcessorMessageBrokerConnection(Configuration);
 			// services.AddEventProcessorOutbox(Configuration);
-			// services.AddHostedService<IEventProcessorService, ...>();
-			
+			return services;
+		}
+		
+		public static IServiceCollection AddEventProcessorHostedService(this IServiceCollection services, IConfiguration configuration)
+		{
+			services.AddHostedService<EventProcessorHostedService>();
+			services.AddSingleton<IEventProcessor, EventProcessor>();
 			return services;
 		}
 		
