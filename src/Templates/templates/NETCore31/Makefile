@@ -136,11 +136,11 @@ push: ##@Build	 Push the docker image
 # LOCAL NUGET REFERENCES
 ##########################################################################
 .PHONY: use-projects
-use-projects: ##@Build	 Switch to using local ddd project reference
+use-projects: ##@Build	 Switch to using local projects
 	cd $(SRC_DIR) && \
 	dnt switch-to-projects
 
 .PHONY: use-nugets
-use-nugets: ##@Build	 Switch to using ddd nuget
+use-nugets: ##@Build	 Switch to using nugets
 	cd $(SRC_DIR) && \
 	dnt switch-to-packages
