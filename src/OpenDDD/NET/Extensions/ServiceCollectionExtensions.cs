@@ -6,6 +6,7 @@ using NSwag;
 using NSwag.Generation.Processors.Security;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Event;
+using OpenDDD.Domain.Services;
 using OpenDDD.Infrastructure.Ports.Adapters.Database.Memory;
 using OpenDDD.Infrastructure.Services.EventProcessor;
 using OpenDDD.Infrastructure.Services.Publisher;
@@ -121,6 +122,14 @@ namespace OpenDDD.NET.Extensions
 		
 		public static IServiceCollection AddRepository<TInterface, TImplementation>(this IServiceCollection services)
 			where TImplementation : class, TInterface
+		{
+			services.AddTransient(typeof(TInterface), typeof(TImplementation));
+			return services;
+		}
+		
+		public static IServiceCollection AddDomainService<TInterface, TImplementation>(this IServiceCollection services)
+			where TInterface : IDomainService
+			where TImplementation : class, IDomainService
 		{
 			services.AddTransient(typeof(TInterface), typeof(TImplementation));
 			return services;
