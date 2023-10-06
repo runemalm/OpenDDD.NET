@@ -63,6 +63,17 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Database.Memory
             return Task.FromResult(Find<T>(collectionName, filter));
         }
 
+        public int GetCount(string collectionName)
+        {
+            AssureCollection(collectionName);
+            return GetCollection(collectionName).Count;
+        }
+
+        public Task<int> GetCountAsync(string collectionName)
+        {
+            return Task.FromResult(GetCount(collectionName));
+        }
+
         // Private
         
         private void AssureCollection(string collectionName)

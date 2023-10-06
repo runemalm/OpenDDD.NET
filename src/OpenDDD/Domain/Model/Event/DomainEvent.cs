@@ -4,7 +4,7 @@ using OpenDDD.NET;
 
 namespace OpenDDD.Domain.Model.Event
 {
-	public class DomainEvent : Model.Event.Event, IDomainEvent 
+	public class DomainEvent : Event, IDomainEvent 
 	{
 		public DomainEvent() { }
 			

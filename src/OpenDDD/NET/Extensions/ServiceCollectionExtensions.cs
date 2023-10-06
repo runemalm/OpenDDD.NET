@@ -4,17 +4,20 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using NSwag;
 using NSwag.Generation.Processors.Security;
-using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Event;
 using OpenDDD.Domain.Services;
 using OpenDDD.Infrastructure.Ports.Adapters.Database.Memory;
+using OpenDDD.Infrastructure.Ports.Events;
 using OpenDDD.Infrastructure.Services.EventProcessor;
+using OpenDDD.Infrastructure.Services.EventPublisher;
 using OpenDDD.Infrastructure.Services.Publisher;
 using OpenDDD.Infrastructure.Services.Serialization;
 using OpenDDD.Main;
 using OpenDDD.NET.Extensions.Swagger;
 using OpenDDD.NET.Services.DatabaseConnection;
 using OpenDDD.NET.Services.DatabaseConnection.Memory;
+using OpenDDD.NET.Services.MessageBrokerConnection;
+using OpenDDD.NET.Services.MessageBrokerConnection.Memory;
 using OpenDDD.NET.Services.Outbox;
 
 namespace OpenDDD.NET.Extensions
@@ -44,28 +47,81 @@ namespace OpenDDD.NET.Extensions
 			return services;
 		}
 
-		public static IServiceCollection AddMemoryDatabase(this IServiceCollection services, IConfiguration configuration)
+		// Message broker
+		
+		public static IServiceCollection MaybeAddDomainMessageBroker(this IServiceCollection services, IConfiguration configuration)
 		{
-			services.AddSingleton<IMemoryDatabaseStore, MemoryDatabaseStore>();
-			services.AddSingleton<IMemoryDatabase, MemoryDatabase>();
+			if (configuration["DomainMessageBrokerConnection:Provider"].ToLower() == "memory")
+			{
+				services.AddMemoryDomainMessageBroker(configuration);
+			}
+			
 			return services;
 		}
 		
-		public static IServiceCollection AddEventProcessor(this IServiceCollection services, IConfiguration configuration)
+		public static IServiceCollection AddMemoryDomainMessageBroker(this IServiceCollection services, IConfiguration configuration)
 		{
-			// services.AddEventProcessorHostedService(Configuration);
-			// services.AddEventProcessorDatabaseConnection(Configuration);
-			// services.AddEventProcessorMessageBrokerConnection(Configuration);
-			// services.AddEventProcessorOutbox(Configuration);
+			services.AddSingleton<IMemoryDomainMessageBroker, MemoryDomainMessageBroker>();
 			return services;
 		}
 		
+		// Message broker connections
+		
+		public static IServiceCollection AddDomainMessageBrokerConnection(this IServiceCollection services, IConfiguration configuration)
+		{
+			string provider = configuration["DomainMessageBrokerConnection:Provider"].ToLower();
+			
+			if (provider == "memory")
+			{
+				services.AddSettings<IMemoryDomainMessageBrokerConnectionSettings, MemoryDomainMessageBrokerConnectionSettings>(configuration, "DomainMessageBrokerConnection.Memory");
+				services.AddSingleton<IDomainMessageBrokerConnection, MemoryDomainMessageBrokerConnection>();
+			}
+			else if (provider == "rabbitmq")
+			{
+				
+			}
+			
+			return services;
+		}
+		
+		// Event processor
+
 		public static IServiceCollection AddEventProcessorHostedService(this IServiceCollection services, IConfiguration configuration)
 		{
 			services.AddHostedService<EventProcessorHostedService>();
-			services.AddSingleton<IEventProcessor, EventProcessor>();
 			return services;
 		}
+		
+		public static IServiceCollection AddEventProcessor(this IServiceCollection services)
+		{
+			services.AddTransient<IEventProcessor, EventProcessor>();
+			return services;
+		}
+
+		public static IServiceCollection AddEventProcessorDatabaseConnection(this IServiceCollection services, IConfiguration configuration)
+		{
+			string provider = configuration["EventProcessorDatabaseConnection:Provider"].ToLower();
+			
+			if (provider == "memory")
+			{
+				services.AddSettings<IMemoryEventProcessorDatabaseConnectionSettings, MemoryEventProcessorDatabaseConnectionSettings>(configuration, "EventProcessorDatabaseConnection.Memory");
+				services.AddSingleton<IEventProcessorDatabaseConnection, MemoryEventProcessorDatabaseConnection>();
+			}
+			else if (provider == "postgres")
+			{
+				
+			}
+			
+			return services;
+		}
+		
+		public static IServiceCollection AddEventProcessorOutbox(this IServiceCollection services)
+		{
+			services.AddTransient<IEventProcessorOutbox, EventProcessorOutbox>();
+			return services;
+		}
+		
+		// Database
 		
 		public static IServiceCollection MaybeAddDatabase(this IServiceCollection services, IConfiguration configuration)
 		{
@@ -74,6 +130,13 @@ namespace OpenDDD.NET.Extensions
 				services.AddMemoryDatabase(configuration);
 			}
 			
+			return services;
+		}
+		
+		public static IServiceCollection AddMemoryDatabase(this IServiceCollection services, IConfiguration configuration)
+		{
+			services.AddSingleton<IMemoryDatabaseStore, MemoryDatabaseStore>();
+			services.AddSingleton<IMemoryDatabase, MemoryDatabase>();
 			return services;
 		}
 
@@ -88,8 +151,7 @@ namespace OpenDDD.NET.Extensions
 			}
 			else if (provider == "postgres")
 			{
-				// services.Configure<PostgresTransactionalDbConnectionSettings>(configuration["TransactionalConnection.Postgres"]);
-				// services.AddScoped<ITransactionalDbConnection, PostgresDbConnection<PostgresTransactionalDbConnectionSettings>>();
+				
 			}
 			
 			return services;
@@ -101,22 +163,46 @@ namespace OpenDDD.NET.Extensions
 			return services;
 		}
 		
+		// Publishers
+		
 		public static IServiceCollection AddDomainPublisher(this IServiceCollection services)
 		{
 			services.AddTransient<IDomainPublisher, DomainPublisher>();
 			return services;
 		}
+		
+		// Event publishers
+		
+		public static IServiceCollection AddDomainEventPublisher(this IServiceCollection services)
+		{
+			services.AddTransient<IDomainEventPublisher, DomainEventPublisher>();
+			return services;
+		}
+		
+		// Event listeners
+		
+		public static IServiceCollection AddDomainEventListener<TImplementation>(this IServiceCollection services)
+			where TImplementation : class, IStartableEventListener
+		{
+			services.AddSingleton<TImplementation>();
+			services.AddSingleton<IStartableEventListener>(provider => provider.GetRequiredService<TImplementation>());
 
+			
+			// services.AddSingleton<TImplementation>();
+			//
+			// services.AddTransient(typeof (IEventListener), typeof (TImplementation));
+			// services.AddTransient<TImplementation>();
+			
+			
+			return services;
+		}
+		
 		public static IServiceCollection AddSettings<TInterface, TImplementation>(this IServiceCollection services, IConfiguration configuration, string sectionName)
 			where TInterface : class, ISettings
 			where TImplementation : class, TInterface, new()
 		{
-			// Bind the MyAppSettings section to your settings class
 			services.Configure<TImplementation>(configuration.GetSection(sectionName));
-
-			// Register the interface and resolve it to the settings class
-			services.AddScoped<TInterface, TImplementation>();
-
+			services.AddTransient<TInterface, TImplementation>();
 			return services;
 		}
 		

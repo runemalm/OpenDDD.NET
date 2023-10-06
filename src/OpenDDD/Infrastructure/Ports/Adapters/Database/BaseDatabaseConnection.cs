@@ -37,6 +37,8 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Database
         public abstract Task<IEnumerable<T>> FindAsync<T>(string collectionName, Expression<Func<T, bool>> filter) where T : class;
         public abstract IEnumerable<T> GetAll<T>(string collectionName) where T : class;
         public abstract Task<IEnumerable<T>> GetAllAsync<T>(string collectionName) where T : class;
+        public abstract int GetCount(string collectionName);
+        public abstract Task<int> GetCountAsync(string collectionName);
 
         // ITransactionalDatabaseConnection
         

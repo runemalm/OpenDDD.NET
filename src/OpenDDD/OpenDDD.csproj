@@ -38,6 +38,7 @@
     <PackageReference Include="Microsoft.AspNet.WebApi.WebHost" Version="5.2.8" />
     <PackageReference Include="WireMock.Net" Version="1.5.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
+    <None Remove="Infrastructure\Ports\Adapters\Common\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,10 +51,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\Ports\Adapters\Common\Exceptions\Memory" />
-    <Folder Include="Infrastructure\Ports\Adapters\Common\Exceptions\Postgres" />
-    <Folder Include="Infrastructure\Ports\Adapters\Common\Exceptions\Rabbit" />
-    <Folder Include="Infrastructure\Ports\Adapters\Common\Exceptions\ServiceBus" />
+    <Compile Remove="Infrastructure\Ports\Adapters\Common\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Infrastructure\Ports\Adapters\Common\**" />
   </ItemGroup>
 
 </Project>

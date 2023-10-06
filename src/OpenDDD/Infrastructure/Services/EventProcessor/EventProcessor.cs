@@ -1,32 +1,50 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using OpenDDD.Domain.Model.Event;
-using OpenDDD.Infrastructure.Services.Outbox;
+using OpenDDD.Infrastructure.Services.EventPublisher;
+using OpenDDD.NET.Services.Outbox;
 
 namespace OpenDDD.Infrastructure.Services.EventProcessor
 {
     public class EventProcessor : IEventProcessor
     {
         private readonly ILogger _logger;
-        // private readonly IDomainPublisher _domainPublisher;
-        // private readonly IInterchangePublisher _interchangePublisher;
-        // private readonly IEventProcessorOutbox _outbox;
+        private readonly IDomainEventPublisher _domainEventPublisher;
+        private readonly IEventProcessorOutbox _outbox;
         private readonly CancellationTokenSource _waitCancellationTokenSource;
 
         public EventProcessor(
-            ILogger<EventProcessor> logger)
-            // IDomainPublisher domainPublisher)
-            // IInterchangePublisher interchangePublisher,
-            // IEventProcessorOutbox outbox)
+            ILogger<EventProcessor> logger,
+            IDomainEventPublisher domainEventPublisher,
+            IEventProcessorOutbox outbox)
         {
             _logger = logger;
-            // _domainPublisher = domainPublisher;
-            // _interchangePublisher = interchangePublisher;
-            // _outbox = outbox;
+            _domainEventPublisher = domainEventPublisher;
+            _outbox = outbox;
             _waitCancellationTokenSource = new CancellationTokenSource();
+        }
+        
+        public async Task ProcessNextOutboxEventAsync()
+        {
+            var nextEvent = await _outbox.NextEventAsync();
+            
+            if (nextEvent != null)
+            {
+                if (nextEvent is IDomainEvent @event)
+                {
+                    await _domainEventPublisher.PublishAsync(@event);
+                }
+                else if (nextEvent.Header.EventType == EventType.IntegrationEvent)
+                {
+                    throw new NotImplementedException("Use integration event publisher when we have it and publish the event using it here.");
+                }
+                else
+                {
+                    throw new Exception("Can't publish event from outbox, the event type is unknown. This should never happen.");
+                }
+            }
         }
 
         // public async Task WorkOutboxAsync(CancellationToken stoppingToken)

@@ -13,5 +13,7 @@ namespace OpenDDD.Infrastructure.Ports.Database
         Task<IEnumerable<T>> GetAllAsync<T>(string collectionName) where T : class;
         IEnumerable<T> Find<T>(string collectionName, Expression<Func<T, bool>> filter) where T : class;
         Task<IEnumerable<T>> FindAsync<T>(string collectionName, Expression<Func<T, bool>> filter) where T : class;
+        int GetCount(string collectionName);
+        Task<int> GetCountAsync(string collectionName);
     }
 }

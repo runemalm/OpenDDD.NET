@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenDDD.Application;
 using OpenDDD.Application.Error;
 using OpenDDD.Domain.Model.Error;
+using OpenDDD.Infrastructure.Ports.Events;
 using OpenDDD.Main;
 using OpenDDD.NET.Services.DatabaseConnection;
 using ApplicationException = OpenDDD.Application.Error.ApplicationException;
@@ -140,9 +141,47 @@ namespace OpenDDD.NET.Extensions
 			return app;
 		}
 		
-		public static IApplicationBuilder UseActionMiddleware(this IApplicationBuilder app)
+		public static IApplicationBuilder StartEventProcessorDatabaseConnection(this IApplicationBuilder app)
 		{
-			app.UseMiddleware<ActionMiddleware>();
+			// Start action database connection
+			var eventProcessorDatabaseConnection = app.ApplicationServices.GetService<IEventProcessorDatabaseConnection>();
+			if (eventProcessorDatabaseConnection == null)
+				throw new Exception(
+					"Can't start event processor database connection, IEventProcessorDatabaseConnection hasn't been registered.");
+			eventProcessorDatabaseConnection.Start(CancellationToken.None);
+			
+			// // Create a scope, since some dependencies are registered as scoped
+			// using (var scope = app.ApplicationServices.CreateScope())
+			// {
+			// 	// Start action database connection
+			// 	var actionDatabaseConnection = scope.ServiceProvider.GetService<IActionDatabaseConnection>();
+			// 	if (actionDatabaseConnection == null)
+			// 		throw new Exception(
+			// 			"Can't run ensure data tasks, IApplicationDatabaseConnection hasn't been registered.");
+			// 	actionDatabaseConnection.Start(CancellationToken.None);
+			// 	
+			// 	// Run the ensure data tasks
+			// 	foreach (var task in scope.ServiceProvider.GetServices<IEnsureDataTask>())
+			// 		task.Execute(ActionId.BootId(), CancellationToken.None);
+			// 	
+			// 	// Stop action database connection
+			// 	actionDatabaseConnection.Stop(CancellationToken.None);
+			// }
+			
+			return app;
+		}
+		
+		public static IApplicationBuilder StartListeners(this IApplicationBuilder app)
+		{
+			foreach (IStartableEventListener service in app.ApplicationServices.GetServices<IStartableEventListener>())
+				service.Start(CancellationToken.None);
+			return app;
+		}
+		
+		public static IApplicationBuilder StopListeners(this IApplicationBuilder app)
+		{
+			foreach (IStartableEventListener service in app.ApplicationServices.GetServices<IStartableEventListener>())
+				service.Stop(CancellationToken.None);
 			return app;
 		}
 	}

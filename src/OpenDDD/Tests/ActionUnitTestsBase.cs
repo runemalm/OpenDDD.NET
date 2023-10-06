@@ -12,6 +12,7 @@ using OpenDDD.Application;
 using OpenDDD.Application.Error;
 using OpenDDD.Domain.Model.Event;
 using OpenDDD.Infrastructure.Ports.Adapters.Http;
+using OpenDDD.Infrastructure.Services.EventProcessor;
 using OpenDDD.Infrastructure.Services.Serialization;
 using OpenDDD.Main;
 using OpenDDD.NET;
@@ -31,8 +32,6 @@ namespace OpenDDD.Tests
         {
             ActionName = GetType().Name.Replace("Tests", "");
             ActionId = ActionId.Create();
-            
-            // UnsetConfigEnvironmentVariables();
             
             // Reset date time provider
             DateTimeProvider.Reset();
@@ -67,99 +66,9 @@ namespace OpenDDD.Tests
                 task.Execute(ActionId, CancellationToken.None);
         }
 
-        // Configuration
-        
-        // public void UnsetConfigEnvironmentVariables()
-        // {
-        //     foreach(DictionaryEntry e in Environment.GetEnvironmentVariables())
-        //     {
-        //         if (e.Key.ToString().StartsWith($"CFG_{ActionName}_"))
-        //         {
-        //             Environment.SetEnvironmentVariable(e.Key.ToString(), null);
-        //         }
-        //     }
-        // }
-        //
-        // public void Configure()
-        //     => Environment.SetEnvironmentVariable($"ENV_FILE_{ActionName}", CreateEnvFileJson());
-        //
-        // private string CreateEnvFileJson()
-        // {
-        //     var envFileName = "env.test";
-        //     
-        //     var opts = 
-        //         DotEnv.Fluent()
-        //             .WithExceptions()
-        //             .WithEnvFiles(GetEnvFilePath(envFileName))
-        //             .WithTrimValues();
-        //
-        //     var values = opts.Read()
-        //         .Select(kvp => new KeyValuePair<string, string>(Regex.Replace(kvp.Key, "CFG_", $"CFG_{ActionName}_"), kvp.Value))
-        //         .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-        //
-        //     var existing = 
-        //         Environment.GetEnvironmentVariables()
-        //             .Cast<DictionaryEntry>()
-        //             .Where(kvp => kvp.Key.ToString().StartsWith($"CFG_{ActionName}_"))
-        //             .Select(entry => new KeyValuePair<string, string>(entry.Key.ToString(), entry.Value.ToString()));
-        //
-        //     values[$"CFG_{ActionName}_POSTGRES_CONN_STR"] = Regex.Replace(
-        //         values[$"CFG_{ActionName}_POSTGRES_CONN_STR"], 
-        //         "Database=([^;]*)", 
-        //         $"Database=$1_{ActionName}");
-        //
-        //     foreach (var e in existing)
-        //         values[e.Key] = e.Value;
-        //
-        //     var jsonResolver = new PropertyRenameAndIgnoreSerializerContractResolver();
-        //     
-        //     var serializerSettings = new JsonSerializerSettings();
-        //     serializerSettings.ContractResolver = jsonResolver;
-        //     
-        //     var jsonString = JsonConvert.SerializeObject(values, serializerSettings);
-        //
-        //     return jsonString;
-        // }
-        //
-        // private string GetEnvFilePath(string filename)
-        // {
-        //     var pathRoot = Path.GetPathRoot(Directory.GetCurrentDirectory());
-        //
-        //     var dir = Directory.GetCurrentDirectory();
-        //     var path = $"{dir}/{filename}";
-        //     bool found = File.Exists(path);
-        //
-        //     while (!found && dir != pathRoot)
-        //     {
-        //         dir = Directory.GetParent(dir).ToString();
-        //         path = dir != "/" ? $"{dir}/{filename}" : $"/{filename}";
-        //         found = File.Exists(path);
-        //     }
-        //
-        //     return path;
-        // }
-        //
-        // public void SetConfig(string name, string value)
-        //     => Environment.SetEnvironmentVariable($"CFG_{ActionName}_{name}", value);
-        //
-        // public string? GetConfig(string name)
-        //     => Environment.GetEnvironmentVariable($"CFG_{ActionName}_{name}");
-        //
-        // public void SetFrontendConfig(string name, string value)
-        //     => SetConfig($"FRONTEND_{name}", value);
-        //
-        // public void SetConfigPersistenceProvider(string value)
-        //     => SetConfig("PERSISTENCE_PROVIDER", value);
-        //
-        // public void SetConfigPostgresConnStr(string value)
-        //     => SetConfig("POSTGRES_CONN_STR", value);
-        //
-        // public string? GetConfigPostgresConnStr()
-        //     => GetConfig("POSTGRES_CONN_STR");
-
         // Mock API
         
-        private WireMockServer _mockApi;
+        private WireMockServer? _mockApi;
         public WireMockServer MockApi
         {
             get
@@ -168,7 +77,6 @@ namespace OpenDDD.Tests
                     _mockApi = WireMockServer.Start();
                 return _mockApi;
             }
-            set { }
         }
 
         // PubSub
@@ -188,28 +96,17 @@ namespace OpenDDD.Tests
         // protected void EnableIntegrationEvents() => InterchangePublisher.SetEnabled(true);
         // protected void DisableIntegrationEvents() => InterchangePublisher.SetEnabled(false);
         
-        // protected async Task ReceiveDomainEventAsync(IEvent theEvent)
-        // {
-        //     var outboxEvent = OutboxEvent.Create(theEvent, ConversionSettings, DateTimeProvider);
-        //     var message = new MemoryMessage(outboxEvent.JsonPayload);
-        //     var listeners = DomainEventAdapter.GetListeners(
-        //         outboxEvent.EventName,
-        //         outboxEvent.DomainModelVersion.ToStringWithWildcardMinorAndBuildVersions());
-        //
-        //     foreach (var listener in listeners)
-        //     {
-        //         var success = await listener.Handle(message);
-        //         if (!success)
-        //             throw new DddException(
-        //                 "An exception occured when reacting to the domain event. See the debug log for details.");
-        //     }
-        // }
+        protected async Task PublishDomainEventAsync(IDomainEvent theEvent)
+        {
+            await ActionOutbox.AddEventAsync(theEvent);
+            await EventProcessor.ProcessNextOutboxEventAsync();
+        }
 
         // Repositories
         
         public IActionOutbox ActionOutbox => Scope.ServiceProvider.GetRequiredService<IActionOutbox>();
-        // public IDeadLetterQueue DeadLetterQueue => TestServer.Host.Services.GetRequiredService<IDeadLetterQueue>();
-        
+        public IEventProcessor EventProcessor => Scope.ServiceProvider.GetRequiredService<IEventProcessor>();
+
         // Database connections
         
         public IActionDatabaseConnection ActionDatabaseConnection => Scope.ServiceProvider.GetRequiredService<IActionDatabaseConnection>();
@@ -220,7 +117,7 @@ namespace OpenDDD.Tests
         
         // Test server
         
-        private TestServer _testServer;
+        private TestServer? _testServer;
         public TestServer TestServer
         {
             get
@@ -232,13 +129,13 @@ namespace OpenDDD.Tests
                     var builder = CreateWebHostBuilder();
                     Task.Run(() => _testServer = new TestServer(builder)).GetAwaiter().GetResult();
                 }
-                return _testServer;
+                return _testServer!;
             }
         }
         
         // Test scope
         
-        protected IServiceScope _scope;
+        protected IServiceScope? _scope;
         public IServiceScope Scope
         {
             get
@@ -255,7 +152,7 @@ namespace OpenDDD.Tests
         
         // Test HTTP Client
 
-        private HttpClient _testClient;
+        private HttpClient? _testClient;
         public HttpClient TestClient
         {
             get
@@ -287,37 +184,7 @@ namespace OpenDDD.Tests
         // Translation
         
         public ISerializer Serializer => TestServer.Host.Services.GetRequiredService<ISerializer>();
-        
-        // Email
-        
-        // public IEmailPort EmailAdapter => TestServer.Host.Services.GetRequiredService<IEmailPort>();
-        //
-        // protected async Task DoWithEmailDisabled(Func<Task> actionsAsync)
-        // {
-        //     DisableEmails();
-        //     await actionsAsync();
-        //     EnableEmails();
-        // }
-        
-        // protected async Task DoWithEventsDisabled(Func<Task> actionsAsync)
-        // {
-        //     var prevDomainEventsEnabled = DomainPublisher.IsEnabled();
-        //     var prevIntegrationEventsEnabled = InterchangePublisher.IsEnabled();
-        //     
-        //     DisableDomainEvents();
-        //     DisableIntegrationEvents();
-        //     await actionsAsync();
-        //     
-        //     if (prevDomainEventsEnabled)
-        //         EnableDomainEvents();
-        //     
-        //     if (prevIntegrationEventsEnabled)
-        //         EnableIntegrationEvents();
-        // }
-        //
-        // protected void EnableEmails() => EmailAdapter.SetEnabled(true);
-        // protected void DisableEmails() => EmailAdapter.SetEnabled(false);
-        
+
         // Assertions
         
         protected void AssertNow(DateTime? actual)
@@ -325,27 +192,6 @@ namespace OpenDDD.Tests
         
         public void AssertDomainEventPublished(IDomainEvent theEvent)
             => Assert.True(ActionOutbox.HasPublished(theEvent), $"Expected domain event to have been published: {theEvent.Header.Name}.");
-        
-        // public void AssertIntegrationEventPublished(Event event_)
-        //     => Assert.True(InterchangePublisher.HasPublished(event_), $"Expected integration event to have been published: {event_.Header.Name}.");
-        //
-        // public async Task AssertAllowedAsync<T>(bool shouldBeAllowed, Func<Task<T>> actionAsync)
-        // {
-        //     if (shouldBeAllowed)
-        //         await actionAsync();
-        //     else
-        //         await Assert.ThrowsAsync<AuthorizeException>(actionAsync);
-        // }
-        //
-        // public async Task AssertCommandValidationFailure(ICommand command, IEnumerable<(string, string)> expectedErrors)
-        // {
-        //     var exc = Assert.Throws<ApplicationException>(command.Validate);
-        //     AssertCount(1, exc.Errors);
-        //     AssertEqual(ApplicationError.Application_InvalidCommand_Code, exc.Errors.Single().Code);
-        //     AssertEqual(
-        //         $"Invalid command: {string.Join(". ", expectedErrors.Select(e => $"Field: '{command.GetType().Name}.{e.Item1}', Message: '{e.Item2}'"))}", 
-        //         exc.Errors.Single().Message);
-        // }
 
         public void AssertSuccessResponse(HttpResponseMessage response)
         {

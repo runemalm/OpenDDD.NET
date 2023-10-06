@@ -123,6 +123,18 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Database.Memory
             AssureConnected();
             return await _database.GetAllAsync<T>(collectionName);
         }
+        
+        public override int GetCount(string collectionName)
+        {
+            AssureConnected();
+            return _database.GetCount(collectionName);
+        }
+
+        public override async Task<int> GetCountAsync(string collectionName)
+        {
+            AssureConnected();
+            return await _database.GetCountAsync(collectionName);
+        }
 
         // ITransactionalDatabaseConnection
         

@@ -57,9 +57,9 @@ dotnet new opendddnet-sln-netcore31 -n "YOUR_SOLUTION_NAME"
 
 ## Example Usage
 
-In your `Startup.cs` file, you'll need to register various services and configure the middleware pipeline to set up your project for OpenDDD.NET.
+In your `Startup.cs` file, you'll need to register various services and configure the middleware pipeline to set up your project to use the framework.
 
-Here's an example of how to typically configure your application in Startup.cs: 
+`In case you don't use project templates`, here's an example of how to manually configure your application in Startup.cs:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;

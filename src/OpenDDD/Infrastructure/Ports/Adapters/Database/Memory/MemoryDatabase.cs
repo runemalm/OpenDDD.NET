@@ -86,6 +86,16 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Database.Memory
             return await _store.GetAllAsync<T>(collectionName);
         }
 
+        public int GetCount(string collectionName)
+        {
+            return _store.GetCount(collectionName);
+        }
+
+        public async Task<int> GetCountAsync(string collectionName)
+        {
+            return await _store.GetCountAsync(collectionName);
+        }
+
         // ITransactionalDatabase
         
         public Task StartTransactionAsync()

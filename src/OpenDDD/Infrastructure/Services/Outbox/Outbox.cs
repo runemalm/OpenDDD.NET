@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
@@ -25,6 +26,13 @@ namespace OpenDDD.Infrastructure.Services.Outbox
 		{
 			await _databaseConnection.AddDocumentAsync(DatabaseCollectionName, theEvent);
 			_logger.LogDebug("Adding event to outbox.");
+		}
+
+		public async Task<IEvent?> NextEventAsync()
+		{
+			// TODO: Filter on not dead events and order by date added to outbox ascending
+			var nextEvent = (await _databaseConnection.FindAsync(DatabaseCollectionName, (IEvent e) => true)).FirstOrDefault();
+			return nextEvent;
 		}
 
 		public bool HasPublished(IEvent theEvent)
@@ -54,6 +62,11 @@ namespace OpenDDD.Infrastructure.Services.Outbox
 		public Task<bool> HasPublishedAsync(IEvent theEvent)
 		{
 			return Task.FromResult(HasPublished(theEvent));
+		}
+
+		public int GetEventCount()
+		{
+			return _databaseConnection.GetCount(DatabaseCollectionName);
 		}
 	}
 }

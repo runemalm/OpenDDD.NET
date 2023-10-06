@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using OpenDDD.Infrastructure.Services.Outbox;
 using OpenDDD.NET.Services.DatabaseConnection;
 
 namespace OpenDDD.Application
@@ -11,13 +10,11 @@ namespace OpenDDD.Application
 		where TCommand : ICommand
 	{
 		private readonly IActionDatabaseConnection _actionDatabaseConnection;
-		private readonly IOutbox _outbox;
 		private readonly ILogger _logger;
 
-		public BaseAction(IActionDatabaseConnection actionDatabaseConnection, IOutbox outbox, ILogger<BaseAction<TCommand, TReturns>> logger)
+		public BaseAction(IActionDatabaseConnection actionDatabaseConnection, ILogger<BaseAction<TCommand, TReturns>> logger)
 		{
 			_actionDatabaseConnection = actionDatabaseConnection;
-			_outbox = outbox;
 			_logger = logger;
 		}
 		
@@ -31,19 +28,22 @@ namespace OpenDDD.Application
 			_logger.LogDebug("Executing action.");
 			try
 			{
+				await _actionDatabaseConnection.StartAsync(CancellationToken.None);
 				await _actionDatabaseConnection.StartTransactionAsync();
 				var result = await ExecuteAsync(command, actionId, ct);
 				await _actionDatabaseConnection.CommitTransactionAsync();
+				_logger.LogDebug("Action executed.");
 				return result;
 			}
 			catch (Exception)
 			{
 				await _actionDatabaseConnection.RollbackTransactionAsync();
+				_logger.LogError("Action failed!");
 				throw;
 			}
 			finally
 			{
-				_logger.LogDebug("..action executed.");
+				await _actionDatabaseConnection.StopAsync(CancellationToken.None);
 			}
 		}
 	}
