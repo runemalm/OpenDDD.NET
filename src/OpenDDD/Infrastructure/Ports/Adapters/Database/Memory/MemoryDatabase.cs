@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -84,6 +85,25 @@ namespace OpenDDD.Infrastructure.Ports.Adapters.Database.Memory
         public async Task<IEnumerable<T>> GetAllAsync<T>(string collectionName) where T : class
         {
             return await _store.GetAllAsync<T>(collectionName);
+        }
+
+        public T? FindOneAndUpdate<T>(string collectionName, Expression<Func<T, bool>> filter, Action<T> updateAction) where T : class
+        {
+            throw new NotImplementedException();
+            
+            // var document = Find(collectionName, filter).SingleOrDefault();
+            // if (document != null)
+            // {
+            //     updateAction(document);
+            //     UpsertDocument(collectionName, document., document);
+            //     return document;
+            // }
+            // return null;
+        }
+
+        public Task<T?> FindOneAndUpdateAsync<T>(string collectionName, Expression<Func<T, bool>> filter, Action<T> updateAction) where T : class
+        {
+            throw new NotImplementedException();
         }
 
         public int GetCount(string collectionName)

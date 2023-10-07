@@ -143,34 +143,30 @@ namespace OpenDDD.NET.Extensions
 		
 		public static IApplicationBuilder StartEventProcessorDatabaseConnection(this IApplicationBuilder app)
 		{
-			// Start action database connection
 			var eventProcessorDatabaseConnection = app.ApplicationServices.GetService<IEventProcessorDatabaseConnection>();
+
 			if (eventProcessorDatabaseConnection == null)
 				throw new Exception(
 					"Can't start event processor database connection, IEventProcessorDatabaseConnection hasn't been registered.");
-			eventProcessorDatabaseConnection.Start(CancellationToken.None);
 			
-			// // Create a scope, since some dependencies are registered as scoped
-			// using (var scope = app.ApplicationServices.CreateScope())
-			// {
-			// 	// Start action database connection
-			// 	var actionDatabaseConnection = scope.ServiceProvider.GetService<IActionDatabaseConnection>();
-			// 	if (actionDatabaseConnection == null)
-			// 		throw new Exception(
-			// 			"Can't run ensure data tasks, IApplicationDatabaseConnection hasn't been registered.");
-			// 	actionDatabaseConnection.Start(CancellationToken.None);
-			// 	
-			// 	// Run the ensure data tasks
-			// 	foreach (var task in scope.ServiceProvider.GetServices<IEnsureDataTask>())
-			// 		task.Execute(ActionId.BootId(), CancellationToken.None);
-			// 	
-			// 	// Stop action database connection
-			// 	actionDatabaseConnection.Stop(CancellationToken.None);
-			// }
+			eventProcessorDatabaseConnection.Start(CancellationToken.None);
 			
 			return app;
 		}
 		
+		public static IApplicationBuilder StopEventProcessorDatabaseConnection(this IApplicationBuilder app)
+		{
+			var eventProcessorDatabaseConnection = app.ApplicationServices.GetService<IEventProcessorDatabaseConnection>();
+
+			if (eventProcessorDatabaseConnection == null)
+				throw new Exception(
+					"Can't stop event processor database connection, IEventProcessorDatabaseConnection hasn't been registered.");
+			
+			eventProcessorDatabaseConnection.Stop(CancellationToken.None);
+			
+			return app;
+		}
+
 		public static IApplicationBuilder StartListeners(this IApplicationBuilder app)
 		{
 			foreach (IStartableEventListener service in app.ApplicationServices.GetServices<IStartableEventListener>())

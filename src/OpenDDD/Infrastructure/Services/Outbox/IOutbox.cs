@@ -6,7 +6,9 @@ namespace OpenDDD.Infrastructure.Services.Outbox
     public interface IOutbox
     {
         Task AddEventAsync(IEvent theEvent);
-        Task<IEvent?> NextEventAsync();
+        Task RemoveEventAsync(IEvent theEvent);
+        Task<IEvent?> GetNextAndMarkProcessingAsync();
+        Task MarkNotProcessingAsync(IEvent theEvent);
         bool HasPublished(IEvent theEvent);
         Task<bool> HasPublishedAsync(IEvent theEvent);
         int GetEventCount();

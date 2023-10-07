@@ -25,83 +25,46 @@ namespace OpenDDD.Infrastructure.Services.EventProcessor
             _outbox = outbox;
             _waitCancellationTokenSource = new CancellationTokenSource();
         }
-        
-        public async Task ProcessNextOutboxEventAsync()
+
+        public async Task<bool> ProcessNextOutboxEventAsync()
         {
-            var nextEvent = await _outbox.NextEventAsync();
+            var nextEvent = await _outbox.GetNextAndMarkProcessingAsync();
+            var didPublish = false;
             
             if (nextEvent != null)
             {
-                if (nextEvent is IDomainEvent @event)
+                try
                 {
-                    await _domainEventPublisher.PublishAsync(@event);
+                    if (nextEvent is IDomainEvent @nextDomainEvent)
+                    {
+                        await _domainEventPublisher.PublishAsync(@nextDomainEvent);
+                    }
+                    else if (nextEvent is IIntegrationEvent @nextIntegrationEvent)
+                    {
+                        throw new NotImplementedException("Use integration event publisher when we have it and publish the event using it here.");
+                    }
+                    else
+                    {
+                        throw new Exception("Can't publish event from outbox, the event type is unknown. This should never happen.");
+                    }
+                    
+                    didPublish = true;
                 }
-                else if (nextEvent.Header.EventType == EventType.IntegrationEvent)
+                catch (Exception e)
                 {
-                    throw new NotImplementedException("Use integration event publisher when we have it and publish the event using it here.");
+                    _logger.LogError($"Failed to publish outbox event: {e}");
                 }
+        
+                if (didPublish)
+                    await _outbox.RemoveEventAsync(nextEvent);
                 else
-                {
-                    throw new Exception("Can't publish event from outbox, the event type is unknown. This should never happen.");
-                }
+                    await _outbox.MarkNotProcessingAsync(nextEvent);
             }
-        }
 
-        // public async Task WorkOutboxAsync(CancellationToken stoppingToken)
-        // {
-        //     while (!stoppingToken.IsCancellationRequested && 
-        //            !_waitCancellationTokenSource.Token.IsCancellationRequested &&
-        //            !_isStarted)
-        //     {
-        //         try
-        //         {
-        //             await Task.Delay(500, _waitCancellationTokenSource.Token);
-        //         }
-        //         catch (TaskCanceledException e)
-        //         {
-        //             _logger.Log("Wait cancellationtoken was canceled while publisherservice was waiting to be started.", LogLevel.Debug);
-        //         }
-        //     }
-        //
-        //     while (!stoppingToken.IsCancellationRequested && 
-        //            !_waitCancellationTokenSource.Token.IsCancellationRequested &&
-        //            _isStarted)
-        //     {
-        //         var outboxEvent = await GetNextAsync();
-        //
-        //         if (outboxEvent != null)
-        //         {
-        //             var didPublish = true;
-        //
-        //             try
-        //             {
-        //                 await PublishAsync(outboxEvent);
-        //             }
-        //             catch (Exception e)
-        //             {
-        //                 _logger.Log($"Exception when publishing in publisher: {e}", LogLevel.Error);
-        //                 didPublish = false;
-        //             }
-        //
-        //             if (didPublish)
-        //                 await DeleteFromOutboxAsync(outboxEvent);
-        //             else
-        //                 await MarkAsNotPublishingAsync(outboxEvent);
-        //         }
-        //
-        //         if (outboxEvent == null)
-        //         {
-        //             try
-        //             {
-        //                 await Task.Delay(1000, _waitCancellationTokenSource.Token);
-        //             }
-        //             catch (TaskCanceledException e)
-        //             {
-        //                 _logger.Log("Wait cancellationtoken was canceled while publisherservice was waiting for next work cycle in started mode.", LogLevel.Debug);
-        //             }
-        //         }
-        //     }
-        // }
+            return didPublish;
+        }
+        
+        
         //
         // public Task StopWorkingOutboxAsync(CancellationToken cancellationToken)
         // {

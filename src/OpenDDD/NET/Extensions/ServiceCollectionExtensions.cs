@@ -92,9 +92,11 @@ namespace OpenDDD.NET.Extensions
 			return services;
 		}
 		
-		public static IServiceCollection AddEventProcessor(this IServiceCollection services)
+		public static IServiceCollection AddEventProcessor(this IServiceCollection services, IConfiguration configuration)
 		{
+			services.AddTransient<IEventProcessorSettings, EventProcessorSettings>();
 			services.AddTransient<IEventProcessor, EventProcessor>();
+			services.AddEventProcessorHostedService(configuration);
 			return services;
 		}
 

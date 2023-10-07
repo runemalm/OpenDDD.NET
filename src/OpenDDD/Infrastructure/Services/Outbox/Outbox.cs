@@ -27,12 +27,22 @@ namespace OpenDDD.Infrastructure.Services.Outbox
 			await _databaseConnection.AddDocumentAsync(DatabaseCollectionName, theEvent);
 			_logger.LogDebug("Adding event to outbox.");
 		}
-
-		public async Task<IEvent?> NextEventAsync()
+		
+		public Task RemoveEventAsync(IEvent theEvent)
 		{
-			// TODO: Filter on not dead events and order by date added to outbox ascending
+			throw new System.NotImplementedException();
+		}
+
+		public async Task<IEvent?> GetNextAndMarkProcessingAsync()
+		{
+			// TODO: Filter on not dead events and order by date added to outbox ascending, also mark processing
 			var nextEvent = (await _databaseConnection.FindAsync(DatabaseCollectionName, (IEvent e) => true)).FirstOrDefault();
 			return nextEvent;
+		}
+
+		public Task MarkNotProcessingAsync(IEvent theEvent)
+		{
+			throw new System.NotImplementedException();
 		}
 
 		public bool HasPublished(IEvent theEvent)

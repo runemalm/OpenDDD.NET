@@ -4,6 +4,6 @@ namespace OpenDDD.Infrastructure.Services.EventProcessor
 {
 	public interface IEventProcessor : IInfrastructureService
 	{
-		Task ProcessNextOutboxEventAsync();
+		Task<bool> ProcessNextOutboxEventAsync();
 	}
 }
