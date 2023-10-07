@@ -12,9 +12,9 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
 - **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
 - **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
-- **Application Services**: Use application services to coordinate the execution of domain logic and manage transactions.
+- **Application Services**: Use application services and actions to coordinate the execution of domain logic and manage transactions.
 - **Dependency Injection**: Leverage the built-in dependency injection support in .NET for easy integration with your application.
-- **Testability**: Comes prepared with base test classes for efficient and simple unit testing of actions.
+- **Testing Support**: Simplify the testing of your actions with built-in testing support, including unit tests, integration tests, and mocking methods.
 - **Horizontal Scaling**: Seamlessly scale your application horizontally to handle increased traffic and demand.
 
 ## Basic Concepts
@@ -123,7 +123,7 @@ using YourCrawlingContext.Domain.Model;
 
 namespace YourCrawlingContext.Application
 {
-    public class CrawlSearchPageAction : BaseAction<Command, SearchResults>  
+    public class CrawlSearchPageAction : BaseAction<CrawlSearchPageCommand, SearchResults>  
     {  
         private readonly ISiteRepository _siteRepository;  
           
@@ -139,7 +139,7 @@ namespace YourCrawlingContext.Application
             _siteRepository = siteRepository;  
         }
 
-        public override async Task<SearchResults> ExecuteAsync(Command command, ActionId actionId, CancellationToken ct)  
+        public override async Task<SearchResults> ExecuteAsync(CrawlSearchPageCommand command, ActionId actionId, CancellationToken ct)  
         {  
             var site = await GetAggregateOrThrowAsync(command.SiteId, _siteRepository, actionId, ct);  
               
