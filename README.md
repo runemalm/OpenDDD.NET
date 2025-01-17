@@ -94,7 +94,7 @@ With this setup, you can begin implementing domain-driven design principles usin
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
 
-**Note**: Early adopters know that we have released a major version 1 and 2. We are now changing direction and have completely redesigned the framework. Star and follow the repository to follow our progression towards a stable major 3 release. You can see the feature list below which concepts we have left to add before release.
+**Note**: Early adopters know that we have released a major version 1 and 2. We are now changing development strategy and also completely redesign the framework. Star and follow the repository to follow our progression towards a stable major 3 release. You can see the feature list below which concepts we have left to add before release.
 
 ## Contributing
 
