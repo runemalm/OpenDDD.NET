@@ -1,3 +1,4 @@
+
 # OpenDDD.NET
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
@@ -5,31 +6,30 @@
 
 OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
+> **Note:** OpenDDD.NET is currently in an alpha state as part of a complete rewrite for version 3. While it introduces foundational concepts and aims to provide a production-ready framework eventually, some features are still under development. Use with caution in production environments and consider contributing to its development.
+
 ## Key Features
 
-- **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
-- **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
-- **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
-- **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
-- **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
-- **Application Services**: Use application services to coordinate the execution of domain logic and manage transactions.
-- **Dependency Injection**: Leverage the built-in dependency injection support in .NET for easy integration with your application.
-- **Testability**: Comes prepared with base test classes for efficient and simple unit testing of actions.
-- **Horizontal Scaling**: Seamlessly scale your application horizontally to handle increased traffic and demand.
+- [x] **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
+- [x] **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
+- [ ] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
+- [ ] **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
+- [ ] **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
+- [ ] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
+- [ ] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
+- [ ] **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
+- [ ] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
+- [ ] **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
 ## Basic Concepts
 
-The map below visually represents the key concepts and their interrelationships.
+We're adhering to the key principles and building blocks of Domain-Driven Design.
 
-![Concept Map](https://github.com/runemalm/OpenDDD.NET/blob/develop/concept-map.png)
+![DDD Concept Graph](https://github.com/runemalm/OpenDDD.NET/blob/develop/ddd-graph.png)
 
 ## Supported Versions
 
-- .NET Core 3.1
-- .NET 5
-- .NET 6 (upcoming)
-- .NET 7 (upcoming)
-- .NET 8 (upcoming)
+- .NET 8
 
 ## Getting Started
 
@@ -38,178 +38,102 @@ To get started with OpenDDD.NET, follow these simple steps:
 1. **Install the NuGet package**: Use the NuGet package manager or the .NET CLI to add the OpenDDD.NET package to your project.
 
 ```bash
-dotnet add package OpenDDD.NET
+dotnet add package OpenDDD.NET --prerelease
 ```
 
-2. **Install the project template**: If you want to quickly scaffold new projects using OpenDDD.NET, you can install the OpenDDD.NET project template NuGet package.
+2. **Create a new project**: Create a new project in your editor or IDE of choice or use the command below.
 
 ```bash
-dotnet new install OpenDDD.NET-Templates
+dotnet new webapi -n YourProjectName
 ```
 
-3. **Create a new project**: Use the OpenDDD.NET project template to create a new project with the necessary files, folder structure, and initial configuration already set up.
+3. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
 
-```bash
-dotnet new opendddnet-sln-netcore31 -n "YOUR_SOLUTION_NAME"
+## Configuration in `appsettings.json`
+
+OpenDDD.NET can be configured using the `appsettings.json` file. Below is an example configuration:
+
+```
+{
+  "OpenDDD": {
+    "Services": {
+      "AutoRegisterActions": true,
+      "AutoRegisterRepositories": true
+    },
+    "Pipeline": {
+      
+    }
+  }
+}
 ```
 
-4. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
+### Explanation of Configuration Options
+
+-   **`Services.AutoRegisterActions`**: Automatically registers all actions found in the application.
+    
+-   **`Services.AutoRegisterRepositories`**: Automatically registers all repositories found in the application.
+    
+
+These settings can be overridden programmatically in `Program.cs`.
 
 ## Example Usage
 
-In your `Startup.cs` file, you'll need to register various services and configure the middleware pipeline to set up your project for OpenDDD.NET.
+In your `Program.cs` file, you'll need to register various services and configure the middleware pipeline to set up your project to use the framework.
 
-Here's an example of how to typically configure your application in Startup.cs: 
+Here's an example of how to manually configure your application in Program.cs:
 
 ```csharp
-using Microsoft.Extensions.DependencyInjection;
-using OpenDDD.Infrastructure.Services.Serialization;
-using YourCrawlingContext.Domain.Model.Property;
-using YourCrawlingContext.Infrastructure.Ports.Adapters.Site.ThailandProperty;
+using OpenDDD.Main.Extensions;
 
-namespace YourCrawlingContext.Main
+var builder = WebApplication.CreateBuilder(args);
+
+// Register OpenDDD Services
+builder.Services.AddOpenDDD(builder.Configuration, options =>
 {
-    public class Startup
-    {
-        // ... (existing code)
+    options.AutoRegisterActions = true;
+    options.AutoRegisterRepositories = true;
+});
 
-        public void ConfigureServices(IServiceCollection services)
-        {
-        
-            // ... (other service configurations)
+var app = builder.Build();
 
-            // Event processor  
-            services.AddEventProcessorHostedService(Configuration);
-            services.AddEventProcessorDatabaseConnection(Configuration);  
-            services.AddEventProcessorMessageBrokerConnection(Configuration);  
-            services.AddEventProcessorOutbox();  
-              
-            // Action services
-            services.AddActionDatabaseConnection(Configuration);  
-            services.AddActionMessageBrokerConnection(Configuration);  
-            services.AddActionOutbox();  
+// Add OpenDDD Middleware
+app.UseOpenDDD();
 
-            // Actions            
-            services.AddAction<CrawlSearchPage.Action, CrawlSearchPage.Command>();  
-            services.AddAction<GetProperties.Action, GetProperties.Command>();  
-              
-            // Publishers  
-            services.AddDomainPublisher();  
-            services.AddIntegrationPublisher();  
-              
-            // Listeners  
-            services.AddDomainEventListener(SearchPageCrawledListener);  
-            services.AddIntegrationEventListener(IcAccountCreatedListener);  
-              
-            // Repositories  
-            services.AddRepository<IPropertyRepository, PropertyRepository>();  
-            services.AddRepository<ISiteRepository, SiteRepository>();  
-        }
+if (app.Environment.IsDevelopment())
+    app.UseDeveloperExceptionPage();
 
-        // ... (existing code)
-    }
-}
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
 ```
 
-**Example:** 
-Implement one of the `Actions` that collectively form your `Application Service`:
+With this setup, you can begin implementing domain-driven design principles using OpenDDD.NET in your application.
 
-```csharp
-using OpenDDD.Application;  
-using OpenDDD.Domain.Model.Event;  
-using YourCrawlingContext.Domain.Model;
+## Documentation
 
-// ... (other imports)
+Comprehensive documentation for OpenDDD.NET is available on **Read the Docs**. The documentation includes guides, examples, and reference materials to help you get started and make the most of the framework.
 
-namespace YourCrawlingContext.Application
-{
-    public class CrawlSearchPageAction : BaseAction<Command, SearchResults>  
-    {  
-        private readonly ISiteRepository _siteRepository;  
-          
-        public CrawlSearchPageAction(  
-            IActionDatabaseConnection actionDatabaseConnection,  
-            IActionOutbox outbox,  
-            ISiteRepository siteRepository,  
-            ISomeWebSitePort someWebSiteAdapter,
-            IDomainPublisher domainPublisher,  
-            ILogger<CrawlSearchPageAction> logger)  
-            : base(actionDatabaseConnection, outbox, someWebSiteAdapter, domainPublisher, logger)  
-        {  
-            _siteRepository = siteRepository;  
-        }
-
-        public override async Task<SearchResults> ExecuteAsync(Command command, ActionId actionId, CancellationToken ct)  
-        {  
-            var site = await GetAggregateOrThrowAsync(command.SiteId, _siteRepository, actionId, ct);  
-              
-            var siteAdapter = GetSiteAdapterOrThrow(command.SiteId);  
-              
-            var searchResults = await site.CrawlSearchPageAsync(siteAdapter, _domainPublisher, actionId, ct);  
-              
-            await _siteRepository.SaveAsync(site, actionId, ct);  
-              
-            return searchResults;  
-        }
-    }
-}
-```
-
-**Example:** 
-Publish an `Domain Event` from an `Aggregate Root`:
-
-```csharp
-using OpenDDD.Application;  
-using OpenDDD.Domain.Model.AggregateRoot;  
-using OpenDDD.Domain.Model.Entity;
-using OpenDDD.Domain.Model.Event;
-
-// ... (other imports)
-  
-namespace YourCrawlingContext.Domain.Model.Site  
-{  
-    public class Site : AggregateRoot, IAggregateRoot, IEquatable<Site>  
-    {  
-        public SiteId SiteId { get; set; }    
-  
-        public string Name { get; set; }  
-  
-        // ... (other methods)
-
-        public async Task<SearchResults.SearchResults> CrawlSearchPageAsync(ISitePort siteAdapter, IDomainPublisher domainPublisher, ActionId actionId, CancellationToken ct)  
-        {  
-            var searchResults = await siteAdapter.CrawlSearchPageAsync(ct);  
-  
-            await domainPublisher.PublishAsync(new SearchPageCrawled(SiteId, searchResults, actionId));  
-  
-            return searchResults;  
-        }
-
-        // ... (other methods)
-    }
-}
-```
+Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/)
 
 ## Release History
 
-- **v1.0.0-alpha.1** (2022-10-02): Initial alpha release.
-- **v1.0.0-alpha.2** (2022-10-09): Make the hexagonal architecture pattern more represented in the namespaces.
-- **v1.0.0-alpha.3** (2022-11-20): Refactor JwtToken and add IdToken.
+- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release with foundational features.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
-
-**Note**: We have just released an alpha version of major version 2 of this framework, and some features are still under development. Avoid using it in production environments and expect some code to not be implemented still.
 
 ## Contributing
 
 We welcome contributions from the community. To contribute to OpenDDD.NET, please follow these steps:
 
-1. Fork the repository and clone it to your local machine.
-2. Create a new branch for your feature or bug fix.
-3. Implement your changes and ensure that the existing tests pass.
-4. Write new tests to cover your changes and make sure they pass as well.
-5. Commit your changes and push them to your fork.
-6. Submit a pull request with a clear description of your changes and the problem they solve.
+1. Fork the repository on GitHub.
+2. Clone your forked repository to your local machine.
+3. Create a new branch from the `master` branch for your changes.
+4. Make your modifications and ensure they adhere to our coding conventions.
+5. Write appropriate tests for your changes, ensuring they pass.
+6. Commit your changes with a descriptive and meaningful commit message.
+7. Push your branch to your forked repository on GitHub.
+8. Open a pull request (PR) against the `develop` branch of the main repository.
 
 Please make sure to review our [Contributing Guidelines](https://github.com/runemalm/OpenDDD.NET/blob/master/CONTRIBUTING.md) before submitting a pull request.
 
@@ -223,6 +147,6 @@ OpenDDD.NET is inspired by the principles and ideas of Domain-Driven Design (DDD
 
 ## Get in Touch
 
-If you have any questions, suggestions, or feedback, please don't hesitate to reach out to us. You can find more information and ways to contact us on our [Website](https://www.openddd.net).
+If you have any questions, suggestions, or feedback, please don't hesitate to reach out to us.
 
 Let's build better software together with OpenDDD.NET!
