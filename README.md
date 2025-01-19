@@ -16,7 +16,7 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - [ ] **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
 - [ ] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
 - [ ] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
-- [ ] **Application Services**: Use application services and actions to coordinate the execution of domain logic and manage transactions.
+- [ ] **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
 - [ ] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
 - [ ] **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
@@ -124,8 +124,7 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 ## Release History
 
-- **v3.0.0-alpha.1** (2025-01-xx): Initial alpha release introducing foundational concepts.
-    - Note: OpenDDD.NET is being rewritten from the ground up in version 3 to improve its architecture, usability, and scalability.
+- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release with foundational features: Aggregates, Entities, Value Objects, Actions.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
 

@@ -7,9 +7,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'OpenDDD.NET'
-copyright = '2023, David Runemalm'
+copyright = '2025, David Runemalm'
 author = 'David Runemalm'
-release = 'v1.0.0-alpha.16'
+release = 'v3.0.0-alpha.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
