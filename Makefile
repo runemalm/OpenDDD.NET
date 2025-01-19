@@ -17,24 +17,16 @@ export $(shell sed 's/=.*//' env.make)
 ##########################################################################
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
-NETWORK := openddd
-BUILD_VERSION := 2.0.0-alpha.3
+NETWORK := openddd-net
+BUILD_VERSION := 3.0.0-alpha.1
 
 NUGET_NAME := OpenDDD.NET
-TOOLS_IMAGE_NAME := runemalm/openddd-tools
-TOOLS_IMAGE_TAG := 1.0.0-alpha.1
 ROOT_NAMESPACE := OpenDDD
-
-TEMPLATES_NUGET_NAME := OpenDDD.NET-Templates
-TEMPLATES_BUILD_VERSION := 2.0.0-alpha.2
 
 SRC_DIR := $(PWD)/src
 DOCS_DIR := $(PWD)/docs
 NAMESPACE_DIR := $(SRC_DIR)/$(ROOT_NAMESPACE)
 BUILD_DIR := $(NAMESPACE_DIR)/$(ROOT_NAMESPACE)/bin
-TESTS_DIR := $(SRC_DIR)/Tests
-TOOLS_DIR := $(SRC_DIR)/Tools
-PROJECT_TEMPLATES_DIR := $(SRC_DIR)/Templates
 FEED_DIR := $(HOME)/Projects/LocalFeed
 USER_NUGET_CONFIG_DIR=$(HOME)/.config/NuGet/NuGet.Config
 SPHINXDOC_IMG := openddd.net/sphinxdoc
@@ -50,7 +42,6 @@ WHITE     := $(shell tput -Txterm setaf 7)
 YELLOW    := $(shell tput -Txterm setaf 3)
 GREY      := $(shell tput -Txterm setaf 1)
 RESET     := $(shell tput -Txterm sgr0)
-
 SMUL      := $(shell tput smul)
 RMUL      := $(shell tput rmul)
 
@@ -140,32 +131,25 @@ push: ##@Build	 Push the nuget to the global feed
 	dotnet nuget push $(NUGET_NAME).$(BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
 
 ##########################################################################
-# Docs
+# DOCS
 ##########################################################################
 
 .PHONY: sphinx-buildimage
 sphinx-buildimage: ##@Docs	 Build the custom sphinxdoc image
 	docker build -t $(SPHINXDOC_IMG) $(DOCS_DIR)
 
-.PHONY: sphinx-quickstart
-sphinx-quickstart: ##@Docs	 Run the sphinx quickstart
-	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG) sphinx-quickstart
-
 .PHONY: sphinx-html
 sphinx-html: ##@Docs	 Build the sphinx html
 	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG) make html
 
-.PHONY: sphinx-epub
-sphinx-epub: ##@Docs	 Build the sphinx epub
-	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG) make epub
-
-.PHONY: sphinx-pdf
-sphinx-pdf: ##@Docs	 Build the sphinx pdf
-	docker run -it --rm -v $(DOCS_DIR):/docs $(SPHINXDOC_IMG)-latexpdf make latexpdf
+.PHONY: sphinx-clean
+sphinx-clean: ##@Docs	 Clean the sphinx docs
+	rm -rf $(DOCS_DIR)/_build
 
 .PHONY: sphinx-rebuild
 sphinx-rebuild: ##@Docs	 Re-build the sphinx docs
-	rm -rf $(DOCS_DIR)/_build && make sphinx-html
+	make sphinx-clean && \
+	make sphinx-html
 
 .PHONY: sphinx-autobuild
 sphinx-autobuild: ##@Docs	 Activate autobuild of docs
@@ -193,36 +177,3 @@ restore: ##@Build	 restore the solution
 .PHONY: clear-nuget-caches
 clear-nuget-caches: ##@Build	 clean all nuget caches
 	nuget locals all -clear
-
-##########################################################################
-# TOOLS
-##########################################################################
-
-.PHONY: build-tools-image
-build-tools-image: ##@Tools	Build the tools image
-	cd $(TOOLS_DIR) && docker build --progress plain -t $(TOOLS_IMAGE_NAME):$(TOOLS_IMAGE_TAG) .
-
-.PHONY: push-tools-image
-push-tools-image: ##@Tools	Push the tools image
-	docker push $(TOOLS_IMAGE_NAME):$(TOOLS_IMAGE_TAG)
-
-##########################################################################
-# PROJECT TEMPLATES
-##########################################################################
-
-.PHONY: templates-install
-templates-install: ##@Project Templates	Install the .NET Core 3.1 template
-	cd $(PROJECT_TEMPLATES_DIR)/templates/NETCore31 && dotnet new --install .
-
-.PHONY: templates-uninstall
-templates-uninstall: ##@Project Templates	Uninstall the .NET Core 3.1 template
-	cd $(PROJECT_TEMPLATES_DIR)/templates/NETCore31 && dotnet new --uninstall .
-
-.PHONY: templates-pack
-templates-pack: ##@Project Templates	Builds and packs the template package.
-	cd $(PROJECT_TEMPLATES_DIR) && dotnet pack
-
-.PHONY: templates-push
-templates-push: ##@Project Templates	Push the template package nuget to the global feed..
-	cd $(PROJECT_TEMPLATES_DIR)/bin/Debug && \
-	dotnet nuget push $(TEMPLATES_NUGET_NAME).$(TEMPLATES_BUILD_VERSION).nupkg --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json

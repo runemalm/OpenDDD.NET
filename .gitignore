@@ -1,18 +1,3 @@
-# Project specific
-.DS_Store
-env.*
-!env.sample
-!env.make.sample
-scratch
-src/Templates/testing
-*.sublime-project
-*.sublime-workspace
-docs/_build
-
-# ..project templates
-src/Templates/**/NuGet.config
-!src/Templates/**/env*
-
 # globs
 Makefile.in
 *.userprefs
@@ -418,3 +403,17 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+
+# Project specific
+.DS_Store
+
+env.*
+!env.sample
+!env.make.sample
+
+scratch
+
+*.sublime-project
+*.sublime-workspace
+
+docs/_build
