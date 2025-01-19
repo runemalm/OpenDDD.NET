@@ -42,12 +42,12 @@ Add OpenDDD.NET services to your application in the `Program.cs` file:
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Register OpenDDD services
+    // Register OpenDDD Services
     builder.Services.AddOpenDDD(builder.Configuration);
 
     var app = builder.Build();
 
-    // Add OpenDDD middleware
+    // Add OpenDDD Middleware
     app.UseOpenDDD();
 
     app.Run();

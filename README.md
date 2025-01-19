@@ -1,3 +1,4 @@
+
 # OpenDDD.NET
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
@@ -37,7 +38,7 @@ To get started with OpenDDD.NET, follow these simple steps:
 1. **Install the NuGet package**: Use the NuGet package manager or the .NET CLI to add the OpenDDD.NET package to your project.
 
 ```bash
-dotnet add package OpenDDD.NET
+dotnet add package OpenDDD.NET --prerelease
 ```
 
 2. **Create a new project**: Create a new project in your editor or IDE of choice or use the command below.
@@ -86,31 +87,24 @@ using OpenDDD.Main.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register OpenDDD services
+// Register OpenDDD Services
 builder.Services.AddOpenDDD(builder.Configuration, options =>
 {
-    // Override specific settings
     options.AutoRegisterActions = true;
     options.AutoRegisterRepositories = true;
 });
 
 var app = builder.Build();
 
-// Use OpenDDD in request pipeline
+// Add OpenDDD Middleware
 app.UseOpenDDD();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
-{
     app.UseDeveloperExceptionPage();
-}
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
-
-// Add endpoints for controller actions
 app.MapControllers();
-
 app.Run();
 ```
 
@@ -124,7 +118,7 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 ## Release History
 
-- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release with foundational features: Aggregates, Entities, Value Objects, Actions.
+- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release with foundational features.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
 
@@ -132,12 +126,14 @@ For a complete list of releases and their changelogs, please visit the [Releases
 
 We welcome contributions from the community. To contribute to OpenDDD.NET, please follow these steps:
 
-1. Fork the repository and clone it to your local machine.
-2. Create a new branch for your feature or bug fix.
-3. Implement your changes and ensure that the existing tests pass.
-4. Write new tests to cover your changes and make sure they pass as well.
-5. Commit your changes and push them to your fork.
-6. Submit a pull request on the develop branch with a clear description of your changes and the problem they solve.
+1. Fork the repository on GitHub.
+2. Clone your forked repository to your local machine.
+3. Create a new branch from the `master` branch for your changes.
+4. Make your modifications and ensure they adhere to our coding conventions.
+5. Write appropriate tests for your changes, ensuring they pass.
+6. Commit your changes with a descriptive and meaningful commit message.
+7. Push your branch to your forked repository on GitHub.
+8. Open a pull request (PR) against the `develop` branch of the main repository.
 
 Please make sure to review our [Contributing Guidelines](https://github.com/runemalm/OpenDDD.NET/blob/master/CONTRIBUTING.md) before submitting a pull request.
 
