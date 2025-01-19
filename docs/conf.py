@@ -9,7 +9,12 @@
 project = 'OpenDDD.NET'
 copyright = '2025, David Runemalm'
 author = 'David Runemalm'
-release = 'v3.0.0-alpha.1'
+
+# The version
+version = "3.0"
+
+# The full version, including alpha/beta/rc tags
+release = '3.0.0-alpha.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -28,6 +33,9 @@ exclude_trees = ['.git', 'src/Templates', 'src/Tools']
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "sphinx"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
