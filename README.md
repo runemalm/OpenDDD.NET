@@ -5,19 +5,17 @@
 
 OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
-The framework follows .NET conventions for seamless integration, ensuring compatibility with standardized naming, dependency injection patterns, and middleware setup. It is also designed for non-intrusive adoption, enabling developers to try out its features in existing codebases without significant refactoring.
-
 ## Key Features
 
 - [x] **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
 - [x] **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
-- [x] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
+- [ ] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
 - [ ] **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
 - [ ] **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
 - [ ] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
-- [x] **Application Services**: Use application services and actions to coordinate the execution of domain logic and manage transactions.
-- [x] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
-- [x] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
+- [ ] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
+- [ ] **Application Services**: Use application services and actions to coordinate the execution of domain logic and manage transactions.
+- [ ] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
 - [ ] **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
 ## Basic Concepts
@@ -50,6 +48,33 @@ dotnet new webapi -n YourProjectName
 
 3. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
 
+## Configuration in `appsettings.json`
+
+OpenDDD.NET can be configured using the `appsettings.json` file. Below is an example configuration:
+
+```
+{
+  "OpenDDD": {
+    "Services": {
+      "AutoRegisterActions": true,
+      "AutoRegisterRepositories": true
+    },
+    "Pipeline": {
+      
+    }
+  }
+}
+```
+
+### Explanation of Configuration Options
+
+-   **`Services.AutoRegisterActions`**: Automatically registers all actions found in the application.
+    
+-   **`Services.AutoRegisterRepositories`**: Automatically registers all repositories found in the application.
+    
+
+These settings can be overridden programmatically in `Program.cs`.
+
 ## Example Usage
 
 In your `Program.cs` file, you'll need to register various services and configure the middleware pipeline to set up your project to use the framework.
@@ -57,20 +82,22 @@ In your `Program.cs` file, you'll need to register various services and configur
 Here's an example of how to manually configure your application in Program.cs:
 
 ```csharp
-using OpenDDD;
+using OpenDDD.Main.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Register OpenDDD services
-builder.Services.AddOpenDDD(options =>
+builder.Services.AddOpenDDD(builder.Configuration, options =>
 {
-    options.UseDomainEvents();
-    options.UseRepositories();
-    options.UseApplicationServices();
-    // Add additional configurations here
+    // Override specific settings
+    options.AutoRegisterActions = true;
+    options.AutoRegisterRepositories = true;
 });
 
 var app = builder.Build();
+
+// Use OpenDDD in request pipeline
+app.UseOpenDDD();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -81,6 +108,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
+// Add endpoints for controller actions
 app.MapControllers();
 
 app.Run();
@@ -88,13 +116,18 @@ app.Run();
 
 With this setup, you can begin implementing domain-driven design principles using OpenDDD.NET in your application.
 
+## Documentation
+
+Comprehensive documentation for OpenDDD.NET is available on **Read the Docs**. The documentation includes guides, examples, and reference materials to help you get started and make the most of the framework.
+
+Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/)
+
 ## Release History
 
-- **v3.0.0-alpha.1** (2025-01-xx): Initial alpha release introducing foundational concepts.
+- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release introducing foundational concepts.
+    - Note: OpenDDD.NET is being rewritten from the ground up in version 3 to improve its architecture, usability, and scalability.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
-
-**Note**: Early adopters know that we have released a major version 1 and 2. We are now changing development strategy and also completely redesign the framework. Star and follow the repository to follow our progression towards a stable major 3 release. You can see the feature list below which concepts we have left to add before release.
 
 ## Contributing
 
