@@ -124,7 +124,7 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 ## Release History
 
-- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release introducing foundational concepts.
+- **v3.0.0-alpha.1** (2025-01-xx): Initial alpha release introducing foundational concepts.
     - Note: OpenDDD.NET is being rewritten from the ground up in version 3 to improve its architecture, usability, and scalability.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
