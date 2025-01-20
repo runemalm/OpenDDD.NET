@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
+using OpenDDD.Main.Managers;
 using OpenDDD.Main.Options;
 
 namespace OpenDDD.Main.Extensions
@@ -24,6 +25,8 @@ namespace OpenDDD.Main.Extensions
             {
                 RegisterRepositories(services);
             }
+
+            RegisterServiceManager(services);
 
             return services;
         }
@@ -52,6 +55,11 @@ namespace OpenDDD.Main.Extensions
             {
                 services.AddTransient(repositoryType);
             }
+        }
+        
+        private static void RegisterServiceManager(IServiceCollection services)
+        {
+            services.AddSingleton<IOpenDddServiceManager, OpenDddServiceManager>();
         }
     }
 }
