@@ -32,14 +32,14 @@ namespace OpenDDD.Infrastructure.Repository.EF.Base
         {
             _context.ChangeTracker.Clear(); // Clear any cached tracked entities
             var query = IncludeRelatedEntities(DbSet.AsNoTracking());
-            return await query.FirstOrDefaultAsync(e => e.Id.Equals(id)) 
+            return await query.FirstOrDefaultAsync(e => e.Id != null && e.Id.Equals(id)) 
                    ?? throw new InvalidOperationException($"Aggregate root with ID {id} not found.");
         }
 
         public async Task<TAggregateRoot?> FindAsync(TId id)
         {
             var query = IncludeRelatedEntities(DbSet.AsNoTracking());
-            return await query.FirstOrDefaultAsync(e => e.Id.Equals(id));
+            return await query.FirstOrDefaultAsync(e => e.Id != null && e.Id.Equals(id));
         }
 
         public async Task<IEnumerable<TAggregateRoot>> FindWithAsync(Expression<Func<TAggregateRoot, bool>> filterExpression)
@@ -65,7 +65,7 @@ namespace OpenDDD.Infrastructure.Repository.EF.Base
             var entry = _context.Entry(aggregateRoot);
             if (entry.State == EntityState.Detached)
             {
-                var exists = await DbSet.AsNoTracking().AnyAsync(e => e.Id.Equals(aggregateRoot.Id), ct);
+                var exists = await DbSet.AsNoTracking().AnyAsync(e => e.Id != null && e.Id.Equals(aggregateRoot.Id), ct);
 
                 if (exists)
                 {
@@ -85,7 +85,7 @@ namespace OpenDDD.Infrastructure.Repository.EF.Base
 
         public async Task DeleteAsync(TAggregateRoot aggregateRoot)
         {
-            var exists = await DbSet.AsNoTracking().AnyAsync(e => e.Id.Equals(aggregateRoot.Id));
+            var exists = await DbSet.AsNoTracking().AnyAsync(e => e.Id != null && e.Id.Equals(aggregateRoot.Id));
             if (!exists)
                 throw new InvalidOperationException("Cannot delete an aggregate root that does not exist.");
 

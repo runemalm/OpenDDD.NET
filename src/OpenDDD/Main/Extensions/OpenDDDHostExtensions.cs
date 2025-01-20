@@ -5,7 +5,7 @@ using OpenDDD.Main.Managers;
 
 namespace OpenDDD.Main.Extensions
 {
-    public static class OpenDDDHostExtensions
+    public static class OpenDddHostExtensions
     {
         public static async Task UseOpenDddServiceLifetimeManagerAsync(this IHost host)
         {
@@ -20,7 +20,8 @@ namespace OpenDDD.Main.Extensions
                 {
                     try
                     {
-                        await serviceManager.StopServicesAsync();
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                        await serviceManager.StopServicesAsync(cts.Token);
                     }
                     catch (Exception ex)
                     {

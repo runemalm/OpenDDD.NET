@@ -31,6 +31,11 @@ namespace OpenDDD.Main.Managers
                         .GetCustomAttribute<StartPriorityAttribute>();
                     return priorityAttribute?.StartPriority ?? 0;
                 });
+            
+            if (!startables.Any())
+            {
+                _logger.LogWarning("No IStartable services found to start.");
+            }
 
             foreach (var startable in startables)
             {
@@ -62,6 +67,11 @@ namespace OpenDDD.Main.Managers
                         .GetCustomAttribute<StopPriorityAttribute>();
                     return priorityAttribute?.StopPriority ?? 0;
                 });
+            
+            if (!stoppables.Any())
+            {
+                _logger.LogWarning("No IStoppable services found to stop.");
+            }
 
             foreach (var stoppable in stoppables)
             {
