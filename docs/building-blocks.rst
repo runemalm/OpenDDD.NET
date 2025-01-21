@@ -68,7 +68,7 @@ Repositories are auto-registered in OpenDDD.NET. By default, implementations fol
 
 Interfaces ending with *Repository* (e.g., `ICustomerRepository`) are automatically registered with their matching implementations.
 
-The framework supports configurable implementations (e.g., `PostgresCustomerRepository`, `InMemoryCustomerRepository`) through naming conventions and a configuration key.
+The framework supports base classes for each persistence provider (e.g., ``PostgresRepositoryBase``, ``InMemoryRepositoryBase``). Use it when you build your custom repository classes.
 
 **Example:**
 
@@ -147,7 +147,7 @@ Event Listeners manage domain and integration events, supporting scalable, event
 Domain Services
 ###############
 
-Domain Services encapsulate domain-specific operations that do not naturally belong to an entity or value object. They implement ``IDomainService`` or an interface extending it and provide operations that cross multiple aggregates or entities.
+Domain Services encapsulate domain-specific operations that do not naturally belong to an entity or value object. They implement ``IDomainService`` or an interface extending it and provide operations that may cross multiple aggregates or entities.
 
 Domain Services are auto-registered using a convention-based mechanism:
 

@@ -47,7 +47,7 @@ Add OpenDDD.NET services to your application in the `Program.cs` file:
 
     var app = builder.Build();
 
-    // Add OpenDDD Middleware
+    // Use OpenDDD Middleware
     app.UseOpenDDD();
 
     app.Run();
@@ -161,7 +161,7 @@ Sample Project
 
 The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-world scenario, including domain modeling, repositories, actions, and framework configuration.
 
-You can explore the source code in the repository: `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/develop/samples/Bookstore>`_.
+You can explore the source code in the repository: `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_.
 
 #################
 Where to Go Next?
