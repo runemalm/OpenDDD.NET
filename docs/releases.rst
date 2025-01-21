@@ -9,7 +9,7 @@ Version History
 **3.0.0-alpha.2 (2025-01-21)**
 
 - **Domain Services:** Added the `IDomainService` interface to mark domain services, which are now auto-registered.
-- **Repositories:** Introduced support for repositories with `InMemoryRepositoryBase` as the base class for custom implementations.
+- **Repositories:** Introduced support for repositories with `InMemoryRepositoryBase` as the base class for custom implementations and thus first supported persistence provider.
 - **Actions:** Added the `IAction<TCommand, TReturns>` interface to mark actions, which are now auto-registered.
 - **Sample Project:** Introduced the `Bookstore` sample project to demonstrate OpenDDD.NET usage.
 - **Documentation Updates:** Expanded documentation with examples and guides for repositories, domain services, actions and the sample project.

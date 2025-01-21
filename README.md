@@ -54,26 +54,29 @@ OpenDDD.NET can be configured using the `appsettings.json` file. Below is an exa
 
 ```
 {
-  "OpenDDD": {
-    "Services": {
-      "AutoRegisterActions": true,
-      "AutoRegisterRepositories": true
-    },
-    "Pipeline": {
-      
-    }
+  "OpenDDD": {  
+    "ConnectionString": "",
+    "AutoRegisterDomainServices": true,  
+    "AutoRegisterRepositories": true,  
+    "AutoRegisterActions": true,  
+    "PersistenceProvider": "InMemory"  
   }
 }
 ```
 
 ### Explanation of Configuration Options
 
--   **`Services.AutoRegisterActions`**: Automatically registers all actions found in the application.
-    
--   **`Services.AutoRegisterRepositories`**: Automatically registers all repositories found in the application.
-    
+- **`ConnectionString`**: Specifies the connection string for persistence providers (e.g., databases). This is required for certain providers like `Postgres`.
 
-These settings can be overridden programmatically in `Program.cs`.
+- **`AutoRegisterDomainServices`**: Automatically registers all domain service interfaces (e.g. `ICustomerDomainService`) with their corresponding implementations.
+
+- **`AutoRegisterRepositories`**: Automatically registers all repository interfaces (e.g., `ICustomerRepository`) with their corresponding implementations.
+
+- **`AutoRegisterActions`**: Automatically registers all classes implementing `IAction<TCommand, TReturns>`.
+
+- **`PersistenceProvider`**: Defines the persistence technology to use (e.g., `InMemory`, `Postgres`). Determines the implementation used for repositories and other persistence-related features.
+
+These options can be customized in `appsettings.json` or overridden programmatically in `Program.cs`.
 
 ## Example Usage
 
@@ -82,28 +85,24 @@ In your `Program.cs` file, you'll need to register various services and configur
 Here's an example of how to manually configure your application in Program.cs:
 
 ```csharp
-using OpenDDD.Main.Extensions;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// Register OpenDDD Services
-builder.Services.AddOpenDDD(builder.Configuration, options =>
-{
-    options.AutoRegisterActions = true;
-    options.AutoRegisterRepositories = true;
-});
+using OpenDDD.Main.Extensions;  
+  
+var builder = WebApplication.CreateBuilder(args);  
+  
+// ...
+  
+// Add OpenDDD Services
+builder.Services.AddOpenDDD(builder.Configuration);  
+  
+// ...
 
 var app = builder.Build();
+  
+// Use OpenDDD Middleware
+app.UseOpenDDD();  
+  
+// ...
 
-// Add OpenDDD Middleware
-app.UseOpenDDD();
-
-if (app.Environment.IsDevelopment())
-    app.UseDeveloperExceptionPage();
-
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
 app.Run();
 ```
 
@@ -120,7 +119,7 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 **3.0.0-alpha.2 (2025-01-21)**
 
 - **Domain Services:** Added the `IDomainService` interface to mark domain services, which are now auto-registered.
-- **Repositories:** Introduced support for repositories with `InMemoryRepositoryBase` as the base class for custom implementations.
+- **Repositories:** Introduced support for repositories with `InMemoryRepositoryBase` as the base class for custom implementations and thus first supported persistence provider.
 - **Actions:** Added the `IAction<TCommand, TReturns>` interface to mark actions, which are now auto-registered.
 - **Sample Project:** Introduced the `Bookstore` sample project to demonstrate OpenDDD.NET usage.
 - **Documentation Updates:** Expanded documentation with examples and guides for repositories, domain services, actions and the sample project.
