@@ -33,17 +33,21 @@ namespace OpenDDD.Main.Extensions
                                                         "'OpenDDD:ConnectionString' or " +
                                                         "'ConnectionStrings:DefaultConnection'.");
                 }
-                
-                if (options.AutoRegisterActions)
-                {
-                    RegisterActions(services);
-                }
-
-                if (options.AutoRegisterRepositories)
-                {
-                    RegisterRepositories(services);
-                }
             });
+            
+            var options = configuration.GetSection("OpenDDD").Get<OpenDddOptions>();
+
+            // Auto-register repositories
+            if (options.AutoRegisterRepositories)
+            {
+                RegisterRepositories(services, configuration);
+            }
+            
+            // Auto-register actions
+            if (options.AutoRegisterActions)
+            {
+                RegisterActions(services);
+            }
 
             // Allow additional service configuration
             configureServices?.Invoke(services);
@@ -51,6 +55,9 @@ namespace OpenDDD.Main.Extensions
             // Register the service manager and startup filter
             RegisterServiceManager(services);
             services.AddSingleton<IStartupFilter, OpenDddStartupFilter>();
+            
+            // Register the service collection itself so we can use it to start services in the service manager
+            services.AddSingleton(services);
 
             return services;
         }
@@ -68,18 +75,48 @@ namespace OpenDDD.Main.Extensions
             }
         }
 
-        private static void RegisterRepositories(IServiceCollection services)
+        private static void RegisterRepositories(IServiceCollection services, IConfiguration configuration)
         {
-            var repositoryTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.Name.EndsWith("Repository") &&
-                               typeof(IRepository<,>).IsAssignableTo(type) &&
-                               !type.IsInterface && !type.IsAbstract);
+            // Get the desired implementation type from configuration
+            var repositoryImplementation = configuration.GetValue<string>("OpenDDD:RepositoryImplementation") ?? "Postgres";
 
-            foreach (var repositoryType in repositoryTypes)
+            // Find all repository interfaces
+            var repositoryInterfaces = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => 
+                    type.IsInterface &&
+                    type.Name.EndsWith("Repository") &&
+                    type.GetInterfaces().Any(i => 
+                        i.IsGenericType && 
+                        i.GetGenericTypeDefinition() == typeof(IRepository<,>)
+                    )
+                )
+                .ToList();
+
+            // Find all repository implementations
+            var repositoryImplementations = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => !type.IsInterface && !type.IsAbstract && 
+                               type.Name.StartsWith(repositoryImplementation) && 
+                               type.Name.EndsWith("Repository"))
+                .ToList();
+
+            foreach (var interfaceType in repositoryInterfaces)
             {
-                services.AddTransient(repositoryType);
-                Console.WriteLine($"Registered repository: {repositoryType.Name}");
+                // Find a matching implementation using the naming convention
+                var implementationType = repositoryImplementations.FirstOrDefault(
+                    impl => impl.Name.Equals($"{repositoryImplementation}{interfaceType.Name.Substring(1)}", StringComparison.Ordinal));
+
+                if (implementationType != null && interfaceType.IsAssignableFrom(implementationType))
+                {
+                    // Register the interface and its implementation
+                    services.AddTransient(interfaceType, implementationType);
+                    Console.WriteLine($"Registered {implementationType.Name} for {interfaceType.Name}");
+                }
+                else
+                {
+                    Console.WriteLine($"Warning: No implementation found for {interfaceType.Name} with prefix '{repositoryImplementation}'");
+                }
             }
         }
         
