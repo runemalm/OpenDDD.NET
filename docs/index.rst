@@ -21,7 +21,7 @@ Key Features
 - **Domain Events**: Facilitate communication between domain objects while maintaining loose coupling. (Planned)
 - **Integration Events**: Enable communication between bounded contexts in distributed systems. (Planned)
 - **Event Listeners**: Manage event listeners to handle domain and integration events for scalable, event-driven architectures. (Planned)
-- **Domain Services**: Encapsulate domain-specific operations that do not naturally belong to an entity or value object. (Planned)
+- **Domain Services**: Encapsulate domain-specific operations that do not naturally belong to an entity or value object. (Implemented)
 - **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands. (Implemented)
 - **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations. (Planned)
 - **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions. (Planned)
@@ -39,6 +39,13 @@ Key Features
   :caption: Building Blocks
 
   building-blocks
+
+.. advanced-topics-docs:
+.. toctree::
+  :maxdepth: 1
+  :caption: Advanced Topics
+
+  advanced-topics
 
 .. releases-docs:
 .. toctree::

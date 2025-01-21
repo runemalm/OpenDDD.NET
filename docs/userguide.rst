@@ -42,7 +42,7 @@ Add OpenDDD.NET services to your application in the `Program.cs` file:
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Register OpenDDD Services
+    // Add OpenDDD Services
     builder.Services.AddOpenDDD(builder.Configuration);
 
     var app = builder.Build();
@@ -68,17 +68,33 @@ Create aggregates, entities, and value objects to represent your domain model. F
         }
     }
 
-**Step 3: Implement Repositories and Actions**
+**Step 3: Implement Repositories, Actions, and Domain Services**
 
-Define repositories for aggregates and create actions to handle application logic. For example:
+Define repositories for aggregates, create actions to handle application logic, and implement domain services for cross-aggregate domain logic.
+
+Repositories are automatically registered based on naming conventions:
+
+- Interfaces ending with `Repository` (e.g., `ICustomerRepository`) are automatically registered with their corresponding implementation (e.g., `PostgresCustomerRepository` or `MemoryCustomerRepository`), depending on the configuration.
+
+Actions are also auto-registered:
+
+- Any class implementing ``IAction<TCommand, TReturns>`` is registered with transient scope.
+
+Domain Services encapsulate domain-specific operations:
+
+- Interfaces extending ``IDomainService`` (e.g., `ICustomerDomainService`) are automatically registered with their matching implementations (e.g., `CustomerDomainService`) by convention.
+
+**Example definitions:**
 
 .. code-block:: csharp
 
+    // Repository interface
     public interface IOrderRepository : IRepository<Order, Guid>
     {
-        Task<Order?> GetByCustomerNameAsync(string customerName);
+        Task<IEnumerable<Order>?> FindByCustomerNameAsync(string customerName);
     }
 
+    // Action
     public class PlaceOrderAction : IAction<PlaceOrderCommand, Guid>
     {
         private readonly IOrderRepository _orderRepository;
@@ -96,6 +112,29 @@ Define repositories for aggregates and create actions to handle application logi
         }
     }
 
+    // Domain service
+    public interface ICustomerDomainService : IDomainService
+    {
+        Task<Customer> Register(string name, string email);
+    }
+
+    public class CustomerDomainService : ICustomerDomainService
+    {
+        private readonly ICustomerRepository _customerRepository;
+
+        public CustomerDomainService(ICustomerRepository customerRepository)
+        {
+            _customerRepository = customerRepository;
+        }
+
+        public async Task<Customer> Register(string name, string email)
+        {
+            var customer = new Customer(Guid.NewGuid(), name, email);
+            await _customerRepository.SaveAsync(customer, default);
+            return customer;
+        }
+    }
+
 **Step 4: Add Configuration**
 
 Add the following configuration to your `appsettings.json` file to customize OpenDDD.NET behavior:
@@ -104,15 +143,17 @@ Add the following configuration to your `appsettings.json` file to customize Ope
 
     {
       "OpenDDD": {
-        "Services": {
-          "AutoRegisterActions": true,
-          "AutoRegisterRepositories": true
-        },
-        "Pipeline": {
-          
-        }
+        "AutoRegisterDomainServices": true,
+        "AutoRegisterRepositories": true,
+        "AutoRegisterActions": true,
+        "RepositoryImplementation": "InMemory"
       }
     }
+
+- **AutoRegisterDomainServices**: Registers domain service interfaces (e.g., `ICustomerDomainService`) with their implementations (e.g., `CustomerDomainService`).
+- **AutoRegisterRepositories**: Automatically registers repository interfaces (e.g., `ICustomerRepository`) with their corresponding implementations (e.g., `PostgresCustomerRepository`).
+- **AutoRegisterActions**: Enables automatic registration of all classes implementing `IAction<TCommand, TReturns>` with transient scope.
+- **RepositoryImplementation**: Define the persistence provider to use, (one of *InMemory*, *Postgres*).
 
 #################
 Where to Go Next?

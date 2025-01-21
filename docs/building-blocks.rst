@@ -6,7 +6,7 @@
 Aggregates
 ##########
 
-Aggregates represent the core units of your domain model, defining boundaries within which domain logic and consistency are enforced. Aggregates have a single root entity known as the Aggregate Root.
+Aggregates represent the core units of your domain model, defining boundaries within which domain logic and consistency are enforced. Aggregates have a single root entity known as the *Aggregate Root*.
 
 .. code-block:: csharp
 
@@ -62,13 +62,49 @@ Value Objects represent immutable domain concepts without identity. They are def
 Repositories
 ############
 
-Repositories abstract away persistence concerns, enabling interaction with aggregates and entities while keeping domain logic clean. This feature is currently under development.
+Repositories in OpenDDD.NET abstract persistence concerns, enabling interaction with aggregates and entities while keeping domain logic clean. They allow you to interact with the database or other persistence mechanisms without introducing infrastructure-specific logic into the domain model.
+
+Repositories are auto-registered in OpenDDD.NET. By default, implementations follow a convention-based registration:
+
+Interfaces ending with *Repository* (e.g., `ICustomerRepository`) are automatically registered with their matching implementations.
+
+The framework supports configurable implementations (e.g., `PostgresCustomerRepository`, `MemoryCustomerRepository`) through naming conventions and a configuration key.
+
+**Example:**
+
+Define a repository interface and a concrete implementation:
+
+.. code-block:: csharp
+
+    // Repository interface
+    public interface ICustomerRepository : IRepository<Customer, Guid>
+    {
+        Customer GetByEmail(string email, CancellationToken ct = default);
+    }
+
+    // Postgres implementation
+    public class PostgresCustomerRepository : PostgresRepositoryBase<Customer, Guid>, ICustomerRepository
+    {
+        public PostgresCustomerRepository(ILogger<PostgresCustomerRepository> logger) : base(logger) { }
+
+        public Customer GetByEmail(string email, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+With auto-registration enabled, the repository is registered at application startup with the appropriate implementation, based on the configured provider (e.g., **Postgres** or **InMemory**).
+
+**Key Features:**
+
+- **Convention-based registration:** Eliminates the need for manual configuration.
+- **Flexible implementations:** Switch between different implementations (e.g., *Postgres* for production and *InMemory* for testing) by changing a configuration key.
 
 #######
 Actions
 #######
 
-Application Actions coordinate the execution of domain logic in response to commands. They are central to the application layer.
+Application *Actions* coordinate the execution of domain logic in response to commands. They are central to the application layer.
 
 .. code-block:: csharp
 
@@ -89,39 +125,93 @@ Application Actions coordinate the execution of domain logic in response to comm
         }
     }
 
-#################
+#############
 Domain Events
-#################
+#############
 
 Domain Events facilitate communication between domain objects while maintaining loose coupling. This feature is currently under development.
 
-######################
+##################
 Integration Events
-######################
+##################
 
 Integration Events enable communication between bounded contexts in distributed systems. This feature is currently under development.
 
-###################
+###############
 Event Listeners
-###################
+###############
 
 Event Listeners manage domain and integration events, supporting scalable, event-driven architectures. This feature is currently under development.
 
-###################
+###############
 Domain Services
-###################
+###############
 
-Domain Services encapsulate domain-specific operations that do not naturally belong to an entity or value object. This feature is currently under development.
+Domain Services encapsulate domain-specific operations that do not naturally belong to an entity or value object. They implement ``IDomainService`` or an interface extending it and provide operations that cross multiple aggregates or entities.
 
-#########################
+Domain Services are auto-registered using a convention-based mechanism:
+
+Interfaces implementing ``IDomainService`` (e.g., `ICustomerDomainService`) are automatically registered with their matching implementation (e.g., `CustomerDomainService`).
+
+The default registration lifetime is **Transient**. You can override this using the ``LifetimeAttribute``.
+
+**Example:**
+
+Define a domain service interface and its implementation:
+
+.. code-block:: csharp
+
+    // Domain service interface
+    public interface ICustomerDomainService : IDomainService
+    {
+        Task<Customer> Register(string name, string email);
+    }
+
+    // Implementation
+    [Lifetime(ServiceLifetime.Singleton)] // Optional: Specify a custom lifetime
+    public class CustomerDomainService : ICustomerDomainService
+    {
+        private readonly ICustomerRepository _customerRepository;
+
+        public CustomerDomainService(ICustomerRepository customerRepository)
+        {
+            _customerRepository = customerRepository;
+        }
+
+        public async Task<Customer> Register(string name, string email)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name cannot be empty", nameof(name));
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email cannot be empty", nameof(email));
+
+            var existingCustomer = await _customerRepository.FindWithAsync(c => c.Email == email, default);
+            if (existingCustomer.Any())
+                throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+
+            var customer = new Customer(Guid.NewGuid(), name, email);
+            await _customerRepository.SaveAsync(customer, default);
+
+            return customer;
+        }
+    }
+
+**Key Features:**
+
+- **Encapsulation:** Encapsulates domain logic that spans multiple entities or aggregates.
+- **Auto-registration:** Automatically registers domain services with the DI container.
+- **Customizable scope:** Use the ``LifetimeAttribute`` to override the default transient scope.
+
+#######################
 Infrastructure Services
-#########################
+#######################
 
 Infrastructure Services provide implementations for technical concerns such as logging, email, or external integrations. This feature is currently under development.
 
-########################
+####################
 Transactional Outbox
-########################
+####################
 
 The Transactional Outbox ensures event consistency by persisting and publishing events as part of database transactions. This feature is currently under development.
 
