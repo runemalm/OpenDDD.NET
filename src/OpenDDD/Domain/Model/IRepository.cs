@@ -2,7 +2,9 @@
 
 namespace OpenDDD.Domain.Model
 {
-    public interface IRepository<TAggregateRoot, TId> where TAggregateRoot : IAggregateRoot<TId>
+    public interface IRepository<TAggregateRoot, in TId> 
+        where TAggregateRoot : IAggregateRoot<TId>
+        where TId : notnull
     {
         Task<TAggregateRoot> GetAsync(TId id, CancellationToken ct);
         Task<TAggregateRoot?> FindAsync(TId id, CancellationToken ct);

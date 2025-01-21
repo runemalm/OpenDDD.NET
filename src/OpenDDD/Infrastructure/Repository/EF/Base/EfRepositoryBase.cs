@@ -8,6 +8,7 @@ namespace OpenDDD.Infrastructure.Repository.EF.Base
     public abstract class EfRepositoryBase<TAggregateRoot, TId, TContext> : IRepository<TAggregateRoot, TId>
         where TAggregateRoot : AggregateRootBase<TId>
         where TContext : EfDbContextBase
+        where TId : notnull
     {
         protected readonly TContext _context;
         protected readonly DbSet<TAggregateRoot> DbSet;

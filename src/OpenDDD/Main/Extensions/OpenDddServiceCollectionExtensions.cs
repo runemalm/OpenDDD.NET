@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using System.Reflection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
+using OpenDDD.Domain.Service;
+using OpenDDD.Main.Attributes;
 using OpenDDD.Main.Managers;
 using OpenDDD.Main.Options;
 using OpenDDD.Main.StartupFilters;
@@ -37,8 +40,14 @@ namespace OpenDDD.Main.Extensions
             
             var options = configuration.GetSection("OpenDDD").Get<OpenDddOptions>();
 
+            // Auto-register domain services
+            if (options.AutoRegisterDomainServices)
+            {
+                RegisterDomainServices(services);
+            }
+
             // Auto-register repositories
-            if (options.AutoRegisterRepositories)
+            if (options!.AutoRegisterRepositories)
             {
                 RegisterRepositories(services, configuration);
             }
@@ -62,16 +71,38 @@ namespace OpenDDD.Main.Extensions
             return services;
         }
 
-        private static void RegisterActions(IServiceCollection services)
+        private static void RegisterDomainServices(IServiceCollection services)
         {
-            var actionTypes = AppDomain.CurrentDomain.GetAssemblies()
+            // Get all types implementing IDomainService or its ancestor interfaces
+            var domainServiceInterfaces = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => typeof(IAction<,>).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract);
+                .Where(type => 
+                    type.IsInterface && 
+                    type != typeof(IDomainService) && 
+                    typeof(IDomainService).IsAssignableFrom(type))
+                .ToList();
 
-            foreach (var actionType in actionTypes)
+            foreach (var interfaceType in domainServiceInterfaces)
             {
-                services.AddTransient(actionType);
-                Console.WriteLine($"Registered action: {actionType.Name}");
+                // Determine the implementation type by removing the leading 'I' from the interface name
+                var implementationTypeName = interfaceType.Name.Substring(1);
+                var implementationType = interfaceType.Assembly.GetTypes()
+                    .FirstOrDefault(type => type.Name.Equals(implementationTypeName, StringComparison.Ordinal) && interfaceType.IsAssignableFrom(type));
+
+                if (implementationType != null)
+                {
+                    // Check for LifetimeAttribute
+                    var lifetimeAttribute = implementationType.GetCustomAttribute<LifetimeAttribute>();
+                    var lifetime = lifetimeAttribute?.Lifetime ?? ServiceLifetime.Transient;
+
+                    // Register the interface and its implementation
+                    services.Add(new ServiceDescriptor(interfaceType, implementationType, lifetime));
+                    Console.WriteLine($"Registered domain service: {interfaceType.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
+                }
+                else
+                {
+                    Console.WriteLine($"Warning: No implementation found for domain service interface: {interfaceType.Name}");
+                }
             }
         }
 
@@ -109,14 +140,37 @@ namespace OpenDDD.Main.Extensions
 
                 if (implementationType != null && interfaceType.IsAssignableFrom(implementationType))
                 {
+                    // Check for LifetimeAttribute
+                    var lifetimeAttribute = implementationType.GetCustomAttribute<LifetimeAttribute>();
+                    var lifetime = lifetimeAttribute?.Lifetime ?? ServiceLifetime.Transient;
+
                     // Register the interface and its implementation
-                    services.AddTransient(interfaceType, implementationType);
-                    Console.WriteLine($"Registered {implementationType.Name} for {interfaceType.Name}");
+                    services.Add(new ServiceDescriptor(interfaceType, implementationType, lifetime));
+                    Console.WriteLine($"Registered {implementationType.Name} for {interfaceType.Name} with lifetime: {lifetime}");
                 }
                 else
                 {
                     Console.WriteLine($"Warning: No implementation found for {interfaceType.Name} with prefix '{repositoryImplementation}'");
                 }
+            }
+        }
+        
+        private static void RegisterActions(IServiceCollection services)
+        {
+            var actionTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type =>
+                    type.IsClass &&
+                    !type.IsAbstract &&
+                    type.GetInterfaces().Any(i =>
+                        i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAction<,>)))
+                .ToList();
+
+            foreach (var actionType in actionTypes)
+            {
+                // Register the action type with transient lifetime
+                services.AddTransient(actionType);
+                Console.WriteLine($"Registered action: {actionType.Name}");
             }
         }
         
