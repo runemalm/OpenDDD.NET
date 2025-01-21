@@ -7,6 +7,10 @@ namespace Bookstore.Domain.Model
         public string Name;
         public string Email;
 
-        private Customer(Guid id) : base(id) { }
+        public Customer(Guid id, string name, string email) : base(id)
+        {
+            Name = name;
+            Email = email;
+        }
     }
 }

@@ -3,9 +3,9 @@ using OpenDDD.Infrastructure.Repository.Postgres.Base;
 
 namespace Bookstore.Infrastructure.Repositories.Postgres
 {
-    public class PostgresSessionRepository : PostgresRepositoryBase<Customer, Guid>, ICustomerRepository
+    public class PostgresCustomerRepository : PostgresRepositoryBase<Customer, Guid>, ICustomerRepository
     {
-        public PostgresSessionRepository() : base()
+        public PostgresCustomerRepository(ILogger<PostgresCustomerRepository> logger) : base(logger)
         {
             
         }
