@@ -7,12 +7,13 @@
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <IsPackable>true</IsPackable>
         <PackageId>OpenDDD.NET</PackageId>
-        <Version>3.0.0-alpha.1</Version>
+        <Version>3.0.0-alpha.2</Version>
         <Authors>David Runemalm</Authors>
         <Description>A framework for domain-driven design using C# and .NET.</Description>
-        <PackageTags>DDD;Domain-Driven Design;C#;.NET</PackageTags>
+        <PackageTags>DDD;Domain-Driven Design;C#;.NET;Hexagonal Architecture</PackageTags>
         <RepositoryUrl>https://github.com/runemalm/OpenDDD.NET</RepositoryUrl>
         <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,6 +25,10 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1" />
         <PackageReference Include="xunit" Version="2.9.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../../README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>
