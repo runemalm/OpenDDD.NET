@@ -74,7 +74,7 @@ Define repositories for aggregates, create actions to handle application logic, 
 
 Repositories are automatically registered based on naming conventions:
 
-- Interfaces ending with `Repository` (e.g., `ICustomerRepository`) are automatically registered with their corresponding implementation (e.g., `PostgresCustomerRepository` or `MemoryCustomerRepository`), depending on the configuration.
+- Interfaces ending with `Repository` (e.g., `ICustomerRepository`) are automatically registered with their corresponding implementation (e.g., `PostgresCustomerRepository` or `InMemoryCustomerRepository`), depending on the configuration.
 
 Actions are also auto-registered:
 
@@ -146,14 +146,14 @@ Add the following configuration to your `appsettings.json` file to customize Ope
         "AutoRegisterDomainServices": true,
         "AutoRegisterRepositories": true,
         "AutoRegisterActions": true,
-        "RepositoryImplementation": "InMemory"
+        "PersistenceProvider": "InMemory"
       }
     }
 
 - **AutoRegisterDomainServices**: Registers domain service interfaces (e.g., `ICustomerDomainService`) with their implementations (e.g., `CustomerDomainService`).
 - **AutoRegisterRepositories**: Automatically registers repository interfaces (e.g., `ICustomerRepository`) with their corresponding implementations (e.g., `PostgresCustomerRepository`).
 - **AutoRegisterActions**: Enables automatic registration of all classes implementing `IAction<TCommand, TReturns>` with transient scope.
-- **RepositoryImplementation**: Define the persistence provider to use, (one of *InMemory*, *Postgres*).
+- **PersistenceProvider**: Define the persistence provider to use, (one of *InMemory*, *Postgres*).
 
 #################
 Where to Go Next?

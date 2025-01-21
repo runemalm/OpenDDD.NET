@@ -68,7 +68,7 @@ Repositories are auto-registered in OpenDDD.NET. By default, implementations fol
 
 Interfaces ending with *Repository* (e.g., `ICustomerRepository`) are automatically registered with their matching implementations.
 
-The framework supports configurable implementations (e.g., `PostgresCustomerRepository`, `MemoryCustomerRepository`) through naming conventions and a configuration key.
+The framework supports configurable implementations (e.g., `PostgresCustomerRepository`, `InMemoryCustomerRepository`) through naming conventions and a configuration key.
 
 **Example:**
 
@@ -93,7 +93,7 @@ Define a repository interface and a concrete implementation:
         }
     }
 
-With auto-registration enabled, the repository is registered at application startup with the appropriate implementation, based on the configured provider (e.g., **Postgres** or **InMemory**).
+With auto-registration enabled, the repository is registered at application startup with the appropriate implementation, based on the configured persistence provider (e.g., **Postgres** or **InMemory**).
 
 **Key Features:**
 

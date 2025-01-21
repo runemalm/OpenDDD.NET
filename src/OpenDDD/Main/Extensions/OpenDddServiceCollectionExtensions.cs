@@ -41,13 +41,13 @@ namespace OpenDDD.Main.Extensions
             var options = configuration.GetSection("OpenDDD").Get<OpenDddOptions>();
 
             // Auto-register domain services
-            if (options.AutoRegisterDomainServices)
+            if (options!.AutoRegisterDomainServices)
             {
                 RegisterDomainServices(services);
             }
 
             // Auto-register repositories
-            if (options!.AutoRegisterRepositories)
+            if (options.AutoRegisterRepositories)
             {
                 RegisterRepositories(services, configuration);
             }
@@ -109,7 +109,7 @@ namespace OpenDDD.Main.Extensions
         private static void RegisterRepositories(IServiceCollection services, IConfiguration configuration)
         {
             // Get the desired implementation type from configuration
-            var repositoryImplementation = configuration.GetValue<string>("OpenDDD:RepositoryImplementation") ?? "Postgres";
+            var persistenceProvider = configuration.GetValue<string>("OpenDDD:PersistenceProvider") ?? "Postgres";
 
             // Find all repository interfaces
             var repositoryInterfaces = AppDomain.CurrentDomain.GetAssemblies()
@@ -128,7 +128,7 @@ namespace OpenDDD.Main.Extensions
             var repositoryImplementations = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => !type.IsInterface && !type.IsAbstract && 
-                               type.Name.StartsWith(repositoryImplementation) && 
+                               type.Name.StartsWith(persistenceProvider) && 
                                type.Name.EndsWith("Repository"))
                 .ToList();
 
@@ -136,7 +136,7 @@ namespace OpenDDD.Main.Extensions
             {
                 // Find a matching implementation using the naming convention
                 var implementationType = repositoryImplementations.FirstOrDefault(
-                    impl => impl.Name.Equals($"{repositoryImplementation}{interfaceType.Name.Substring(1)}", StringComparison.Ordinal));
+                    impl => impl.Name.Equals($"{persistenceProvider}{interfaceType.Name.Substring(1)}", StringComparison.Ordinal));
 
                 if (implementationType != null && interfaceType.IsAssignableFrom(implementationType))
                 {
@@ -146,11 +146,11 @@ namespace OpenDDD.Main.Extensions
 
                     // Register the interface and its implementation
                     services.Add(new ServiceDescriptor(interfaceType, implementationType, lifetime));
-                    Console.WriteLine($"Registered {implementationType.Name} for {interfaceType.Name} with lifetime: {lifetime}");
+                    Console.WriteLine($"Registered repository: {interfaceType.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
                 }
                 else
                 {
-                    Console.WriteLine($"Warning: No implementation found for {interfaceType.Name} with prefix '{repositoryImplementation}'");
+                    Console.WriteLine($"Warning: No implementation found for {interfaceType.Name} with prefix '{persistenceProvider}'");
                 }
             }
         }
@@ -170,7 +170,7 @@ namespace OpenDDD.Main.Extensions
             {
                 // Register the action type with transient lifetime
                 services.AddTransient(actionType);
-                Console.WriteLine($"Registered action: {actionType.Name}");
+                Console.WriteLine($"Registered action: {actionType.Name} with lifetime: Transient");
             }
         }
         
