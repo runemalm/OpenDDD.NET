@@ -28,30 +28,30 @@ namespace OpenDDD.Infrastructure.Repository.EF.Base
             
         }
 
-        public async Task<TAggregateRoot> GetAsync(TId id)
+        public async Task<TAggregateRoot> GetAsync(TId id, CancellationToken ct)
         {
             _context.ChangeTracker.Clear(); // Clear any cached tracked entities
             var query = IncludeRelatedEntities(DbSet.AsNoTracking());
-            return await query.FirstOrDefaultAsync(e => e.Id != null && e.Id.Equals(id)) 
+            return await query.FirstOrDefaultAsync(e => e.Id != null && e.Id.Equals(id), cancellationToken: ct) 
                    ?? throw new InvalidOperationException($"Aggregate root with ID {id} not found.");
         }
 
-        public async Task<TAggregateRoot?> FindAsync(TId id)
+        public async Task<TAggregateRoot?> FindAsync(TId id, CancellationToken ct)
         {
             var query = IncludeRelatedEntities(DbSet.AsNoTracking());
-            return await query.FirstOrDefaultAsync(e => e.Id != null && e.Id.Equals(id));
+            return await query.FirstOrDefaultAsync(e => e.Id != null && e.Id.Equals(id), cancellationToken: ct);
         }
 
-        public async Task<IEnumerable<TAggregateRoot>> FindWithAsync(Expression<Func<TAggregateRoot, bool>> filterExpression)
+        public async Task<IEnumerable<TAggregateRoot>> FindWithAsync(Expression<Func<TAggregateRoot, bool>> filterExpression, CancellationToken ct)
         {
             var query = IncludeRelatedEntities(DbSet.AsNoTracking());
-            return await query.Where(filterExpression).ToListAsync();
+            return await query.Where(filterExpression).ToListAsync(cancellationToken: ct);
         }
 
-        public async Task<IEnumerable<TAggregateRoot>> FindAllAsync()
+        public async Task<IEnumerable<TAggregateRoot>> FindAllAsync(CancellationToken ct)
         {
             var query = IncludeRelatedEntities(DbSet.AsNoTracking());
-            return await query.ToListAsync();
+            return await query.ToListAsync(cancellationToken: ct);
         }
 
         public async Task SaveAsync(TAggregateRoot aggregateRoot, CancellationToken ct)
@@ -83,14 +83,14 @@ namespace OpenDDD.Infrastructure.Repository.EF.Base
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(TAggregateRoot aggregateRoot)
+        public async Task DeleteAsync(TAggregateRoot aggregateRoot, CancellationToken ct)
         {
             var exists = await DbSet.AsNoTracking().AnyAsync(e => e.Id != null && e.Id.Equals(aggregateRoot.Id));
             if (!exists)
                 throw new InvalidOperationException("Cannot delete an aggregate root that does not exist.");
 
             DbSet.Remove(aggregateRoot);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
         }
     }
 }
