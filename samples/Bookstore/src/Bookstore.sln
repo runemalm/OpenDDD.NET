@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore", "Bookstore\Bookstore.csproj", "{006340CF-B3FB-4F72-B278-2D41EB8D921B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDDD", "..\..\..\src\OpenDDD\OpenDDD.csproj", "{05861AFA-45DB-409A-AF0D-E81936198EB0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{006340CF-B3FB-4F72-B278-2D41EB8D921B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{006340CF-B3FB-4F72-B278-2D41EB8D921B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{006340CF-B3FB-4F72-B278-2D41EB8D921B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{006340CF-B3FB-4F72-B278-2D41EB8D921B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05861AFA-45DB-409A-AF0D-E81936198EB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05861AFA-45DB-409A-AF0D-E81936198EB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05861AFA-45DB-409A-AF0D-E81936198EB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05861AFA-45DB-409A-AF0D-E81936198EB0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
