@@ -30,6 +30,12 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 
 - .NET 8
 
+## Sample Project
+
+The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-world scenario, including domain modeling, repositories, actions, and framework configuration. 
+
+Explore the project in the repository: [Bookstore Sample Project](https://github.com/runemalm/OpenDDD.NET/tree/develop/samples/Bookstore).
+
 ## Getting Started
 
 To get started with OpenDDD.NET, follow these simple steps:

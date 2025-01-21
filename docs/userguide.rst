@@ -155,9 +155,18 @@ Add the following configuration to your `appsettings.json` file to customize Ope
 - **AutoRegisterActions**: Enables automatic registration of all classes implementing `IAction<TCommand, TReturns>` with transient scope.
 - **PersistenceProvider**: Define the persistence provider to use, (one of *InMemory*, *Postgres*).
 
+##############
+Sample Project
+##############
+
+The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-world scenario, including domain modeling, repositories, actions, and framework configuration.
+
+You can explore the source code in the repository: `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/develop/samples/Bookstore>`_.
+
 #################
 Where to Go Next?
 #################
 
 - **Explore Building Blocks**: Learn more about the foundational components of OpenDDD.NET in the `Building Blocks` section.
+- **Sample Project**: Check out the sample project mentioned above.
 - **Contribute**: Join the OpenDDD.NET community on GitHub to report issues, ask questions, or contribute to the project.
