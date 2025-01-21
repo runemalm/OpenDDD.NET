@@ -57,7 +57,10 @@ namespace OpenDDD.Main.Managers
                 await Task.WhenAll(tasks);
             }
 
-            _logger.LogInformation("All OpenDDD services have been started.");
+            if (startables.Any())
+            {
+                _logger.LogInformation("All OpenDDD services have been started.");
+            }
         }
 
         public async Task StopServicesAsync(CancellationToken cancellationToken = default)
@@ -100,7 +103,10 @@ namespace OpenDDD.Main.Managers
                 await Task.WhenAll(tasks);
             }
 
-            _logger.LogInformation("All OpenDDD services have been stopped.");
+            if (stoppables.Any())
+            {
+                _logger.LogInformation("All OpenDDD services have been stopped.");
+            }
         }
 
     }
