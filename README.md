@@ -1,4 +1,3 @@
-
 # OpenDDD.NET
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
@@ -12,7 +11,7 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 
 - [x] **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
 - [x] **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
-- [ ] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
+- [x] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
 - [ ] **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
 - [ ] **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
 - [ ] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
@@ -118,7 +117,18 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 ## Release History
 
-- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release with foundational features.
+**3.0.0-alpha.2 (2025-01-21)**
+
+- **Domain Services:** Added the `IDomainService` interface to mark domain services, which are now auto-registered.
+- **Repositories:** Introduced support for repositories with `InMemoryRepositoryBase` as the base class for custom implementations.
+- **Actions:** Added the `IAction<TCommand, TReturns>` interface to mark actions, which are now auto-registered.
+- **Sample Project:** Introduced the `Bookstore` sample project to demonstrate OpenDDD.NET usage.
+- **Documentation Updates:** Expanded documentation with examples and guides for repositories, domain services, actions and the sample project.
+- **Community:** Added an advanced topics section to the documentation, covering concepts useful for contributors or developers looking to extend the framework’s functionality.
+
+**3.0.0-alpha.1 (2025-01-19)**
+
+- **Major Version 3**: Initial alpha release with foundational features.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
 

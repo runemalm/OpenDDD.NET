@@ -17,7 +17,7 @@ Key Features
 
 - **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them. (Implemented)
 - **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety. (Implemented)
-- **Repositories**: Abstract away data access and enable persistence of domain objects. (Planned)
+- **Repositories**: Abstract away data access and enable persistence of domain objects. (Implemented)
 - **Domain Events**: Facilitate communication between domain objects while maintaining loose coupling. (Planned)
 - **Integration Events**: Enable communication between bounded contexts in distributed systems. (Planned)
 - **Event Listeners**: Manage event listeners to handle domain and integration events for scalable, event-driven architectures. (Planned)
