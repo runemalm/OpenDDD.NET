@@ -1,4 +1,3 @@
-
 # OpenDDD.NET
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
@@ -12,12 +11,12 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 
 - [x] **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
 - [x] **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
-- [ ] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
+- [x] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
 - [ ] **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
 - [ ] **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
 - [ ] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
-- [ ] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
-- [ ] **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
+- [x] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
+- [x] **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
 - [ ] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
 - [ ] **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
@@ -30,6 +29,12 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 ## Supported Versions
 
 - .NET 8
+
+## Sample Project
+
+The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-world scenario, including domain modeling, repositories, actions, and framework configuration. 
+
+Explore the project in the repository: [Bookstore Sample Project](https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore).
 
 ## Getting Started
 
@@ -55,26 +60,29 @@ OpenDDD.NET can be configured using the `appsettings.json` file. Below is an exa
 
 ```
 {
-  "OpenDDD": {
-    "Services": {
-      "AutoRegisterActions": true,
-      "AutoRegisterRepositories": true
-    },
-    "Pipeline": {
-      
-    }
+  "OpenDDD": {  
+    "ConnectionString": "",
+    "AutoRegisterDomainServices": true,  
+    "AutoRegisterRepositories": true,  
+    "AutoRegisterActions": true,  
+    "PersistenceProvider": "InMemory"  
   }
 }
 ```
 
 ### Explanation of Configuration Options
 
--   **`Services.AutoRegisterActions`**: Automatically registers all actions found in the application.
-    
--   **`Services.AutoRegisterRepositories`**: Automatically registers all repositories found in the application.
-    
+- **`ConnectionString`**: Specifies the connection string for persistence providers (e.g., databases). This is required for certain providers like `Postgres`.
 
-These settings can be overridden programmatically in `Program.cs`.
+- **`AutoRegisterDomainServices`**: Automatically registers all domain service interfaces (e.g. `ICustomerDomainService`) with their corresponding implementations.
+
+- **`AutoRegisterRepositories`**: Automatically registers all repository interfaces (e.g., `ICustomerRepository`) with their corresponding implementations.
+
+- **`AutoRegisterActions`**: Automatically registers all classes implementing `IAction<TCommand, TReturns>`.
+
+- **`PersistenceProvider`**: Defines the persistence technology to use (e.g., `InMemory`, `Postgres`). Determines the implementation used for repositories and other persistence-related features.
+
+These options can be customized in `appsettings.json` or overridden programmatically in `Program.cs`.
 
 ## Example Usage
 
@@ -83,28 +91,24 @@ In your `Program.cs` file, you'll need to register various services and configur
 Here's an example of how to manually configure your application in Program.cs:
 
 ```csharp
-using OpenDDD.Main.Extensions;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// Register OpenDDD Services
-builder.Services.AddOpenDDD(builder.Configuration, options =>
-{
-    options.AutoRegisterActions = true;
-    options.AutoRegisterRepositories = true;
-});
+using OpenDDD.Main.Extensions;  
+  
+var builder = WebApplication.CreateBuilder(args);  
+  
+// ...
+  
+// Add OpenDDD Services
+builder.Services.AddOpenDDD(builder.Configuration);  
+  
+// ...
 
 var app = builder.Build();
+  
+// Use OpenDDD Middleware
+app.UseOpenDDD();  
+  
+// ...
 
-// Add OpenDDD Middleware
-app.UseOpenDDD();
-
-if (app.Environment.IsDevelopment())
-    app.UseDeveloperExceptionPage();
-
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
 app.Run();
 ```
 
@@ -118,7 +122,18 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 ## Release History
 
-- **v3.0.0-alpha.1** (2025-01-19): Initial alpha release with foundational features.
+**3.0.0-alpha.2 (2025-01-21)**
+
+- **Domain Services:** Added the `IDomainService` interface to mark domain services, which are now auto-registered.
+- **Repositories:** Introduced support for repositories with `InMemoryRepositoryBase` as the base class for custom implementations and thus first supported persistence provider.
+- **Actions:** Added the `IAction<TCommand, TReturns>` interface to mark actions, which are now auto-registered.
+- **Sample Project:** Introduced the `Bookstore` sample project to demonstrate OpenDDD.NET usage.
+- **Documentation Updates:** Expanded documentation with examples and guides for repositories, domain services, actions and the sample project.
+- **Community:** Added an advanced topics section to the documentation, covering concepts useful for contributors or developers looking to extend the framework’s functionality.
+
+**3.0.0-alpha.1 (2025-01-19)**
+
+- **Major Version 3**: Initial alpha release with foundational features.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
 
