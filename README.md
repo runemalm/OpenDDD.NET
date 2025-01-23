@@ -24,7 +24,7 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 
 We're adhering to the key principles and building blocks of Domain-Driven Design.
 
-![DDD Concept Graph](https://github.com/runemalm/OpenDDD.NET/blob/develop/ddd-graph.png)
+<img src="https://github.com/runemalm/OpenDDD.NET/blob/master/ddd-graph.png" width="636" alt="DDD Concepts Graph" />
 
 ## Supported Versions
 
