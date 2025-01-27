@@ -5,6 +5,6 @@ namespace Bookstore.Domain.Services
 {
     public interface ICustomerDomainService : IDomainService
     {
-        Task<Customer> Register(string name, string email);
+        Task<Customer> RegisterAsync(string name, string email, CancellationToken ct);
     }
 }

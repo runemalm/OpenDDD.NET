@@ -11,7 +11,7 @@ namespace Bookstore.Domain.Services
             _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         }
 
-        public async Task<Customer> Register(string name, string email)
+        public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Customer name cannot be empty.", nameof(name));
@@ -20,18 +20,16 @@ namespace Bookstore.Domain.Services
                 throw new ArgumentException("Customer email cannot be empty.", nameof(email));
 
             // Check if a customer with the same email already exists
-            var existingCustomer = await _customerRepository.FindWithAsync(
-                c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase), 
-                default);
+            var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
-            if (existingCustomer.Any())
+            if (existingCustomer != null)
                 throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
 
             // Create a new customer
             var newCustomer = new Customer(Guid.NewGuid(), name, email);
 
             // Save the new customer to the repository
-            await _customerRepository.SaveAsync(newCustomer, default);
+            await _customerRepository.SaveAsync(newCustomer, ct);
 
             return newCustomer;
         }

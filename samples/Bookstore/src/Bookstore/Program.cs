@@ -1,3 +1,4 @@
+using Bookstore.Infrastructure.Persistence.EfCore;
 using OpenDDD.Main.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,7 +8,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-builder.Services.AddOpenDDD(builder.Configuration);
+builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>
+{
+    
+});
 
 // Add Controller Services
 builder.Services.AddControllers();
@@ -23,6 +27,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
 // Use HTTP->HTTPS Redirection Middleware

@@ -417,3 +417,7 @@ scratch
 *.sublime-workspace
 
 docs/_build
+
+*.db
+*.db-shm
+*.db-wal

@@ -4,14 +4,18 @@ namespace Bookstore.Domain.Model
 {
     public class Order : AggregateRootBase<Guid>
     {
-        public Guid CustomerId;
-        public IEnumerable<Item> Items;
+        public Guid CustomerId { get; private set; }
+        public ICollection<LineItem> LineItems { get; private set; }
 
-        public Order(Guid id, Guid customerId, IEnumerable<Item> items) : base(id)
+        private Order() : base(Guid.Empty)
+        {
+            LineItems = new List<LineItem>();
+        }
+
+        public Order(Guid id, Guid customerId, ICollection<LineItem> lineItems) : base(id)
         {
             CustomerId = customerId;
-            Items = items;
+            LineItems = lineItems ?? new List<LineItem>();
         }
     }
 }
-
