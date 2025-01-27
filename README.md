@@ -17,7 +17,7 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - [ ] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
 - [x] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
 - [x] **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
-- [ ] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
+- [x] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
 - [ ] **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
 ## Basic Concepts
@@ -42,77 +42,41 @@ To get started with OpenDDD.NET, follow these simple steps:
 
 1. **Install the NuGet package**: Use the NuGet package manager or the .NET CLI to add the OpenDDD.NET package to your project.
 
-```bash
-dotnet add package OpenDDD.NET --prerelease
-```
+   ```bash
+   dotnet add package OpenDDD.NET --prerelease
+   ```
 
 2. **Create a new project**: Create a new project in your editor or IDE of choice or use the command below.
 
-```bash
-dotnet new webapi -n YourProjectName
-```
+   ```bash
+   dotnet new webapi -n Bookstore
+   ```
 
-3. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications following the principles of DDD.
+3. **Set up OpenDDD.NET**: Register OpenDDD services and middleware in your `Program.cs` file.
 
-## Configuration in `appsettings.json`
+   ```csharp
+   using OpenDDD.Main.Extensions;
 
-OpenDDD.NET can be configured using the `appsettings.json` file. Below is an example configuration:
+   var builder = WebApplication.CreateBuilder(args);
 
-```
-{
-  "OpenDDD": {  
-    "ConnectionString": "",
-    "AutoRegisterDomainServices": true,  
-    "AutoRegisterRepositories": true,  
-    "AutoRegisterActions": true,  
-    "PersistenceProvider": "InMemory"  
-  }
-}
-```
+   // Add OpenDDD Services
+   builder.Services.AddOpenDDD(builder.Configuration, options =>  
+   {  
+      options.UseEfCore();  
+      options.UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared");  
+   });
 
-### Explanation of Configuration Options
+   var app = builder.Build();
 
-- **`ConnectionString`**: Specifies the connection string for persistence providers (e.g., databases). This is required for certain providers like `Postgres`.
+   // Use OpenDDD Middleware
+   app.UseOpenDDD();
 
-- **`AutoRegisterDomainServices`**: Automatically registers all domain service interfaces (e.g. `ICustomerDomainService`) with their corresponding implementations.
+   app.Run();
+   ```
 
-- **`AutoRegisterRepositories`**: Automatically registers all repository interfaces (e.g., `ICustomerRepository`) with their corresponding implementations.
+4. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications.
 
-- **`AutoRegisterActions`**: Automatically registers all classes implementing `IAction<TCommand, TReturns>`.
-
-- **`PersistenceProvider`**: Defines the persistence technology to use (e.g., `InMemory`, `Postgres`). Determines the implementation used for repositories and other persistence-related features.
-
-These options can be customized in `appsettings.json` or overridden programmatically in `Program.cs`.
-
-## Example Usage
-
-In your `Program.cs` file, you'll need to register various services and configure the middleware pipeline to set up your project to use the framework.
-
-Here's an example of how to manually configure your application in Program.cs:
-
-```csharp
-using OpenDDD.Main.Extensions;  
-  
-var builder = WebApplication.CreateBuilder(args);  
-  
-// ...
-  
-// Add OpenDDD Services
-builder.Services.AddOpenDDD(builder.Configuration);  
-  
-// ...
-
-var app = builder.Build();
-  
-// Use OpenDDD Middleware
-app.UseOpenDDD();  
-  
-// ...
-
-app.Run();
-```
-
-With this setup, you can begin implementing domain-driven design principles using OpenDDD.NET in your application.
+For detailed guides and examples, refer to the documentation.
 
 ## Documentation
 
@@ -121,6 +85,11 @@ Comprehensive documentation for OpenDDD.NET is available on **Read the Docs**. T
 Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/)
 
 ## Release History
+
+**3.0.0-alpha.3 (2025-01-xx)**
+
+- **Infrastructure Services:** Added support for auto-registering infrastructure services via the -`IInfrastructureService` interface.
+- **Repository Refactoring:** Simplified the repository pattern by replacing old base repository classes with `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, ensuring consistency and supporting easy customization.
 
 **3.0.0-alpha.2 (2025-01-21)**
 

@@ -10,7 +10,8 @@ builder.Services.AddSwaggerGen();
 // Add OpenDDD services
 builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>
 {
-    
+    options.UseEfCore();
+    options.UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared");
 });
 
 // Add Controller Services
