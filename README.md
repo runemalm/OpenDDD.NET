@@ -88,7 +88,7 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 **3.0.0-alpha.3 (2025-01-xx)**
 
-- **Infrastructure Services:** Added support for auto-registering infrastructure services via the -`IInfrastructureService` interface.
+- **Infrastructure Services:** Added support for infrastructure services via the `IInfrastructureService` interface.
 - **Repository Refactoring:** Simplified the repository pattern by replacing old base repository classes with `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, ensuring consistency and supporting easy customization.
 
 **3.0.0-alpha.2 (2025-01-21)**
