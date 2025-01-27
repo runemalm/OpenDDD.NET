@@ -53,24 +53,26 @@ namespace OpenDDD.Main.Extensions
             if (options.PersistenceProvider.ToLower() == "efcore")
             {
                 // Regisgter the DbContext using the generic type parameter
-                services.AddDbContext<TDbContext>(optionsBuilder =>
+                services.AddDbContext<TDbContext>((serviceProvider, optionsBuilder) =>
                 {
+                    var openDddOptions = serviceProvider.GetRequiredService<OpenDddOptions>();
+
                     switch (options.StorageProvider.ToLower())
                     {
                         case "postgres":
-                            optionsBuilder.UseNpgsql(options.ConnectionString);
+                            optionsBuilder.UseNpgsql(openDddOptions.ConnectionString);
                             break;
                         case "sqlserver":
-                            optionsBuilder.UseSqlServer(options.ConnectionString);
+                            optionsBuilder.UseSqlServer(openDddOptions.ConnectionString);
                             break;
                         case "sqlite":
-                            optionsBuilder.UseSqlite(options.ConnectionString);
+                            optionsBuilder.UseSqlite(openDddOptions.ConnectionString);
                             break;
                         case "inmemory":
                             optionsBuilder.UseInMemoryDatabase("OpenDDD");
                             break;
                         default:
-                            throw new InvalidOperationException($"Unsupported StorageProvider: {options.StorageProvider}");
+                            throw new InvalidOperationException($"Unsupported StorageProvider: {openDddOptions.StorageProvider}");
                     }
 
                     dbContextOptions?.Invoke(optionsBuilder);
@@ -78,7 +80,7 @@ namespace OpenDDD.Main.Extensions
             
                 // Also register with the base class
                 services.AddScoped<OpenDddDbContextBase>(sp => sp.GetRequiredService<TDbContext>());
-
+                
                 // Register the database initializer
                 services.AddSingleton<EfCoreDatabaseInitializer>();
             }
