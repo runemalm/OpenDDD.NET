@@ -9,6 +9,7 @@
         public bool AutoRegisterRepositories { get; set; } = true;
         public bool AutoRegisterActions { get; set; } = true;
         public bool AutoRegisterConfigurations { get; set; } = true;
+        public bool AutoRegisterInfrastructureServices { get; set; } = true;
         
         public OpenDddOptions UseEfCore()
         {
@@ -93,6 +94,18 @@
         public OpenDddOptions DisableAutoRegisterActions()
         {
             AutoRegisterActions = false;
+            return this;
+        }
+        
+        public OpenDddOptions EnableAutoRegisterInfrastructureServices()
+        {
+            AutoRegisterInfrastructureServices = true;
+            return this;
+        }
+
+        public OpenDddOptions DisableAutoRegisterInfrastructureServices()
+        {
+            AutoRegisterInfrastructureServices = false;
             return this;
         }
 

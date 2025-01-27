@@ -1,6 +1,6 @@
 ﻿using Bookstore.Domain.Model;
 
-namespace Bookstore.Domain.Services
+namespace Bookstore.Domain.Service
 {
     public class CustomerDomainService : ICustomerDomainService
     {

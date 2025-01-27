@@ -1,7 +1,7 @@
 ﻿using Bookstore.Domain.Model;
 using OpenDDD.Domain.Service;
 
-namespace Bookstore.Domain.Services
+namespace Bookstore.Domain.Service
 {
     public interface ICustomerDomainService : IDomainService
     {

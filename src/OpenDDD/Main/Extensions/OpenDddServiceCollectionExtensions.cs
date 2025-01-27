@@ -12,6 +12,7 @@ using OpenDDD.Infrastructure.Persistence.EfCore.Startup;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
+using OpenDDD.Infrastructure.Services;
 using OpenDDD.Main.Attributes;
 using OpenDDD.Main.Options;
 using OpenDDD.Main.StartupFilters;
@@ -112,6 +113,11 @@ namespace OpenDDD.Main.Extensions
             if (options.AutoRegisterActions)
             {
                 RegisterActions(services);
+            }
+            
+            if (options.AutoRegisterInfrastructureServices)
+            {
+                RegisterInfrastructureServices(services);
             }
 
             // Allow additional service configuration
@@ -223,6 +229,42 @@ namespace OpenDDD.Main.Extensions
                 // Register the action type with transient lifetime
                 services.AddTransient(actionType);
                 Console.WriteLine($"Registered action: {actionType.Name} with lifetime: Transient");
+            }
+        }
+        
+        private static void RegisterInfrastructureServices(IServiceCollection services)
+        {
+            // Find all classes that implement IInfrastructureService
+            var infrastructureServiceTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => 
+                    type.IsClass && 
+                    !type.IsAbstract && 
+                    typeof(IInfrastructureService).IsAssignableFrom(type))
+                .ToList();
+
+            foreach (var implementationType in infrastructureServiceTypes)
+            {
+                // Find the interface it implements that is NOT IInfrastructureService
+                var serviceInterface = implementationType.GetInterfaces()
+                    .FirstOrDefault(i => 
+                        i != typeof(IInfrastructureService) && 
+                        !i.IsGenericType); // Exclude generic interfaces if unnecessary
+
+                if (serviceInterface != null)
+                {
+                    // Check for custom lifetime using LifetimeAttribute or default to Transient
+                    var lifetimeAttribute = implementationType.GetCustomAttribute<LifetimeAttribute>();
+                    var lifetime = lifetimeAttribute?.Lifetime ?? ServiceLifetime.Transient;
+
+                    // Register the service
+                    services.Add(new ServiceDescriptor(serviceInterface, implementationType, lifetime));
+                    Console.WriteLine($"Registered infrastructure service: {serviceInterface.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
+                }
+                else
+                {
+                    Console.WriteLine($"Warning: No suitable interface found for infrastructure service {implementationType.Name}.");
+                }
             }
         }
         

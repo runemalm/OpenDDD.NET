@@ -15,6 +15,7 @@ namespace OpenDDD.Main.Extensions
 
             // Middleware to commit or rollback Unit of Work
             app.UseMiddleware<UnitOfWorkMiddleware>();
+            app.UseMiddleware<TransactionalOutboxMiddleware>();
 
             return app;
         }
