@@ -1,7 +1,7 @@
-﻿using Azure.Messaging.ServiceBus;
-using Azure.Messaging.ServiceBus.Administration;
-using OpenDDD.Infrastructure.Events.Azure.Options;
+﻿using OpenDDD.Infrastructure.Events.Azure.Options;
 using OpenDDD.Main.Options;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 
 namespace OpenDDD.Infrastructure.Events.Azure
 {
@@ -13,64 +13,66 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
         public AzureServiceBusProvider(AzureServiceBusOptions options, OpenDddOptions openDddOptions)
         {
-            _openDddOptions = openDddOptions;
-            _options = options;
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _openDddOptions = openDddOptions ?? throw new ArgumentNullException(nameof(openDddOptions));
             _client = new ServiceBusClient(options.ConnectionString);
         }
 
-        public async Task SubscribeAsync(string topic, Func<string, Task> messageHandler)
+        public async Task SubscribeAsync(string topic, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
             var subscriptionName = _openDddOptions.EventsListenerGroup;
 
             if (_options.AutoCreateTopics)
             {
-                await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName);
+                await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
             }
 
             var processor = _client.CreateProcessor(topic, subscriptionName);
+
             processor.ProcessMessageAsync += async args =>
             {
-                await messageHandler(args.Message.Body.ToString());
-                await args.CompleteMessageAsync(args.Message);
+                await messageHandler(args.Message.Body.ToString(), cancellationToken);
+                await args.CompleteMessageAsync(args.Message, cancellationToken);
             };
+
             processor.ProcessErrorAsync += args =>
             {
                 Console.WriteLine($"Error processing message in subscription {subscriptionName}: {args.Exception.Message}");
                 return Task.CompletedTask;
             };
 
-            await processor.StartProcessingAsync();
+            await processor.StartProcessingAsync(cancellationToken);
         }
 
-        public async Task PublishAsync(string topic, string message)
+        public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
         {
             if (_options.AutoCreateTopics)
             {
-                await CreateTopicIfNotExistsAsync(topic);
+                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
             }
 
             var sender = _client.CreateSender(topic);
-            await sender.SendMessageAsync(new ServiceBusMessage(message));
+            await sender.SendMessageAsync(new ServiceBusMessage(message), cancellationToken);
         }
 
-        private async Task CreateTopicIfNotExistsAsync(string topic)
+        private async Task CreateTopicIfNotExistsAsync(string topic, CancellationToken cancellationToken)
         {
             var adminClient = new ServiceBusAdministrationClient(_options.ConnectionString);
 
-            if (!await adminClient.TopicExistsAsync(topic))
+            if (!await adminClient.TopicExistsAsync(topic, cancellationToken))
             {
-                await adminClient.CreateTopicAsync(topic);
+                await adminClient.CreateTopicAsync(topic, cancellationToken);
                 Console.WriteLine($"Created topic: {topic}");
             }
         }
-        
-        private async Task CreateSubscriptionIfNotExistsAsync(string topic, string subscriptionName)
+
+        private async Task CreateSubscriptionIfNotExistsAsync(string topic, string subscriptionName, CancellationToken cancellationToken)
         {
             var adminClient = new ServiceBusAdministrationClient(_options.ConnectionString);
 
-            if (!await adminClient.SubscriptionExistsAsync(topic, subscriptionName))
+            if (!await adminClient.SubscriptionExistsAsync(topic, subscriptionName, cancellationToken))
             {
-                await adminClient.CreateSubscriptionAsync(topic, subscriptionName);
+                await adminClient.CreateSubscriptionAsync(topic, subscriptionName, cancellationToken);
                 Console.WriteLine($"Created subscription: {subscriptionName} for topic: {topic}");
             }
         }

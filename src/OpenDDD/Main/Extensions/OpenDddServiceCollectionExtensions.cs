@@ -115,6 +115,10 @@ namespace OpenDDD.Main.Extensions
             {
                 throw new InvalidOperationException("The EventsListenerGroup must be configured in OpenDddOptions.");
             }
+            
+            // Register publishers
+            services.AddTransient<IDomainPublisher, DomainPublisher>();
+            services.AddTransient<IIntegrationPublisher, IntegrationPublisher>();
 
             // Auto-register repositories
             if (options.AutoRegisterRepositories)
@@ -299,22 +303,28 @@ namespace OpenDDD.Main.Extensions
             var listenerTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type =>
-                    typeof(IEventListener).IsAssignableFrom(type) &&
-                    !type.IsInterface && !type.IsAbstract)
+                    type.IsClass &&
+                    !type.IsAbstract &&
+                    type.GetInterfaces().Any(i =>
+                        i.IsGenericType &&
+                        typeof(IEventListener<>).IsAssignableFrom(i.GetGenericTypeDefinition())))
                 .ToList();
 
             foreach (var listenerType in listenerTypes)
             {
                 // Register the listener as a hosted service
-                var hostedServiceType = typeof(IHostedService);
-                if (hostedServiceType.IsAssignableFrom(listenerType))
+                var eventListenerInterface = listenerType.GetInterfaces()
+                    .FirstOrDefault(i =>
+                        i.IsGenericType && typeof(IEventListener<>).IsAssignableFrom(i.GetGenericTypeDefinition()));
+
+                if (eventListenerInterface != null)
                 {
-                    var method = typeof(ServiceCollectionHostedServiceExtensions)
+                    var addHostedServiceMethod = typeof(ServiceCollectionHostedServiceExtensions)
                         .GetMethod("AddHostedService", new[] { typeof(IServiceCollection) })
                         ?.MakeGenericMethod(listenerType);
 
-                    method?.Invoke(null, new object[] { services });
-                    Console.WriteLine($"Registered event listener: {listenerType.Name}");
+                    addHostedServiceMethod?.Invoke(null, new object[] { services });
+                    Console.WriteLine($"Registered event listener: {listenerType.Name} for event: {eventListenerInterface.GenericTypeArguments[0].Name}");
                 }
             }
         }
