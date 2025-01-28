@@ -10,6 +10,7 @@ using OpenDDD.Domain.Model.Base;
 using OpenDDD.Domain.Service;
 using OpenDDD.Infrastructure.Events;
 using OpenDDD.Infrastructure.Events.Azure;
+using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.EfCore.Startup;
@@ -305,33 +306,42 @@ namespace OpenDDD.Main.Extensions
         {
             if (!options.AutoRegisterEventListeners) return;
 
+            // Find all classes deriving from EventListenerBase<,>
             var listenerTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type =>
                     type.IsClass &&
                     !type.IsAbstract &&
-                    type.GetInterfaces().Any(i =>
-                        i.IsGenericType &&
-                        typeof(IEventListener<>).IsAssignableFrom(i.GetGenericTypeDefinition())))
+                    IsDerivedFromGenericType(type, typeof(EventListenerBase<,>)))
                 .ToList();
 
             foreach (var listenerType in listenerTypes)
             {
                 // Register the listener as a hosted service
-                var eventListenerInterface = listenerType.GetInterfaces()
-                    .FirstOrDefault(i =>
-                        i.IsGenericType && typeof(IEventListener<>).IsAssignableFrom(i.GetGenericTypeDefinition()));
+                var addHostedServiceMethod = typeof(ServiceCollectionHostedServiceExtensions)
+                    .GetMethod("AddHostedService", new[] { typeof(IServiceCollection) })
+                    ?.MakeGenericMethod(listenerType);
 
-                if (eventListenerInterface != null)
+                if (addHostedServiceMethod != null)
                 {
-                    var addHostedServiceMethod = typeof(ServiceCollectionHostedServiceExtensions)
-                        .GetMethod("AddHostedService", new[] { typeof(IServiceCollection) })
-                        ?.MakeGenericMethod(listenerType);
-
-                    addHostedServiceMethod?.Invoke(null, new object[] { services });
-                    Console.WriteLine($"Registered event listener: {listenerType.Name} for event: {eventListenerInterface.GenericTypeArguments[0].Name}");
+                    addHostedServiceMethod.Invoke(null, new object[] { services });
+                    Console.WriteLine($"Registered event listener: {listenerType.Name}");
                 }
             }
+        }
+
+        private static bool IsDerivedFromGenericType(Type type, Type genericType)
+        {
+            while (type != null && type != typeof(object))
+            {
+                var currentType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+                if (currentType == genericType)
+                {
+                    return true;
+                }
+                type = type.BaseType!;
+            }
+            return false;
         }
         
         private static string GetReadableTypeName(Type type)

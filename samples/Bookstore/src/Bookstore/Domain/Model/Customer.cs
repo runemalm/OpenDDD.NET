@@ -14,5 +14,10 @@ namespace Bookstore.Domain.Model
             Name = name;
             Email = email;
         }
+
+        public void ChangeName(string name)
+        {
+            Name = name;
+        }
     }
 }

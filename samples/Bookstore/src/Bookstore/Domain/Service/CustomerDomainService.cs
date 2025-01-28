@@ -1,6 +1,7 @@
 ﻿using OpenDDD.Domain.Model;
 using Bookstore.Domain.Model;
 using Bookstore.Domain.Model.Events;
+using Bookstore.Domain.Model.Events.Domain;
 
 namespace Bookstore.Domain.Service
 {

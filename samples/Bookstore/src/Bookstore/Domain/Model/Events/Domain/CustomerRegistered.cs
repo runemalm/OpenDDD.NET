@@ -1,6 +1,6 @@
 ﻿using OpenDDD.Domain.Model;
 
-namespace Bookstore.Domain.Model.Events
+namespace Bookstore.Domain.Model.Events.Domain
 {
     public class CustomerRegistered : IDomainEvent
     {
