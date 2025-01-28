@@ -1,4 +1,6 @@
-﻿namespace OpenDDD.Main.Options
+﻿using OpenDDD.Infrastructure.Events.Azure.Options;
+
+namespace OpenDDD.Main.Options
 {
     public class OpenDddOptions
     {
@@ -10,6 +12,11 @@
         public bool AutoRegisterActions { get; set; } = true;
         public bool AutoRegisterConfigurations { get; set; } = true;
         public bool AutoRegisterInfrastructureServices { get; set; } = true;
+        public bool AutoRegisterEventListeners { get; set; } = true;
+        public string MessagingProvider { get; set; } = "AzureServiceBus";
+        public AzureServiceBusOptions AzureServiceBus { get; set; } = new();
+        public string EventsNamespacePrefix { get; set; } = string.Empty;
+        public string EventsListenerGroup { get; set; } = string.Empty;
         
         public OpenDddOptions UseEfCore()
         {

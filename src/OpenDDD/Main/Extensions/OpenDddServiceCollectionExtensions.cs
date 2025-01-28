@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Base;
 using OpenDDD.Domain.Service;
+using OpenDDD.Infrastructure.Events;
+using OpenDDD.Infrastructure.Events.Azure;
+using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.EfCore.Startup;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
@@ -49,7 +53,7 @@ namespace OpenDDD.Main.Extensions
                                                     "'OpenDDD:ConnectionString' or " +
                                                     "'ConnectionStrings:DefaultConnection'.");
             }
-
+            
             // Register services if persistence provider is EfCore
             if (options.PersistenceProvider.ToLower() == "efcore")
             {
@@ -96,6 +100,21 @@ namespace OpenDDD.Main.Extensions
                 }
                 throw new Exception($"Unsupported PersistenceProvider: {options.PersistenceProvider}");
             });
+            
+            // Register event services
+            if (options.MessagingProvider == "InMemory")
+            {
+                services.AddSingleton<IMessagingProvider, InMemoryMessagingProvider>();
+            }
+            else if (options.MessagingProvider == "AzureServiceBus")
+            {
+                services.AddSingleton<IMessagingProvider, AzureServiceBusProvider>();
+            }
+            
+            if (string.IsNullOrWhiteSpace(options.EventsListenerGroup))
+            {
+                throw new InvalidOperationException("The EventsListenerGroup must be configured in OpenDddOptions.");
+            }
 
             // Auto-register repositories
             if (options.AutoRegisterRepositories)
@@ -118,6 +137,11 @@ namespace OpenDDD.Main.Extensions
             if (options.AutoRegisterInfrastructureServices)
             {
                 RegisterInfrastructureServices(services);
+            }
+            
+            if (options.AutoRegisterEventListeners)
+            {
+                RegisterEventListeners(services, options);
             }
 
             // Allow additional service configuration
@@ -264,6 +288,33 @@ namespace OpenDDD.Main.Extensions
                 else
                 {
                     Console.WriteLine($"Warning: No suitable interface found for infrastructure service {implementationType.Name}.");
+                }
+            }
+        }
+
+        private static void RegisterEventListeners(IServiceCollection services, OpenDddOptions options)
+        {
+            if (!options.AutoRegisterEventListeners) return;
+
+            var listenerTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type =>
+                    typeof(IEventListener).IsAssignableFrom(type) &&
+                    !type.IsInterface && !type.IsAbstract)
+                .ToList();
+
+            foreach (var listenerType in listenerTypes)
+            {
+                // Register the listener as a hosted service
+                var hostedServiceType = typeof(IHostedService);
+                if (hostedServiceType.IsAssignableFrom(listenerType))
+                {
+                    var method = typeof(ServiceCollectionHostedServiceExtensions)
+                        .GetMethod("AddHostedService", new[] { typeof(IServiceCollection) })
+                        ?.MakeGenericMethod(listenerType);
+
+                    method?.Invoke(null, new object[] { services });
+                    Console.WriteLine($"Registered event listener: {listenerType.Name}");
                 }
             }
         }
