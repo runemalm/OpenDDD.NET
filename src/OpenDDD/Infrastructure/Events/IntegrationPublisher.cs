@@ -15,14 +15,14 @@ namespace OpenDDD.Infrastructure.Events
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task PublishAsync(IIntegrationEvent integrationEvent, CancellationToken cancellationToken = default)
+        public async Task PublishAsync<TEvent>(TEvent integrationEvent, CancellationToken ct) 
+            where TEvent : IIntegrationEvent
         {
             if (integrationEvent == null) throw new ArgumentNullException(nameof(integrationEvent));
 
-            var topic = EventTopicHelper.DetermineTopic(integrationEvent.GetType(), _options.EventsNamespacePrefix);
+            var topic = EventTopicHelper.DetermineTopic(typeof(TEvent), _options.EventsNamespacePrefix);
             var message = EventSerializer.Serialize(integrationEvent);
-
-            await _messagingProvider.PublishAsync(topic, message, cancellationToken);
+            await _messagingProvider.PublishAsync(topic, message, ct);
         }
     }
 }
