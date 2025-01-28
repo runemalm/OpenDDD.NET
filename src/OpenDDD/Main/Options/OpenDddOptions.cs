@@ -115,6 +115,24 @@ namespace OpenDDD.Main.Options
             AutoRegisterInfrastructureServices = false;
             return this;
         }
+        
+        public OpenDddOptions UseInMemoryMessagingProvider()
+        {
+            MessagingProvider = "InMemory";
+            return this;
+        }
+        
+        public OpenDddOptions UseAzureServiceBus(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new ArgumentException("Connection string for Azure Service Bus cannot be null or empty.", nameof(connectionString));
+            }
+
+            MessagingProvider = "AzureServiceBus";
+            AzureServiceBus.ConnectionString = connectionString;
+            return this;
+        }
 
         private void ValidatePersistenceProvider(params string[] allowedProviders)
         {
