@@ -2,6 +2,12 @@
 {
     public static class EventTopicHelper
     {
+        public static string DetermineTopic(Type eventClassType, string namespacePrefix, string contextType)
+        {
+            var eventName = eventClassType.Name.Replace("IntegrationEvent", "");
+            return $"{namespacePrefix}.{contextType}.{eventName}";
+        }
+
         public static string DetermineTopic(Type eventClassType, string namespacePrefix)
         {
             if (eventClassType == null) throw new ArgumentNullException(nameof(eventClassType));

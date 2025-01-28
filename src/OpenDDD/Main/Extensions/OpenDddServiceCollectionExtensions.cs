@@ -111,6 +111,11 @@ namespace OpenDDD.Main.Extensions
                 services.AddSingleton<IMessagingProvider, AzureServiceBusProvider>();
             }
             
+            if (string.IsNullOrWhiteSpace(options.EventsNamespacePrefix))
+            {
+                throw new InvalidOperationException("The EventsNamespacePrefix must be configured in OpenDddOptions.");
+            }
+            
             if (string.IsNullOrWhiteSpace(options.EventsListenerGroup))
             {
                 throw new InvalidOperationException("The EventsListenerGroup must be configured in OpenDddOptions.");
