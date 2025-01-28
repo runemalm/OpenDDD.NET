@@ -12,9 +12,9 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - [x] **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
 - [x] **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
 - [x] **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
-- [ ] **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
-- [ ] **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
-- [ ] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
+- [x] **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
+- [x] **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
+- [x] **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
 - [x] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
 - [x] **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
 - [x] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
@@ -88,7 +88,9 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 **3.0.0-alpha.3 (2025-01-xx)**
 
-- **Infrastructure Services:** Added support for infrastructure services via the `IInfrastructureService` interface.
+- **Event-Driven Architecture**: Enable decoupled and scalable systems using domain- and integration events, along with listener support for reacting to events with actions.
+- **Messaging Providers**: Pluggable support for messaging backends, including in-memory and Azure Service Bus.
+- **Infrastructure Services:** Added support for infrastructure services via the `IInfrastructureService` interface, including auto-registration.
 - **Repository Refactoring:** Simplified the repository pattern by replacing old base repository classes with `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, ensuring consistency and supporting easy customization.
 
 **3.0.0-alpha.2 (2025-01-21)**
