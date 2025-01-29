@@ -20,8 +20,6 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
 - **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
-## Basic Concepts
-
 We're adhering to the key principles and building blocks of Domain-Driven Design.
 
 <img src="https://github.com/runemalm/OpenDDD.NET/blob/master/ddd-graph.png" width="636" alt="DDD Concepts Graph" />
@@ -30,13 +28,7 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 
 - .NET 8
 
-## Sample Project
-
-The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-world scenario, including domain modeling, repositories, actions, and framework configuration. 
-
-Explore the project in the repository: [Bookstore Sample Project](https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore).
-
-## Getting Started
+## Example Usage
 
 To get started with OpenDDD.NET, follow these simple steps:
 
@@ -81,11 +73,29 @@ To get started with OpenDDD.NET, follow these simple steps:
 
 For detailed guides and examples, refer to the documentation.
 
+
 ## Documentation
 
-Comprehensive documentation for OpenDDD.NET is available on **Read the Docs**. The documentation includes guides, examples, and reference materials to help you get started and make the most of the framework.
+The official OpenDDD.NET documentation provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
 
-Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/)
+### 📖 Read the Docs  
+Visit the documentation: **[OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/)**  
+
+### 🛠 Topics Covered  
+- **Getting Started**: Installation, setup, and basic usage  
+- **Domain Modeling**: Aggregates, entities, and value objects  
+- **Repositories & Persistence**: Using EF Core and selecting database provider  
+- **Event-Driven Architecture**: Domain events, integration events, and event listeners  
+- **Infrastructure & Services**: Auto-registration, messaging providers, and more  
+
+### ⭐ Stay Updated
+If you find OpenDDD.NET useful, consider **starring** the repository and **following** the project on GitHub to stay updated with the latest developments.
+
+## Sample Project
+
+The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-world scenario, including domain modeling, repositories, actions, and framework configuration. 
+
+Explore the project in the repository: [Bookstore Sample Project](https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore).
 
 ## Release History
 
@@ -99,19 +109,6 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 - **Infrastructure Services**: Added `IInfrastructureService` interface for managing infrastructure services, with automatic registration.
 - **Repository Refactoring**: Refactored repository pattern by introducing `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, improving consistency and customization.
 - **Configuration Refactoring**: Restructured OpenDDD.NET configuration system into hierarchical options classes, improving clarity and maintainability.
-
-**3.0.0-alpha.2 (2025-01-21)**
-
-- **Domain Services:** Added the `IDomainService` interface to mark domain services, which are now auto-registered.
-- **Repositories:** Introduced support for repositories with `InMemoryRepositoryBase` as the base class for custom implementations and thus first supported persistence provider.
-- **Actions:** Added the `IAction<TCommand, TReturns>` interface to mark actions, which are now auto-registered.
-- **Sample Project:** Introduced the `Bookstore` sample project to demonstrate OpenDDD.NET usage.
-- **Documentation Updates:** Expanded documentation with examples and guides for repositories, domain services, actions and the sample project.
-- **Community:** Added an advanced topics section to the documentation, covering concepts useful for contributors or developers looking to extend the framework’s functionality.
-
-**3.0.0-alpha.1 (2025-01-19)**
-
-- **Major Version 3**: Initial alpha release with foundational features.
 
 For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
 
