@@ -1,7 +1,7 @@
 ﻿using OpenDDD.Infrastructure.Services;
 using Bookstore.Domain.Model.Ports;
 
-namespace Bookstore.Infrastructure.Service.EmailSender
+namespace Bookstore.Infrastructure.Service.EmailSender.Smtp
 {
     public class SmtpEmailSender : IEmailSender, IInfrastructureService
     {

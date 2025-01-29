@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Base;
@@ -18,6 +17,8 @@ using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
 using OpenDDD.Infrastructure.Services;
+using OpenDDD.Infrastructure.TransactionalOutbox;
+using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
 using OpenDDD.Main.Attributes;
 using OpenDDD.Main.Options;
 using OpenDDD.Main.StartupFilters;
@@ -87,6 +88,9 @@ namespace OpenDDD.Main.Extensions
                 // Also register with the base class
                 services.AddScoped<OpenDddDbContextBase>(sp => sp.GetRequiredService<TDbContext>());
                 
+                // Register outbox repository
+                services.AddTransient<IOutboxRepository, EfCoreOutboxRepository>();
+                
                 // Register the database initializer
                 services.AddSingleton<EfCoreDatabaseInitializer>();
             }
@@ -123,8 +127,8 @@ namespace OpenDDD.Main.Extensions
             }
             
             // Register publishers
-            services.AddTransient<IDomainPublisher, DomainPublisher>();
-            services.AddTransient<IIntegrationPublisher, IntegrationPublisher>();
+            services.AddScoped<IDomainPublisher, DomainPublisher>();
+            services.AddScoped<IIntegrationPublisher, IntegrationPublisher>();
 
             // Auto-register repositories
             if (options.AutoRegisterRepositories)
@@ -153,6 +157,9 @@ namespace OpenDDD.Main.Extensions
             {
                 RegisterEventListeners(services, options);
             }
+            
+            // Register transactional outbox services
+            services.AddHostedService<OutboxProcessor>();
 
             // Allow additional service configuration
             configureServices?.Invoke(services);

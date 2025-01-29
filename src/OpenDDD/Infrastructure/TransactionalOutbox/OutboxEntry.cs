@@ -2,9 +2,12 @@
 {
     public class OutboxEntry
     {
-        public Guid EventId { get; set; }
-        public string EventType { get; set; }
-        public string Payload { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string EventType { get; set; } = string.Empty;
+        public string EventName { get; set; } = string.Empty;
+        public string Payload { get; set; } = null!;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? ProcessedAt { get; set; }
+        public bool Processed { get; set; } = false;
     }
 }

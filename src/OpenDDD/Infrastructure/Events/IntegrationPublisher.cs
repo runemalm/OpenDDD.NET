@@ -1,18 +1,20 @@
 ﻿using OpenDDD.Domain.Model;
-using OpenDDD.Infrastructure.Events.Base;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Events
 {
-    public class IntegrationPublisher : EventPublisherBase, IIntegrationPublisher
+    public class IntegrationPublisher : IIntegrationPublisher
     {
-        public IntegrationPublisher(IMessagingProvider messagingProvider, OpenDddOptions options)
-            : base(messagingProvider, options) { }
+        private readonly List<IIntegrationEvent> _publishedEvents = new();
 
-        public async Task PublishAsync<TEvent>(TEvent integrationEvent, CancellationToken ct) 
+        public Task PublishAsync<TEvent>(TEvent integrationEvent, CancellationToken ct) 
             where TEvent : IIntegrationEvent
         {
-            await PublishAsync(integrationEvent, "Interchange", ct);
+            if (integrationEvent == null) throw new ArgumentNullException(nameof(integrationEvent));
+
+            _publishedEvents.Add(integrationEvent);
+            return Task.CompletedTask;
         }
+
+        public IReadOnlyList<IIntegrationEvent> GetPublishedEvents() => _publishedEvents.AsReadOnly();
     }
 }

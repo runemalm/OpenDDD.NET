@@ -10,13 +10,21 @@ namespace OpenDDD.Infrastructure.Events
             PropertyNamingPolicy = null,
             PropertyNameCaseInsensitive = true,
             WriteIndented = false,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never // Ensure all properties are serialized
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never
         };
 
         public static string Serialize<TEvent>(TEvent domainEvent) where TEvent : IEvent
         {
             if (domainEvent == null) throw new ArgumentNullException(nameof(domainEvent));
             return JsonSerializer.Serialize(domainEvent, SerializerOptions);
+        }
+        
+        public static string Serialize(object @event, Type eventType)
+        {
+            if (@event == null) throw new ArgumentNullException(nameof(@event));
+            if (eventType == null) throw new ArgumentNullException(nameof(eventType));
+
+            return JsonSerializer.Serialize(@event, eventType, SerializerOptions);
         }
 
         public static TEvent Deserialize<TEvent>(string message) where TEvent : IEvent

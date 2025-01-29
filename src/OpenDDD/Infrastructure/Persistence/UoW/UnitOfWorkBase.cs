@@ -7,7 +7,7 @@ namespace OpenDDD.Infrastructure.Persistence.UoW
     {
         private bool _disposed = false;
 
-        public async Task BeginTransactionAsync(CancellationToken ct)
+        public async Task StartAsync(CancellationToken ct)
         {
             await BeginTransactionInternalAsync(ct);
         }

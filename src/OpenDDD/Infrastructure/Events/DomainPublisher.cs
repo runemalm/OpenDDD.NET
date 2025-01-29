@@ -1,18 +1,20 @@
 ﻿using OpenDDD.Domain.Model;
-using OpenDDD.Infrastructure.Events.Base;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Events
 {
-    public class DomainPublisher : EventPublisherBase, IDomainPublisher
+    public class DomainPublisher : IDomainPublisher
     {
-        public DomainPublisher(IMessagingProvider messagingProvider, OpenDddOptions options)
-            : base(messagingProvider, options) { }
+        private readonly List<IDomainEvent> _publishedEvents = new();
 
-        public async Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken ct) 
+        public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken ct) 
             where TEvent : IDomainEvent
         {
-            await PublishAsync(domainEvent, "Domain", ct);
+            if (domainEvent == null) throw new ArgumentNullException(nameof(domainEvent));
+
+            _publishedEvents.Add(domainEvent);
+            return Task.CompletedTask;
         }
+
+        public IReadOnlyList<IDomainEvent> GetPublishedEvents() => _publishedEvents.AsReadOnly();
     }
 }

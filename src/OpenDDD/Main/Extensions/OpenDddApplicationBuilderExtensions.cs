@@ -10,12 +10,9 @@ namespace OpenDDD.Main.Extensions
     {
         public static IApplicationBuilder UseOpenDDD(this IApplicationBuilder app)
         {
-            // Resolve OpenDddOptions (can be used to configure the pipeline if needed)
             var options = app.ApplicationServices.GetRequiredService<IOptions<OpenDddOptions>>().Value;
 
-            // Middleware to commit or rollback Unit of Work
-            app.UseMiddleware<UnitOfWorkMiddleware>();
-            app.UseMiddleware<TransactionalOutboxMiddleware>();
+            app.UseMiddleware<ActionMiddleware>();
 
             return app;
         }

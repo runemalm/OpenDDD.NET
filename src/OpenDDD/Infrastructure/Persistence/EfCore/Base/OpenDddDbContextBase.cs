@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using OpenDDD.Domain.Model.Base;
+using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
@@ -8,6 +9,7 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
     public class OpenDddDbContextBase : DbContext
     {
         private readonly OpenDddOptions _openDddOptions;
+        public DbSet<OutboxEntry> OutboxEntries { get; set; } = null!;
 
         public OpenDddDbContextBase(DbContextOptions options, OpenDddOptions openDddOptions) : base(options)
         {
@@ -18,6 +20,18 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
         {
             base.OnModelCreating(modelBuilder);
             
+            // Configure OutboxEntry Table
+            modelBuilder.Entity<OutboxEntry>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EventType).IsRequired();
+                entity.Property(e => e.EventName).IsRequired();
+                entity.Property(e => e.Payload).IsRequired();
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.ProcessedAt).IsRequired(false);
+                entity.Property(e => e.Processed).HasDefaultValue(false);
+            });
+
             if (_openDddOptions.AutoRegisterConfigurations)
             {
                 ApplyConfigurations(modelBuilder);
