@@ -16,6 +16,10 @@ builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =
            .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
            .UseInMemoryMessaging()
            .SetEventListenerGroup("Bookstore")
+           .SetEventTopicTemplates(
+               "Bookstore.Domain.{EventName}",
+               "Bookstore.Interchange.{EventName}"
+            )
            .EnableAutoRegistration();
 });
 

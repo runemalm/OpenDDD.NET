@@ -41,6 +41,23 @@ namespace Bookstore.Main.EfCore.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OutboxEntries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    EventType = table.Column<string>(type: "TEXT", nullable: false),
+                    EventName = table.Column<string>(type: "TEXT", nullable: false),
+                    Payload = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Processed = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OutboxEntries", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LineItem",
                 columns: table => new
                 {
@@ -75,6 +92,9 @@ namespace Bookstore.Main.EfCore.Migrations
 
             migrationBuilder.DropTable(
                 name: "LineItem");
+
+            migrationBuilder.DropTable(
+                name: "OutboxEntries");
 
             migrationBuilder.DropTable(
                 name: "Orders");
