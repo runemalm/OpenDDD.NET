@@ -1,5 +1,4 @@
 ﻿using OpenDDD.Infrastructure.Events.Azure.Options;
-using OpenDDD.Main.Options;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 
@@ -9,18 +8,16 @@ namespace OpenDDD.Infrastructure.Events.Azure
     {
         private readonly ServiceBusClient _client;
         private readonly AzureServiceBusOptions _options;
-        private readonly OpenDddOptions _openDddOptions;
 
-        public AzureServiceBusProvider(AzureServiceBusOptions options, OpenDddOptions openDddOptions)
+        public AzureServiceBusProvider(AzureServiceBusOptions options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
-            _openDddOptions = openDddOptions ?? throw new ArgumentNullException(nameof(openDddOptions));
             _client = new ServiceBusClient(options.ConnectionString);
         }
 
-        public async Task SubscribeAsync(string topic, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
+        public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
-            var subscriptionName = _openDddOptions.EventsListenerGroup;
+            var subscriptionName = consumerGroup;
 
             if (_options.AutoCreateTopics)
             {

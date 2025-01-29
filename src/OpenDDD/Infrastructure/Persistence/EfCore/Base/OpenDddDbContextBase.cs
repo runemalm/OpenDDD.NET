@@ -32,7 +32,7 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
                 entity.Property(e => e.Processed).HasDefaultValue(false);
             });
 
-            if (_openDddOptions.AutoRegisterConfigurations)
+            if (_openDddOptions.AutoRegister.EfCoreConfigurations)
             {
                 ApplyConfigurations(modelBuilder);
             }

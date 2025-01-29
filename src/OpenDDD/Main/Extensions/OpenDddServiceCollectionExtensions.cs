@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Base;
@@ -34,52 +35,57 @@ namespace OpenDDD.Main.Extensions
             Action<IServiceCollection>? configureServices = null)
             where TDbContext : OpenDddDbContextBase
         {
-            // Configure OpenDddOptions
+            // Bind the OpenDDD options
+            services.Configure<OpenDddOptions>(opt =>
+            {
+                configuration.GetSection("OpenDDD").Bind(opt);
+                configureOptions?.Invoke(opt);
+            });
+
+            // Construct an OpenDdd options object
             var options = new OpenDddOptions();
             configuration.GetSection("OpenDDD").Bind(options);
             configureOptions?.Invoke(options);
             
+            // Register the options object as singleton as well
             services.AddSingleton(options);
 
             // Validate options
-            if (string.IsNullOrWhiteSpace(options.ConnectionString))
-            {
-                options.ConnectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
-            }
-
-            if (string.IsNullOrWhiteSpace(options.ConnectionString) &&
-                options.PersistenceProvider.ToLower() == "efcore" &&
-                options.StorageProvider.ToLower() != "inmemory")
-            {
-                throw new InvalidOperationException("OpenDDD with EfCore requires a valid connection string. Please set " +
-                                                    "'OpenDDD:ConnectionString' or " +
-                                                    "'ConnectionStrings:DefaultConnection'.");
-            }
-            
-            // Register services if persistence provider is EfCore
             if (options.PersistenceProvider.ToLower() == "efcore")
             {
-                // Regisgter the DbContext using the generic type parameter
+                if (options.EfCore.Database.ToLower() != "inmemory")
+                {
+                    if (string.IsNullOrWhiteSpace(options.EfCore.ConnectionString))
+                    {
+                        throw new InvalidOperationException("OpenDDD with EfCore requires a valid connection string. " +
+                                                            "Please set 'OpenDDD:EfCore:ConnectionString'.");
+                    }
+                }
+            }
+
+            // Register services for EfCore
+            if (options.PersistenceProvider.ToLower() == "efcore")
+            {
                 services.AddDbContext<TDbContext>((serviceProvider, optionsBuilder) =>
                 {
-                    var openDddOptions = serviceProvider.GetRequiredService<OpenDddOptions>();
+                    var openDddOptions = serviceProvider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
 
-                    switch (options.StorageProvider.ToLower())
+                    switch (openDddOptions.EfCore.Database.ToLower())
                     {
                         case "postgres":
-                            optionsBuilder.UseNpgsql(openDddOptions.ConnectionString);
+                            optionsBuilder.UseNpgsql(openDddOptions.EfCore.ConnectionString);
                             break;
                         case "sqlserver":
-                            optionsBuilder.UseSqlServer(openDddOptions.ConnectionString);
+                            optionsBuilder.UseSqlServer(openDddOptions.EfCore.ConnectionString);
                             break;
                         case "sqlite":
-                            optionsBuilder.UseSqlite(openDddOptions.ConnectionString);
+                            optionsBuilder.UseSqlite(openDddOptions.EfCore.ConnectionString);
                             break;
                         case "inmemory":
                             optionsBuilder.UseInMemoryDatabase("OpenDDD");
                             break;
                         default:
-                            throw new InvalidOperationException($"Unsupported StorageProvider: {openDddOptions.StorageProvider}");
+                            throw new InvalidOperationException($"Unsupported Database: {openDddOptions.EfCore.Database}");
                     }
 
                     dbContextOptions?.Invoke(optionsBuilder);
@@ -116,44 +122,37 @@ namespace OpenDDD.Main.Extensions
                 services.AddSingleton<IMessagingProvider, AzureServiceBusProvider>();
             }
             
-            if (string.IsNullOrWhiteSpace(options.EventsNamespacePrefix))
-            {
-                throw new InvalidOperationException("The EventsNamespacePrefix must be configured in OpenDddOptions.");
-            }
-            
-            if (string.IsNullOrWhiteSpace(options.EventsListenerGroup))
-            {
-                throw new InvalidOperationException("The EventsListenerGroup must be configured in OpenDddOptions.");
-            }
-            
             // Register publishers
             services.AddScoped<IDomainPublisher, DomainPublisher>();
             services.AddScoped<IIntegrationPublisher, IntegrationPublisher>();
 
             // Auto-register repositories
-            if (options.AutoRegisterRepositories)
+            if (options.AutoRegister.Repositories)
             {
-                RegisterEfCoreRepositories(services);
+                if (options.PersistenceProvider.ToLower() == "efcore")
+                {
+                    RegisterEfCoreRepositories(services);
+                }
             }
 
             // Auto-register domain services
-            if (options.AutoRegisterDomainServices)
+            if (options.AutoRegister.DomainServices)
             {
                 RegisterDomainServices(services);
             }
 
             // Auto-register actions
-            if (options.AutoRegisterActions)
+            if (options.AutoRegister.Actions)
             {
                 RegisterActions(services);
             }
             
-            if (options.AutoRegisterInfrastructureServices)
+            if (options.AutoRegister.InfrastructureServices)
             {
                 RegisterInfrastructureServices(services);
             }
             
-            if (options.AutoRegisterEventListeners)
+            if (options.AutoRegister.EventListeners)
             {
                 RegisterEventListeners(services, options);
             }
@@ -275,7 +274,7 @@ namespace OpenDDD.Main.Extensions
         
         private static void RegisterInfrastructureServices(IServiceCollection services)
         {
-            // Find all classes that implement IInfrastructureService
+            // Get all non-abstract classes implementing IInfrastructureService
             var infrastructureServiceTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => 
@@ -284,16 +283,23 @@ namespace OpenDDD.Main.Extensions
                     typeof(IInfrastructureService).IsAssignableFrom(type))
                 .ToList();
 
-            foreach (var implementationType in infrastructureServiceTypes)
-            {
-                // Find the interface it implements that is NOT IInfrastructureService
-                var serviceInterface = implementationType.GetInterfaces()
-                    .FirstOrDefault(i => 
-                        i != typeof(IInfrastructureService) && 
-                        !i.IsGenericType); // Exclude generic interfaces if unnecessary
+            // Group implementations by their interface (excluding IInfrastructureService itself)
+            var groupedServices = infrastructureServiceTypes
+                .SelectMany(impl => impl.GetInterfaces()
+                    .Where(i => i != typeof(IInfrastructureService) && !i.IsGenericType)
+                    .Select(i => new { Interface = i, Implementation = impl }))
+                .GroupBy(x => x.Interface)
+                .ToList();
 
-                if (serviceInterface != null)
+            foreach (var group in groupedServices)
+            {
+                var serviceInterface = group.Key;
+                var implementations = group.Select(x => x.Implementation).ToList();
+
+                if (implementations.Count == 1)
                 {
+                    var implementationType = implementations.Single();
+
                     // Check for custom lifetime using LifetimeAttribute or default to Transient
                     var lifetimeAttribute = implementationType.GetCustomAttribute<LifetimeAttribute>();
                     var lifetime = lifetimeAttribute?.Lifetime ?? ServiceLifetime.Transient;
@@ -304,14 +310,14 @@ namespace OpenDDD.Main.Extensions
                 }
                 else
                 {
-                    Console.WriteLine($"Warning: No suitable interface found for infrastructure service {implementationType.Name}.");
+                    Console.WriteLine($"Skipping auto-registration for {serviceInterface.Name} due to multiple implementations: {string.Join(", ", implementations.Select(i => i.Name))}. Please register manually.");
                 }
             }
         }
 
         private static void RegisterEventListeners(IServiceCollection services, OpenDddOptions options)
         {
-            if (!options.AutoRegisterEventListeners) return;
+            if (!options.AutoRegister.EventListeners) return;
 
             // Find all classes deriving from EventListenerBase<,>
             var listenerTypes = AppDomain.CurrentDomain.GetAssemblies()

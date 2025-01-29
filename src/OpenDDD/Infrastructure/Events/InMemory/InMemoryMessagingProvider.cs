@@ -1,25 +1,20 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Events.InMemory
 {
     public class InMemoryMessagingProvider : IMessagingProvider
     {
-        private readonly OpenDddOptions _openDddOptions;
         private readonly ConcurrentDictionary<string, ConcurrentBag<Func<string, CancellationToken, Task>>> _subscribers = new();
         private readonly ILogger<InMemoryMessagingProvider> _logger;
 
-        public InMemoryMessagingProvider(OpenDddOptions openDddOptions, ILogger<InMemoryMessagingProvider> logger)
+        public InMemoryMessagingProvider(ILogger<InMemoryMessagingProvider> logger)
         {
-            _openDddOptions = openDddOptions ?? throw new ArgumentNullException(nameof(openDddOptions));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public Task SubscribeAsync(string topic, Func<string, CancellationToken, Task> messageHandler, CancellationToken ct)
+        public Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken ct)
         {
-            var consumerGroup = _openDddOptions.EventsListenerGroup;
-
             var groupKey = $"{topic}:{consumerGroup}";
 
             var handlers = _subscribers.GetOrAdd(groupKey, _ => new ConcurrentBag<Func<string, CancellationToken, Task>>());

@@ -11,8 +11,9 @@ namespace Bookstore.Application.Listeners.Domain
         public CustomerRegisteredListener(
             IMessagingProvider messagingProvider,
             OpenDddOptions options,
-            IServiceScopeFactory serviceScopeFactory)
-            : base(messagingProvider, options, serviceScopeFactory) { }
+            IServiceScopeFactory serviceScopeFactory,
+            ILogger<CustomerRegisteredListener> logger)
+            : base(messagingProvider, options, serviceScopeFactory, logger) { }
 
         public override async Task HandleAsync(CustomerRegistered domainEvent, SendWelcomeEmailAction action, CancellationToken ct)
         {

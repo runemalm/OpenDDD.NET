@@ -1,5 +1,7 @@
-using Bookstore.Infrastructure.Persistence.EfCore;
+using Bookstore.Domain.Model.Ports;
 using OpenDDD.Main.Extensions;
+using Bookstore.Infrastructure.Persistence.EfCore;
+using Bookstore.Infrastructure.Service.EmailSender.Fake;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,11 +10,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>
-{
-    options.UseEfCore();
-    options.UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared");
-});
+builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration);
+
+builder.Services.AddTransient<IEmailSender, FakeEmailSender>();
 
 // Add Controller Services
 builder.Services.AddControllers();

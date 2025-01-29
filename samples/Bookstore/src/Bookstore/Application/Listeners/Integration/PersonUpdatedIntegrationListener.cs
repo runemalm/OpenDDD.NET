@@ -11,8 +11,9 @@ namespace Bookstore.Application.Listeners.Integration
         public PersonUpdatedIntegrationListener(
             IMessagingProvider messagingProvider,
             OpenDddOptions options,
-            IServiceScopeFactory serviceScopeFactory)
-            : base(messagingProvider, options, serviceScopeFactory) { }
+            IServiceScopeFactory serviceScopeFactory,
+            ILogger<PersonUpdatedIntegrationListener> logger)
+            : base(messagingProvider, options, serviceScopeFactory, logger) { }
 
         public override async Task HandleAsync(PersonUpdatedIntegrationEvent integrationEvent, 
             UpdateCustomerNameAction action, CancellationToken ct)
