@@ -18,8 +18,8 @@ namespace OpenDDD.Domain.Model.Helpers
 
                 // Select the correct format from configuration
                 string topicTemplate = isIntegrationEvent 
-                    ? eventOptions.IntegrationEventTopic 
-                    : eventOptions.DomainEventTopic;
+                    ? eventOptions.IntegrationEventTopicTemplate 
+                    : eventOptions.DomainEventTopicTemplate;
 
                 // Ensure the topic format contains "{EventName}"
                 if (!topicTemplate.Contains("{EventName}"))
@@ -53,8 +53,8 @@ namespace OpenDDD.Domain.Model.Helpers
 
                 // Select the correct format from configuration
                 string topicTemplate = eventType == "Integration"
-                    ? eventOptions.IntegrationEventTopic
-                    : eventOptions.DomainEventTopic;
+                    ? eventOptions.IntegrationEventTopicTemplate
+                    : eventOptions.DomainEventTopicTemplate;
 
                 // Ensure the topic format contains "{EventName}"
                 if (!topicTemplate.Contains("{EventName}"))

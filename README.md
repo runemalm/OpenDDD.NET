@@ -59,11 +59,14 @@ To get started with OpenDDD.NET, follow these simple steps:
 
    var builder = WebApplication.CreateBuilder(args);
 
-   // Add OpenDDD Services
-   builder.Services.AddOpenDDD(builder.Configuration, options =>  
+   // Add OpenDDD services
+   builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>  
    {  
-      options.UseEfCore();  
-      options.UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared");  
+       options.UseEfCore()
+              .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+              .UseInMemoryMessaging()
+              .SetEventListenerGroup("Bookstore")
+              .EnableAutoRegistration();
    });
 
    var app = builder.Build();

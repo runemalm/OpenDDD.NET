@@ -10,7 +10,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration);
+builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>  
+{  
+    options.UseEfCore()
+           .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+           .UseInMemoryMessaging()
+           .SetEventListenerGroup("Bookstore")
+           .EnableAutoRegistration();
+});
 
 builder.Services.AddTransient<IEmailSender, FakeEmailSender>();
 
