@@ -5,7 +5,7 @@
 
 OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
-> **Note:** OpenDDD.NET is currently in an alpha state as part of a complete rewrite for version 3. Use with caution in production environments and consider contributing to its development.
+> **Note:** OpenDDD.NET is currently in an alpha state as part of a complete rewrite for version 3. Use with caution in production environments.
 
 ## Key Features
 
@@ -86,7 +86,7 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 ## Release History
 
-**3.0.0-alpha.3 (2025-01-xx)**
+**3.0.0-alpha.3 (2025-01-29)**
 
 - **Domain Events**: Added support for domain events to enable communication between domain objects while maintaining encapsulation.
 - **Integration Events**: Added support for integration events to facilitate communication between bounded contexts.
@@ -95,6 +95,7 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 - **Messaging Providers**: Added pluggable support for messaging backends, including in-memory and Azure Service Bus.
 - **Infrastructure Services**: Added `IInfrastructureService` interface for managing infrastructure services, with automatic registration.
 - **Repository Refactoring**: Refactored repository pattern by introducing `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, improving consistency and customization.
+- **Configuration Refactoring**: Restructured OpenDDD.NET configuration system into hierarchical options classes, improving clarity and maintainability.
 
 **3.0.0-alpha.2 (2025-01-21)**
 
