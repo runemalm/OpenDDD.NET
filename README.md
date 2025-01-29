@@ -9,16 +9,16 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 
 ## Key Features
 
-**Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
-**Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
-**Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
-**Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
-**Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
-**Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
-**Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
-**Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
-**Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
-**Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
+- **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
+- **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
+- **Repositories**: Define repositories to abstract away data access and enable persistence of domain objects.
+- **Domain Events**: Implement domain events to facilitate communication between domain objects and decouple them from each other.
+- **Integration Events**: Implement integration events to facilitate communication between bounded contexts and decouple them from each other.
+- **Event Listeners**: Support for defining and managing event listeners to handle domain and integration events, enabling decoupled and scalable event-driven architectures.
+- **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
+- **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
+- **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
+- **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
 ## Basic Concepts
 
