@@ -18,7 +18,7 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 - [x] **Domain Services**: Encapsulate domain-specific operations that don’t naturally belong to an entity or value object.
 - [x] **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
 - [x] **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
-- [ ] **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
+- [x] **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
 ## Basic Concepts
 
@@ -88,10 +88,11 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 **3.0.0-alpha.3 (2025-01-xx)**
 
-- **Event-Driven Architecture**: Enable decoupled and scalable systems using domain- and integration events, along with listener support for reacting to events with actions.
-- **Messaging Providers**: Pluggable support for messaging backends, including in-memory and Azure Service Bus.
-- **Infrastructure Services:** Added support for infrastructure services via the `IInfrastructureService` interface, including auto-registration.
-- **Repository Refactoring:** Simplified the repository pattern by replacing old base repository classes with `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, ensuring consistency and supporting easy customization.
+- **Event-Driven Architecture**: Added support for domain and integration events, allowing decoupled execution of actions through event listeners.
+- **Transactional Outbox**: Added reliable event publishing by storing events in an outbox before processing and publishing to the message bus, ensuring consistency with database transactions.
+- **Messaging Providers**: Added pluggable support for messaging backends, including in-memory and Azure Service Bus.
+- **Infrastructure Services**: Added `IInfrastructureService` interface for managing infrastructure services, with automatic registration.
+- **Repository Refactoring**: Refactored repository pattern by introducing `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, improving consistency and customization.
 
 **3.0.0-alpha.2 (2025-01-21)**
 
