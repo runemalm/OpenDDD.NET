@@ -88,7 +88,9 @@ Visit the documentation here: [OpenDDD.NET Documentation](https://opendddnet.rea
 
 **3.0.0-alpha.3 (2025-01-xx)**
 
-- **Event-Driven Architecture**: Added support for domain and integration events, allowing decoupled execution of actions through event listeners.
+- **Domain Events**: Added support for domain events to enable communication between domain objects while maintaining encapsulation.
+- **Integration Events**: Added support for integration events to facilitate communication between bounded contexts.
+- **Event Listeners**: Added support for event listeners to handle domain and integration events with actions.
 - **Transactional Outbox**: Added reliable event publishing by storing events in an outbox before processing and publishing to the message bus, ensuring consistency with database transactions.
 - **Messaging Providers**: Added pluggable support for messaging backends, including in-memory and Azure Service Bus.
 - **Infrastructure Services**: Added `IInfrastructureService` interface for managing infrastructure services, with automatic registration.
