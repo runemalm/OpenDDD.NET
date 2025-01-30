@@ -57,7 +57,7 @@ To get started with OpenDDD.NET, follow these simple steps:
        options.UseEfCore()
               .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
               .UseInMemoryMessaging()
-              .SetEventListenerGroup("Bookstore")  
+              .SetEventListenerGroup("Default")  
               .SetEventTopicTemplates(  
                  "Bookstore.Domain.{EventName}",  
                  "Bookstore.Interchange.{EventName}"  

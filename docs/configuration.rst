@@ -103,7 +103,8 @@ To change database to e.g. **SQL Server**, update the database and connection st
 Messaging Settings
 ##################
 
-OpenDDD.NET supports event-driven messaging using **domain events** and **integration events**.
+OpenDDD.NET supports event-driven messaging using **domain events** and **integration events**.  
+Each event type has its own **dedicated topic**.
 
 Example configuration:
 
@@ -122,17 +123,34 @@ Example configuration:
       }
     }
 
+------------------
+Messaging Provider
+------------------
+
 **MessagingProvider** specifies the message bus to be used for event processing:
 
 - `"InMemory"` → Local message bus for event processing within the same application instance.
 - `"AzureServiceBus"` → Distributed message bus for event processing across services.
 
-**Topic Naming Conventions:**
+------------------------
+Topic Naming Conventions
+------------------------
 
 - **Domain Events:** `"Bookstore.Domain.{EventName}"`  
   (or `"Bookstore.{BoundedContext}.{EventName}"` for multi-context applications)
 - **Integration Events:** `"Bookstore.Interchange.{EventName}"`  
   (Always includes `"Interchange"` as the middle part)
+
+----------------------
+Competing Consumer Pattern
+----------------------
+
+OpenDDD.NET supports the **competing consumer pattern**, allowing multiple instances of a service  
+to process messages from the same event topic. 
+
+**ListenerGroup** specifies which **consumer group** the application instance belongs to.  
+Services in the same listener group compete for messages, ensuring **load balancing**  
+while preventing duplicate processing within the group.
 
 .. _config-fluent:
 
