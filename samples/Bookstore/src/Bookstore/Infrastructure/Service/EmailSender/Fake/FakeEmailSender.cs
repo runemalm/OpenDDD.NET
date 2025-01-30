@@ -14,7 +14,7 @@ namespace Bookstore.Infrastructure.Service.EmailSender.Fake
         
         public Task SendEmailAsync(string recipient, string subject, string body, CancellationToken ct)
         {
-            _logger.LogInformation($"Sending email to {recipient} (fake)");
+            _logger.LogInformation($"Sending email to {recipient}");
             return Task.CompletedTask;
         }
     }
