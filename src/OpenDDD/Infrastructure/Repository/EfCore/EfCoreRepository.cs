@@ -50,10 +50,23 @@ namespace OpenDDD.Infrastructure.Repository.EfCore
         {
             return await DbContext.Set<TAggregateRoot>().ToListAsync(ct);
         }
-
+        
         public async Task SaveAsync(TAggregateRoot aggregateRoot, CancellationToken ct)
         {
-            await _unitOfWork.SaveAsync<TAggregateRoot, TId>(aggregateRoot, ct);
+            if (aggregateRoot == null) throw new ArgumentNullException(nameof(aggregateRoot));
+
+            var dbSet = DbContext.Set<TAggregateRoot>();
+
+            var existingEntity = await dbSet.FindAsync(new object[] { aggregateRoot.Id }, ct);
+
+            if (existingEntity == null)
+            {
+                await dbSet.AddAsync(aggregateRoot, ct);
+            }
+            else
+            {
+                DbContext.Entry(existingEntity).CurrentValues.SetValues(aggregateRoot);
+            }
         }
 
         public async Task DeleteAsync(TAggregateRoot aggregateRoot, CancellationToken ct)

@@ -1,7 +1,4 @@
-﻿using OpenDDD.Domain.Model;
-using OpenDDD.Domain.Model.Base;
-
-namespace OpenDDD.Infrastructure.Persistence.UoW
+﻿namespace OpenDDD.Infrastructure.Persistence.UoW
 {
     public abstract class UnitOfWorkBase : IUnitOfWork
     {
@@ -29,10 +26,6 @@ namespace OpenDDD.Infrastructure.Persistence.UoW
         {
             await RollbackTransactionInternalAsync(ct);
         }
-
-        public abstract Task AddToOutboxAsync(IEvent @event, CancellationToken ct);
-        public abstract Task SaveAsync<TAggregateRoot, TId>(TAggregateRoot aggregateRoot, CancellationToken ct)
-            where TAggregateRoot : AggregateRootBase<TId>;
 
         protected abstract Task BeginTransactionInternalAsync(CancellationToken ct);
         protected abstract Task CommitTransactionInternalAsync(CancellationToken ct);
