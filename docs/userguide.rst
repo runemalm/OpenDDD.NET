@@ -32,7 +32,9 @@ Quick Start Overview
 
 To begin using OpenDDD.NET, follow these steps:
 
-**Step 1: Configure Services in `Program.cs`**
+------------------------------------------
+Step 1: Configure Services in `Program.cs`
+------------------------------------------
 
 Add OpenDDD.NET services to your application in the `Program.cs` file:
 
@@ -55,7 +57,9 @@ Add OpenDDD.NET services to your application in the `Program.cs` file:
 
     app.Run();
 
-**Step 2: Define Your Aggregates**
+------------------------------
+Step 2: Define Your Aggregates
+------------------------------
 
 Create aggregates, entities and value objects to represent your domain model.
 
@@ -87,7 +91,9 @@ Example definition:
         }
     }
 
-**Step 3: Define Domain Events**
+----------------------------
+Step 3: Define Domain Events
+----------------------------
 
 Create your events representing key domain actions.
 
@@ -123,7 +129,9 @@ Example definition:
         }
     }
 
-**Step 4: Implement Repositories**
+----------------------------
+Step 4: Implement Repositories
+----------------------------
 
 Define repositories for aggregates.
 
@@ -173,7 +181,9 @@ Example definitions:
         }
     }
 
-**Step 5: Implement Actions and Commands**
+----------------------------
+Step 5: Implement Actions and Commands
+----------------------------
 
 Create actions and their commands to handle application logic.
 
@@ -232,7 +242,9 @@ Example definitions:
         }
     }
 
-**Step 6: Implement Domain Services**
+----------------------------
+Step 6: Implement Domain Services
+----------------------------
 
 Implement domain services for cross-aggregate domain logic.
 
@@ -295,154 +307,158 @@ Example definitions:
         }
     }
 
-**Step 7: Implement Event Listeners**
+----------------------------
+Step 7: Implement Event Listeners
+----------------------------
 
 Event listeners in OpenDDD.NET process **domain events** and **integration events** asynchronously.  
 They allow decoupled event-driven workflows where different parts of the application react to changes in the domain.
 
-**a) Create an Event Listener:**
+**1. Create an Event Listener**
 
-An event listener subscribes to an event and executes an **action** when the event is received.
+    An event listener subscribes to an event and executes an **action** when the event is received.
 
-Example: A listener that sends a welcome email when a customer is registered.
+    Example: A listener that sends a welcome email when a customer is registered.
 
-.. code-block:: csharp
+    .. code-block:: csharp
 
-    using OpenDDD.Infrastructure.Events.Base;
-    using OpenDDD.Main.Options;
-    using OpenDDD.Infrastructure.Events;
-    using Bookstore.Application.Actions.SendWelcomeEmail;
-    using Bookstore.Domain.Model.Events;
+        using OpenDDD.Infrastructure.Events.Base;
+        using OpenDDD.Main.Options;
+        using OpenDDD.Infrastructure.Events;
+        using Bookstore.Application.Actions.SendWelcomeEmail;
+        using Bookstore.Domain.Model.Events;
 
-    namespace Bookstore.Application.Listeners.Domain
-    {
-        public class CustomerRegisteredListener : EventListenerBase<CustomerRegistered, SendWelcomeEmailAction>
+        namespace Bookstore.Application.Listeners.Domain
         {
-            public CustomerRegisteredListener(
-                IMessagingProvider messagingProvider,
-                OpenDddOptions options,
-                IServiceScopeFactory serviceScopeFactory,
-                ILogger<CustomerRegisteredListener> logger)
-                : base(messagingProvider, options, serviceScopeFactory, logger) { }
-
-            public override async Task HandleAsync(CustomerRegistered domainEvent, SendWelcomeEmailAction action, CancellationToken ct)
+            public class CustomerRegisteredListener : EventListenerBase<CustomerRegistered, SendWelcomeEmailAction>
             {
-                var command = new SendWelcomeEmailCommand(domainEvent.Email, domainEvent.Name);
-                await action.ExecuteAsync(command, ct);
+                public CustomerRegisteredListener(
+                    IMessagingProvider messagingProvider,
+                    OpenDddOptions options,
+                    IServiceScopeFactory serviceScopeFactory,
+                    ILogger<CustomerRegisteredListener> logger)
+                    : base(messagingProvider, options, serviceScopeFactory, logger) { }
+
+                public override async Task HandleAsync(CustomerRegistered domainEvent, SendWelcomeEmailAction action, CancellationToken ct)
+                {
+                    var command = new SendWelcomeEmailCommand(domainEvent.Email, domainEvent.Name);
+                    await action.ExecuteAsync(command, ct);
+                }
             }
         }
-    }
 
-**b) Process Events Using Actions:**
+**2. Process Events Using Actions**
 
-Each event listener is paired with an **action** that contains the logic for handling the event. 
+    Each event listener is paired with an **action** that contains the logic for handling the event. 
 
-Example: An action that sends an email.
+    Example: An action that sends an email.
 
-.. code-block:: csharp
+    .. code-block:: csharp
 
-    using OpenDDD.Application;
-    using Bookstore.Domain.Model.Ports;
+        using OpenDDD.Application;
+        using Bookstore.Domain.Model.Ports;
 
-    namespace Bookstore.Application.Actions.SendWelcomeEmail
-    {
-        public class SendWelcomeEmailAction : IAction<SendWelcomeEmailCommand, object>
+        namespace Bookstore.Application.Actions.SendWelcomeEmail
         {
-            private readonly IEmailPort _emailPort;
-
-            public SendWelcomeEmailAction(IEmailPort emailPort)
+            public class SendWelcomeEmailAction : IAction<SendWelcomeEmailCommand, object>
             {
-                _emailPort = emailPort ?? throw new ArgumentNullException(nameof(emailPort));
-            }
+                private readonly IEmailPort _emailPort;
 
-            public async Task<object> ExecuteAsync(SendWelcomeEmailCommand command, CancellationToken ct)
-            {
-                if (string.IsNullOrWhiteSpace(command.RecipientEmail))
-                    throw new ArgumentException("Recipient email cannot be empty.", nameof(command.RecipientEmail));
+                public SendWelcomeEmailAction(IEmailPort emailPort)
+                {
+                    _emailPort = emailPort ?? throw new ArgumentNullException(nameof(emailPort));
+                }
 
-                if (string.IsNullOrWhiteSpace(command.RecipientName))
-                    throw new ArgumentException("Recipient name cannot be empty.", nameof(command.RecipientName));
+                public async Task<object> ExecuteAsync(SendWelcomeEmailCommand command, CancellationToken ct)
+                {
+                    if (string.IsNullOrWhiteSpace(command.RecipientEmail))
+                        throw new ArgumentException("Recipient email cannot be empty.", nameof(command.RecipientEmail));
 
-                var subject = "Welcome to Bookstore!";
-                var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- Bookstore Team";
+                    if (string.IsNullOrWhiteSpace(command.RecipientName))
+                        throw new ArgumentException("Recipient name cannot be empty.", nameof(command.RecipientName));
 
-                // Send email
-                await _emailPort.SendEmailAsync(command.RecipientEmail, subject, body, ct);
+                    var subject = "Welcome to Bookstore!";
+                    var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- Bookstore Team";
 
-                return new { };
+                    // Send email
+                    await _emailPort.SendEmailAsync(command.RecipientEmail, subject, body, ct);
+
+                    return new { };
+                }
             }
         }
-    }
 
-**Step 8: Register port adapters**
+----------------------------
+Step 8: Register port adapters
+----------------------------
 
 Port adapters in OpenDDD.NET allow your application to interact with external systems, such as **email services, payment gateways, or external APIs**.  
 They implement **input and output ports**, enabling a clean separation of concerns.
 
-**a) Define a Port Interface:**
+**1. Define a Port Interface**
 
-A port defines the contract for an external dependency.
+    A port defines the contract for an external dependency.
 
-Example: **IEmailPort** for sending emails.
+    Example: **IEmailPort** for sending emails.
 
-.. code-block:: csharp
+    .. code-block:: csharp
 
-    using OpenDDD.Domain.Model.Ports;
+        using OpenDDD.Domain.Model.Ports;
 
-    namespace Bookstore.Domain.Model.Ports
-    {
-        public interface IEmailPort : IPort
+        namespace Bookstore.Domain.Model.Ports
         {
-            Task SendEmailAsync(string to, string subject, string body, CancellationToken ct);
-        }
-    }
-
-**b) Implement the Adapter:**
-
-Adapters provide concrete implementations of the port interface.
-
-Example: A **console-based email adapter** for testing.
-
-.. code-block:: csharp
-
-    using Bookstore.Domain.Model.Ports;
-
-    namespace Bookstore.Infrastructure.Adapters.Console
-    {
-        public class ConsoleEmailAdapter : IEmailPort
-        {
-            private readonly ILogger<ConsoleEmailAdapter> _logger;
-
-            public ConsoleEmailAdapter(ILogger<ConsoleEmailAdapter> logger)
+            public interface IEmailPort : IPort
             {
-                _logger = logger;
-            }
-
-            public Task SendEmailAsync(string to, string subject, string body, CancellationToken ct)
-            {
-                _logger.LogInformation($"Sending email to {to}: {subject}\n{body}");
-                return Task.CompletedTask;
+                Task SendEmailAsync(string to, string subject, string body, CancellationToken ct);
             }
         }
-    }
 
-**c) Register the Adapter in `Program.cs`:**
+**2. Implement the Adapter**
 
-Register the adapter in **dependency injection (DI)**.
+    Adapters provide concrete implementations of the port interface.
 
-.. code-block:: csharp
+    Example: A **console-based email adapter** for testing.
 
-    builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
+    .. code-block:: csharp
 
-**d) Use the Port in an Action or Service:**
+        using Bookstore.Domain.Model.Ports;
 
-You can see how the port is used in the ``SendWelcomeEmailAction`` above.
+        namespace Bookstore.Infrastructure.Adapters.Console
+        {
+            public class ConsoleEmailAdapter : IEmailPort
+            {
+                private readonly ILogger<ConsoleEmailAdapter> _logger;
 
----
+                public ConsoleEmailAdapter(ILogger<ConsoleEmailAdapter> logger)
+                {
+                    _logger = logger;
+                }
+
+                public Task SendEmailAsync(string to, string subject, string body, CancellationToken ct)
+                {
+                    _logger.LogInformation($"Sending email to {to}: {subject}\n{body}");
+                    return Task.CompletedTask;
+                }
+            }
+        }
+
+**3. Register the Adapter in `Program.cs`**
+
+    Register the adapter in **dependency injection (DI)**.
+
+    .. code-block:: csharp
+
+        builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
+
+**4. Use the Port in an Action or Service**
+
+    You can see how the port is used in the ``SendWelcomeEmailAction`` above.
 
 Port adapters make it easy to swap implementations, keeping the **domain layer** independent from external services.
 
-**Step 9: Add Configuration**
+----------------------------
+Step 9: Add Configuration
+----------------------------
 
 Add the following configuration to your `appsettings.json` file to customize OpenDDD.NET behavior:
 
