@@ -448,13 +448,13 @@ Find the source code here: `Bookstore Sample Project <https://github.com/runemal
 .. code-block:: bash
 
    git clone https://github.com/runemalm/OpenDDD.NET.git
-   cd OpenDDD.NET/samples/Bookstore
+   cd OpenDDD.NET/samples/Bookstore/src/Bookstore
    dotnet run
 
 **Test the API:**
 
 - **Register a customer** → `POST /api/customers/register-customer`
-- Open **Swagger UI** at `http://localhost:5000/swagger` (or the correct port) to explore and test endpoints.
+- Open **Swagger UI** at `http://localhost:5268/swagger` to explore and test endpoints.
 
 #################
 Where to Go Next?
