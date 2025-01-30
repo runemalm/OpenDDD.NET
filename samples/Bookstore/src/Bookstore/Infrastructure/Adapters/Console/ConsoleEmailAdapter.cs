@@ -13,7 +13,7 @@ namespace Bookstore.Infrastructure.Adapters.Console
 
         public Task SendEmailAsync(string to, string subject, string body, CancellationToken ct)
         {
-            _logger.LogInformation($"Sending email to {to}");
+            _logger.LogInformation($"Sending email to {to}: {subject}\n{body}");
             return Task.CompletedTask;
         }
     }

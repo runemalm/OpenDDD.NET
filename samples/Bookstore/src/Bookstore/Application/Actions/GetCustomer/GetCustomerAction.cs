@@ -1,5 +1,5 @@
-﻿using Bookstore.Domain.Model;
-using OpenDDD.Application;
+﻿using OpenDDD.Application;
+using Bookstore.Domain.Model;
 
 namespace Bookstore.Application.Actions.GetCustomer
 {

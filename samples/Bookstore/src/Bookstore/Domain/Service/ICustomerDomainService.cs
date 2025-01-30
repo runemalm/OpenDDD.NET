@@ -1,5 +1,5 @@
-﻿using Bookstore.Domain.Model;
-using OpenDDD.Domain.Service;
+﻿using OpenDDD.Domain.Service;
+using Bookstore.Domain.Model;
 
 namespace Bookstore.Domain.Service
 {

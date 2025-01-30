@@ -22,20 +22,16 @@ namespace Bookstore.Domain.Service
 
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Customer email cannot be empty.", nameof(email));
-
-            // Check if a customer with the same email already exists
+            
             var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
             if (existingCustomer != null)
                 throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
 
-            // Create a new customer
             var newCustomer = new Customer(Guid.NewGuid(), name, email);
 
-            // Save the new customer to the repository
             await _customerRepository.SaveAsync(newCustomer, ct);
 
-            // Publish the CustomerRegistered domain event
             var domainEvent = new CustomerRegistered(newCustomer.Id, newCustomer.Name, newCustomer.Email, DateTime.UtcNow);
             await _domainPublisher.PublishAsync(domainEvent, ct);
 
