@@ -22,152 +22,142 @@ using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
 using OpenDDD.Main.Attributes;
 using OpenDDD.Main.Options;
-using OpenDDD.Main.StartupFilters;
 
 namespace OpenDDD.Main.Extensions
 {
     public static class OpenDddServiceCollectionExtensions
     {
-        public static IServiceCollection AddOpenDDD<TDbContext>(this IServiceCollection services,
+        public static IServiceCollection AddOpenDDD<TDbContext>(
+            this IServiceCollection services,
             IConfiguration configuration,
             Action<OpenDddOptions>? configureOptions = null,
-            Action<DbContextOptionsBuilder>? dbContextOptions = null,
             Action<IServiceCollection>? configureServices = null)
             where TDbContext : OpenDddDbContextBase
         {
-            // Bind the OpenDDD options
-            services.Configure<OpenDddOptions>(opt =>
+            services.AddDbContext<TDbContext>((serviceProvider, optionsBuilder) =>
             {
-                configuration.GetSection("OpenDDD").Bind(opt);
-                configureOptions?.Invoke(opt);
-            });
+                var options = serviceProvider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
 
-            // Construct an OpenDdd options object
+                switch (options.EfCore.Database.ToLower())
+                {
+                    case "postgres":
+                        optionsBuilder.UseNpgsql(options.EfCore.ConnectionString);
+                        break;
+                    case "sqlserver":
+                        optionsBuilder.UseSqlServer(options.EfCore.ConnectionString);
+                        break;
+                    case "sqlite":
+                        optionsBuilder.UseSqlite(options.EfCore.ConnectionString);
+                        break;
+                    case "inmemory":
+                        optionsBuilder.UseInMemoryDatabase("OpenDDD");
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Unsupported Database: {options.EfCore.Database}");
+                }
+            });
+            
+            services.AddScoped<OpenDddDbContextBase>(sp => sp.GetRequiredService<TDbContext>());
+
+            return AddOpenDDD(services, configuration, configureOptions, configureServices);
+        }
+
+        public static IServiceCollection AddOpenDDD(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            Action<OpenDddOptions>? configureOptions = null,
+            Action<IServiceCollection>? configureServices = null)
+        {
+            var options = services.AddAndResolveOptions(configuration, configureOptions);
+
+            services.AddPersistence(options);
+            services.AddMessaging(options);
+            services.AddTransactionalOutbox();
+            services.AddPublishing();
+
+            if (options.AutoRegister.Repositories) RegisterEfCoreRepositories(services);
+            if (options.AutoRegister.DomainServices) RegisterDomainServices(services);
+            if (options.AutoRegister.Actions) RegisterActions(services);
+            if (options.AutoRegister.InfrastructureServices) RegisterInfrastructureServices(services);
+            if (options.AutoRegister.EventListeners) RegisterEventListeners(services);
+            
+            configureServices?.Invoke(services);
+
+            return services;
+        }
+
+        private static OpenDddOptions AddAndResolveOptions(this IServiceCollection services,
+            IConfiguration configuration, Action<OpenDddOptions>? configureOptions)
+        {
+            services.Configure<OpenDddOptions>(options =>
+            {
+                configuration.GetSection("OpenDDD").Bind(options);
+                configureOptions?.Invoke(options);
+            });
+            
             var options = new OpenDddOptions();
             configuration.GetSection("OpenDDD").Bind(options);
             configureOptions?.Invoke(options);
             
-            // Register the options object as singleton as well
-            services.AddSingleton(options);
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<OpenDddOptions>>().Value);
 
-            // Validate options
-            if (options.PersistenceProvider.ToLower() == "efcore")
+            return options;
+        }
+        
+        private static void AddPersistence(this IServiceCollection services, OpenDddOptions options)
+        {
+            switch (options.PersistenceProvider.ToLower())
             {
-                if (options.EfCore.Database.ToLower() != "inmemory")
-                {
-                    if (string.IsNullOrWhiteSpace(options.EfCore.ConnectionString))
-                    {
-                        throw new InvalidOperationException("OpenDDD with EfCore requires a valid connection string. " +
-                                                            "Please set 'OpenDDD:EfCore:ConnectionString'.");
-                    }
-                }
+                case "efcore":
+                    services.AddEfCore();
+                    break;
+                default:
+                    throw new Exception($"Unsupported PersistenceProvider: {options.PersistenceProvider}");
             }
-
-            // Register services for EfCore
-            if (options.PersistenceProvider.ToLower() == "efcore")
+        }
+        
+        private static void AddMessaging(this IServiceCollection services, OpenDddOptions options)
+        {
+            switch (options.MessagingProvider.ToLower())
             {
-                services.AddDbContext<TDbContext>((serviceProvider, optionsBuilder) =>
-                {
-                    var openDddOptions = serviceProvider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
-
-                    switch (openDddOptions.EfCore.Database.ToLower())
-                    {
-                        case "postgres":
-                            optionsBuilder.UseNpgsql(openDddOptions.EfCore.ConnectionString);
-                            break;
-                        case "sqlserver":
-                            optionsBuilder.UseSqlServer(openDddOptions.EfCore.ConnectionString);
-                            break;
-                        case "sqlite":
-                            optionsBuilder.UseSqlite(openDddOptions.EfCore.ConnectionString);
-                            break;
-                        case "inmemory":
-                            optionsBuilder.UseInMemoryDatabase("OpenDDD");
-                            break;
-                        default:
-                            throw new InvalidOperationException($"Unsupported Database: {openDddOptions.EfCore.Database}");
-                    }
-
-                    dbContextOptions?.Invoke(optionsBuilder);
-                });
-            
-                // Also register with the base class
-                services.AddScoped<OpenDddDbContextBase>(sp => sp.GetRequiredService<TDbContext>());
-                
-                // Register outbox repository
-                services.AddTransient<IOutboxRepository, EfCoreOutboxRepository>();
-                
-                // Register the database initializer
-                services.AddSingleton<EfCoreDatabaseInitializer>();
+                case "inmemory":
+                    services.AddInMemoryMessaging();
+                    break;
+                case "azureservicebus":
+                    services.AddAzureServiceBus();
+                    break;
+                default:
+                    throw new Exception($"Unsupported MessagingProvider: {options.MessagingProvider}");
             }
+        }
+        
+        private static void AddTransactionalOutbox(this IServiceCollection services)
+        {
+            services.AddHostedService<OutboxProcessor>();
+        }
 
-            // Register the unit-of-work
-            services.AddScoped<IUnitOfWork>(sp =>
-            {
-                if (options.PersistenceProvider.ToLower() == "efcore")
-                {
-                    var dbContext = sp.GetRequiredService<TDbContext>();
-                    return new EfCoreUnitOfWork(dbContext);
-                }
-                throw new Exception($"Unsupported PersistenceProvider: {options.PersistenceProvider}");
-            });
-            
-            // Register event services
-            if (options.MessagingProvider == "InMemory")
-            {
-                services.AddSingleton<IMessagingProvider, InMemoryMessagingProvider>();
-            }
-            else if (options.MessagingProvider == "AzureServiceBus")
-            {
-                services.AddSingleton<IMessagingProvider, AzureServiceBusProvider>();
-            }
-            
-            // Register publishers
+        private static void AddPublishing(this IServiceCollection services)
+        {
             services.AddScoped<IDomainPublisher, DomainPublisher>();
             services.AddScoped<IIntegrationPublisher, IntegrationPublisher>();
+        }
 
-            // Auto-register repositories
-            if (options.AutoRegister.Repositories)
-            {
-                if (options.PersistenceProvider.ToLower() == "efcore")
-                {
-                    RegisterEfCoreRepositories(services);
-                }
-            }
+        private static void AddEfCore(this IServiceCollection services)
+        {
+            services.AddSingleton<EfCoreDatabaseInitializer>();
+            services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
+            services.AddTransient<IOutboxRepository, EfCoreOutboxRepository>();
+            services.AddSingleton<IStartupFilter, EfCoreStartupFilter>();
+        }
 
-            // Auto-register domain services
-            if (options.AutoRegister.DomainServices)
-            {
-                RegisterDomainServices(services);
-            }
-
-            // Auto-register actions
-            if (options.AutoRegister.Actions)
-            {
-                RegisterActions(services);
-            }
-            
-            if (options.AutoRegister.InfrastructureServices)
-            {
-                RegisterInfrastructureServices(services);
-            }
-            
-            if (options.AutoRegister.EventListeners)
-            {
-                RegisterEventListeners(services, options);
-            }
-            
-            // Register transactional outbox services
-            services.AddHostedService<OutboxProcessor>();
-
-            // Allow additional service configuration
-            configureServices?.Invoke(services);
-
-            // Register service manager and startup filter
-            services.AddSingleton(services);
-            services.AddSingleton<IStartupFilter, OpenDddStartupFilter>();
-
-            return services;
+        private static void AddAzureServiceBus(this IServiceCollection services)
+        {
+            services.AddSingleton<IMessagingProvider, AzureServiceBusProvider>();
+        }
+        
+        private static void AddInMemoryMessaging(this IServiceCollection services)
+        {
+            services.AddSingleton<IMessagingProvider, InMemoryMessagingProvider>();
         }
 
         private static void RegisterDomainServices(IServiceCollection services)
@@ -315,10 +305,8 @@ namespace OpenDDD.Main.Extensions
             }
         }
 
-        private static void RegisterEventListeners(IServiceCollection services, OpenDddOptions options)
+        private static void RegisterEventListeners(IServiceCollection services)
         {
-            if (!options.AutoRegister.EventListeners) return;
-
             // Find all classes deriving from EventListenerBase<,>
             var listenerTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())

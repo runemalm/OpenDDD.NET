@@ -5,11 +5,11 @@ namespace Bookstore.Application.Actions.SendWelcomeEmail
 {
     public class SendWelcomeEmailAction : IAction<SendWelcomeEmailCommand, object>
     {
-        private readonly IEmailSender _emailSender;
+        private readonly IEmailPort _emailPort;
 
-        public SendWelcomeEmailAction(IEmailSender emailSender)
+        public SendWelcomeEmailAction(IEmailPort emailPort)
         {
-            _emailSender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
+            _emailPort = emailPort ?? throw new ArgumentNullException(nameof(emailPort));
         }
 
         public async Task<object> ExecuteAsync(SendWelcomeEmailCommand command, CancellationToken ct)
@@ -24,7 +24,7 @@ namespace Bookstore.Application.Actions.SendWelcomeEmail
             var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- Bookstore Team";
 
             // Send email
-            await _emailSender.SendEmailAsync(command.RecipientEmail, subject, body, ct);
+            await _emailPort.SendEmailAsync(command.RecipientEmail, subject, body, ct);
 
             return new { };
         }

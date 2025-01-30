@@ -1,17 +1,16 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using OpenDDD.Infrastructure.Persistence.EfCore.Startup;
 using OpenDDD.Main.Options;
 
-namespace OpenDDD.Main.StartupFilters
+namespace OpenDDD.Infrastructure.Persistence.EfCore.Startup
 {
-    public class OpenDddStartupFilter : IStartupFilter
+    public class EfCoreStartupFilter : IStartupFilter
     {
         private readonly EfCoreDatabaseInitializer _efCoreDatabaseInitializer;
         private readonly OpenDddOptions _options;
 
-        public OpenDddStartupFilter(
+        public EfCoreStartupFilter(
             EfCoreDatabaseInitializer efCoreDatabaseInitializer,
             IOptions<OpenDddOptions> options)
         {
@@ -23,11 +22,7 @@ namespace OpenDDD.Main.StartupFilters
         {
             return app =>
             {
-                if (_options.PersistenceProvider.Equals("EfCore", StringComparison.OrdinalIgnoreCase))
-                {
-                    _efCoreDatabaseInitializer.InitializeDatabases();
-                }
-
+                _efCoreDatabaseInitializer.InitializeDatabases();
                 next(app);
             };
         }

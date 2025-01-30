@@ -1,7 +1,7 @@
-using Bookstore.Domain.Model.Ports;
 using OpenDDD.Main.Extensions;
+using Bookstore.Domain.Model.Ports;
+using Bookstore.Infrastructure.Adapters.Console;
 using Bookstore.Infrastructure.Persistence.EfCore;
-using Bookstore.Infrastructure.Service.EmailSender.Fake;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,20 +10,25 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>  
-{  
-    options.UseEfCore()
-           .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
-           .UseInMemoryMessaging()
-           .SetEventListenerGroup("Bookstore")
-           .SetEventTopicTemplates(
-               "Bookstore.Domain.{EventName}",
-               "Bookstore.Interchange.{EventName}"
-            )
-           .EnableAutoRegistration();
-});
-
-builder.Services.AddTransient<IEmailSender, FakeEmailSender>();
+builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
+    options =>  
+    {  
+        options.UseEfCore()
+               .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+               .UseInMemoryMessaging()
+               .SetEventListenerGroup("Bookstore")
+               .SetEventTopicTemplates(
+                   "Bookstore.Domain.{EventName}",
+                   "Bookstore.Interchange.{EventName}"
+                )
+               .EnableAutoRegistration();
+    },
+    services =>
+    {
+        // Add port adapters
+        services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
+    }
+);
 
 // Add Controller Services
 builder.Services.AddControllers();

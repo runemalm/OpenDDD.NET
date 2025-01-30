@@ -1,16 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.UoW;
 
 namespace OpenDDD.Infrastructure.Persistence.EfCore.UoW
 {
     public class EfCoreUnitOfWork : UnitOfWorkBase
     {
-        public readonly DbContext DbContext;
+        public readonly OpenDddDbContextBase DbContext;
         private IDbContextTransaction? _currentTransaction;
         private bool _isInMemoryDatabase;
 
-        public EfCoreUnitOfWork(DbContext dbContext)
+        public EfCoreUnitOfWork(OpenDddDbContextBase dbContext)
         {
             DbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _isInMemoryDatabase = dbContext.Database.IsInMemory();
