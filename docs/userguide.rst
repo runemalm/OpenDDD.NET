@@ -33,10 +33,10 @@ Quick Start Overview
 To begin using OpenDDD.NET, follow these steps:
 
 ------------------------------------------
-Step 1: Configure Services in `Program.cs`
+1: Add OpenDDD in `Program.cs
 ------------------------------------------
 
-Add OpenDDD.NET services to your application in the `Program.cs` file:
+Add OpenDDD.NET services and middleware to your application in the `Program.cs` file:
 
 .. code-block:: csharp
 
@@ -58,7 +58,7 @@ Add OpenDDD.NET services to your application in the `Program.cs` file:
     app.Run();
 
 ------------------------------
-Step 2: Define Your Aggregates
+2: Define Aggregates
 ------------------------------
 
 Create aggregates, entities and value objects to represent your domain model.
@@ -92,7 +92,7 @@ Example definition:
     }
 
 ----------------------------
-Step 3: Define Domain Events
+3: Define Domain Events
 ----------------------------
 
 Create your events representing key domain actions.
@@ -130,7 +130,7 @@ Example definition:
     }
 
 ----------------------------
-Step 4: Implement Repositories
+4: Implement Repositories
 ----------------------------
 
 Define repositories for aggregates.
@@ -182,7 +182,7 @@ Example definitions:
     }
 
 ----------------------------
-Step 5: Implement Actions and Commands
+5: Implement Actions
 ----------------------------
 
 Create actions and their commands to handle application logic.
@@ -243,7 +243,7 @@ Example definitions:
     }
 
 ----------------------------
-Step 6: Implement Domain Services
+6: Implement Domain Services
 ----------------------------
 
 Implement domain services for cross-aggregate domain logic.
@@ -308,7 +308,7 @@ Example definitions:
     }
 
 ----------------------------
-Step 7: Implement Event Listeners
+7: Implement Event Listeners
 ----------------------------
 
 Event listeners in OpenDDD.NET process **domain events** and **integration events** asynchronously.  
@@ -389,7 +389,7 @@ They allow decoupled event-driven workflows where different parts of the applica
         }
 
 ----------------------------
-Step 8: Register port adapters
+8: Implement Port Adapters
 ----------------------------
 
 Port adapters in OpenDDD.NET allow your application to interact with external systems, such as **email services, payment gateways, or external APIs**.  
@@ -457,7 +457,7 @@ They implement **input and output ports**, enabling a clean separation of concer
 Port adapters make it easy to swap implementations, keeping the **domain layer** independent from external services.
 
 ----------------------------
-Step 9: Add Configuration
+9: Add Configuration in `appsettings.json`
 ----------------------------
 
 Add the following configuration to your `appsettings.json` file to customize OpenDDD.NET behavior:
