@@ -6,7 +6,7 @@
 Version History
 ###############
 
-**3.0.0-alpha.3 (2025-01-29)**
+**3.0.0-alpha.3 (2025-01-30)**
 
 - **Domain Events**: Added support for domain events to enable communication between domain objects while maintaining encapsulation.
 - **Integration Events**: Added support for integration events to facilitate communication between bounded contexts.
