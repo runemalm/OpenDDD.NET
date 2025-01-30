@@ -1,4 +1,4 @@
-﻿using OpenDDD.Infrastructure.Services;
+﻿using OpenDDD.Infrastructure.Service;
 using Bookstore.Domain.Model.Ports;
 
 namespace Bookstore.Infrastructure.Service.EmailSender.Smtp

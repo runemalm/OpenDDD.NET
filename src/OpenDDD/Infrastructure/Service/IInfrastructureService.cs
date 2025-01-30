@@ -1,4 +1,4 @@
-﻿namespace OpenDDD.Infrastructure.Services
+﻿namespace OpenDDD.Infrastructure.Service
 {
 	public interface IInfrastructureService
 	{

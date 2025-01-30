@@ -2,7 +2,7 @@
 using OpenDDD.Main.Options;
 using OpenDDD.Infrastructure.Events;
 using Bookstore.Application.Actions.SendWelcomeEmail;
-using Bookstore.Domain.Model.Events.Domain;
+using Bookstore.Domain.Model.Events;
 
 namespace Bookstore.Application.Listeners.Domain
 {

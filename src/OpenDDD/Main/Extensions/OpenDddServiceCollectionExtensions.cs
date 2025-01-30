@@ -17,7 +17,7 @@ using OpenDDD.Infrastructure.Persistence.EfCore.Startup;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
-using OpenDDD.Infrastructure.Services;
+using OpenDDD.Infrastructure.Service;
 using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
 using OpenDDD.Main.Attributes;

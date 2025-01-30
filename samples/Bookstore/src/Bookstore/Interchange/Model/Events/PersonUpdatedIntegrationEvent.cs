@@ -1,6 +1,6 @@
 ﻿using OpenDDD.Domain.Model;
 
-namespace Bookstore.Domain.Model.Events.Integration
+namespace Bookstore.Interchange.Model.Events
 {
     public class PersonUpdatedIntegrationEvent : IIntegrationEvent
     {

@@ -2,17 +2,17 @@
 using OpenDDD.Main.Options;
 using OpenDDD.Infrastructure.Events;
 using Bookstore.Application.Actions.UpdateCustomerName;
-using Bookstore.Domain.Model.Events.Integration;
+using Bookstore.Interchange.Model.Events;
 
 namespace Bookstore.Application.Listeners.Integration
 {
-    public class PersonUpdatedIntegrationListener : EventListenerBase<PersonUpdatedIntegrationEvent, UpdateCustomerNameAction>
+    public class PersonUpdatedIntegrationEventListener : EventListenerBase<PersonUpdatedIntegrationEvent, UpdateCustomerNameAction>
     {
-        public PersonUpdatedIntegrationListener(
+        public PersonUpdatedIntegrationEventListener(
             IMessagingProvider messagingProvider,
             OpenDddOptions options,
             IServiceScopeFactory serviceScopeFactory,
-            ILogger<PersonUpdatedIntegrationListener> logger)
+            ILogger<PersonUpdatedIntegrationEventListener> logger)
             : base(messagingProvider, options, serviceScopeFactory, logger) { }
 
         public override async Task HandleAsync(PersonUpdatedIntegrationEvent integrationEvent, 
