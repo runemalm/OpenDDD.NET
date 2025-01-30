@@ -6,6 +6,19 @@
 Version History
 ###############
 
+**3.0.0-alpha.3 (2025-01-29)**
+
+- **Domain Events**: Added support for domain events to enable communication between domain objects while maintaining encapsulation.
+- **Integration Events**: Added support for integration events to facilitate communication between bounded contexts.
+- **Event Listeners**: Added support for event listeners to handle domain and integration events with actions.
+- **Transactional Outbox**: Added reliable event publishing by storing events in an outbox before processing and publishing to the message bus, ensuring consistency with database transactions.
+- **Messaging Providers**: Added pluggable support for messaging backends, including in-memory and Azure Service Bus.
+- **Infrastructure Services**: Added `IInfrastructureService` interface for managing infrastructure services, with automatic registration.
+- **Repository Refactoring**: Refactored repository pattern by introducing `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, improving consistency and customization.
+- **Configuration Refactoring**: Restructured OpenDDD.NET configuration system into hierarchical options classes, improving clarity and maintainability.
+
+`View release on GitHub <https://github.com/runemalm/OpenDDD.NET/releases/tag/v3.0.0-alpha.3>`_
+
 **3.0.0-alpha.2 (2025-01-21)**
 
 - **Domain Services:** Added the `IDomainService` interface to mark domain services, which are now auto-registered.

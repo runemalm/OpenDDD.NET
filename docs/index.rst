@@ -18,13 +18,13 @@ Key Features
 - **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
 - **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
 - **Repositories**: Abstract away data access and enable persistence of domain objects.
-- **Domain Events**: Facilitate communication between domain objects while maintaining loose coupling. (Planned)
-- **Integration Events**: Enable communication between bounded contexts in distributed systems. (Planned)
-- **Event Listeners**: Manage event listeners to handle domain and integration events for scalable, event-driven architectures. (Planned)
+- **Domain Events**: Facilitate communication between domain objects while maintaining loose coupling.
+- **Integration Events**: Enable communication between bounded contexts in distributed systems.
+- **Event Listeners**: Manage event listeners to handle domain and integration events for scalable, event-driven architectures.
 - **Domain Services**: Encapsulate domain-specific operations that do not naturally belong to an entity or value object.
 - **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
-- **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations. (Planned)
-- **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions. (Planned)
+- **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
+- **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
 
 .. userguide-docs:
 .. toctree::
