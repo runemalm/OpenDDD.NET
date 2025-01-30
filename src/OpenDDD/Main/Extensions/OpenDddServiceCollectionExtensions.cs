@@ -77,8 +77,8 @@ namespace OpenDDD.Main.Extensions
 
             if (options.AutoRegister.Repositories) RegisterEfCoreRepositories(services);
             if (options.AutoRegister.DomainServices) RegisterDomainServices(services);
-            if (options.AutoRegister.Actions) RegisterActions(services);
             if (options.AutoRegister.InfrastructureServices) RegisterInfrastructureServices(services);
+            if (options.AutoRegister.Actions) RegisterActions(services);
             if (options.AutoRegister.EventListeners) RegisterEventListeners(services);
             
             configureServices?.Invoke(services);
@@ -162,21 +162,32 @@ namespace OpenDDD.Main.Extensions
 
         private static void RegisterDomainServices(IServiceCollection services)
         {
-            // Get all types implementing IDomainService or its ancestor interfaces
-            var domainServiceInterfaces = AppDomain.CurrentDomain.GetAssemblies()
+            RegisterServicesByInterface<IDomainService>(services, "domain service");
+        }
+
+        private static void RegisterInfrastructureServices(IServiceCollection services)
+        {
+            RegisterServicesByInterface<IInfrastructureService>(services, "infrastructure service");
+        }
+
+        private static void RegisterServicesByInterface<TServiceMarker>(IServiceCollection services, string serviceTypeName)
+        {
+            // Get all interfaces that implement the marker interface (excluding the marker itself)
+            var serviceInterfaces = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => 
-                    type.IsInterface && 
-                    type != typeof(IDomainService) && 
-                    typeof(IDomainService).IsAssignableFrom(type))
+                .Where(type =>
+                    type.IsInterface &&
+                    type != typeof(TServiceMarker) &&
+                    typeof(TServiceMarker).IsAssignableFrom(type))
                 .ToList();
 
-            foreach (var interfaceType in domainServiceInterfaces)
+            foreach (var interfaceType in serviceInterfaces)
             {
                 // Determine the implementation type by removing the leading 'I' from the interface name
                 var implementationTypeName = interfaceType.Name.Substring(1);
                 var implementationType = interfaceType.Assembly.GetTypes()
-                    .FirstOrDefault(type => type.Name.Equals(implementationTypeName, StringComparison.Ordinal) && interfaceType.IsAssignableFrom(type));
+                    .FirstOrDefault(type => type.Name.Equals(implementationTypeName, StringComparison.Ordinal) &&
+                                            interfaceType.IsAssignableFrom(type));
 
                 if (implementationType != null)
                 {
@@ -186,11 +197,11 @@ namespace OpenDDD.Main.Extensions
 
                     // Register the interface and its implementation
                     services.Add(new ServiceDescriptor(interfaceType, implementationType, lifetime));
-                    Console.WriteLine($"Registered domain service: {interfaceType.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
+                    Console.WriteLine($"Registered {serviceTypeName}: {interfaceType.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
                 }
                 else
                 {
-                    Console.WriteLine($"Warning: No implementation found for domain service interface: {interfaceType.Name}");
+                    Console.WriteLine($"Warning: No implementation found for {serviceTypeName} interface: {interfaceType.Name}");
                 }
             }
         }
@@ -262,49 +273,6 @@ namespace OpenDDD.Main.Extensions
             }
         }
         
-        private static void RegisterInfrastructureServices(IServiceCollection services)
-        {
-            // Get all non-abstract classes implementing IInfrastructureService
-            var infrastructureServiceTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => 
-                    type.IsClass && 
-                    !type.IsAbstract && 
-                    typeof(IInfrastructureService).IsAssignableFrom(type))
-                .ToList();
-
-            // Group implementations by their interface (excluding IInfrastructureService itself)
-            var groupedServices = infrastructureServiceTypes
-                .SelectMany(impl => impl.GetInterfaces()
-                    .Where(i => i != typeof(IInfrastructureService) && !i.IsGenericType)
-                    .Select(i => new { Interface = i, Implementation = impl }))
-                .GroupBy(x => x.Interface)
-                .ToList();
-
-            foreach (var group in groupedServices)
-            {
-                var serviceInterface = group.Key;
-                var implementations = group.Select(x => x.Implementation).ToList();
-
-                if (implementations.Count == 1)
-                {
-                    var implementationType = implementations.Single();
-
-                    // Check for custom lifetime using LifetimeAttribute or default to Transient
-                    var lifetimeAttribute = implementationType.GetCustomAttribute<LifetimeAttribute>();
-                    var lifetime = lifetimeAttribute?.Lifetime ?? ServiceLifetime.Transient;
-
-                    // Register the service
-                    services.Add(new ServiceDescriptor(serviceInterface, implementationType, lifetime));
-                    Console.WriteLine($"Registered infrastructure service: {serviceInterface.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
-                }
-                else
-                {
-                    Console.WriteLine($"Skipping auto-registration for {serviceInterface.Name} due to multiple implementations: {string.Join(", ", implementations.Select(i => i.Name))}. Please register manually.");
-                }
-            }
-        }
-
         private static void RegisterEventListeners(IServiceCollection services)
         {
             // Find all classes deriving from EventListenerBase<,>
