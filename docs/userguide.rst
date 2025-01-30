@@ -12,7 +12,7 @@ Introduction
 
 OpenDDD.NET is an open-source framework for building applications using Domain-Driven Design (DDD) principles in .NET. It provides a set of foundational tools and abstractions to help developers create scalable, maintainable, and testable software systems.
 
-This guide will introduce you to the core concepts and show you how to start using OpenDDD.NET. For more detailed usage examples, refer to the `Building Blocks` section.
+This guide will introduce you to the core concepts and show you how to start using OpenDDD.NET. For more detailed usage examples, refer to the :ref:`Building Blocks <building-blocks>` section.
 
 ############
 Installation
@@ -431,6 +431,8 @@ Add the following configuration to your `appsettings.json` file to customize Ope
       }
     }
 
+For a full list of configuration options, see :ref:`Configuration <config>`.
+
 ##############
 Sample Project
 ##############
@@ -458,6 +460,6 @@ Find the source code here: `Bookstore Sample Project <https://github.com/runemal
 Where to Go Next?
 #################
 
-- **Explore Building Blocks**: Learn more about the foundational components of OpenDDD.NET in the `Building Blocks` section.
+- **Explore Building Blocks**: Learn more about the foundational components of OpenDDD.NET in the :ref:`Building Blocks <building-blocks>` section.
 - **Sample Project**: Check out the sample project mentioned above.
 - **Contribute**: Join the OpenDDD.NET community on GitHub to report issues, ask questions, or contribute to the project.

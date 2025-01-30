@@ -40,12 +40,12 @@ Key Features
 
   building-blocks
 
-.. advanced-topics-docs:
+.. configuration-docs:
 .. toctree::
   :maxdepth: 1
-  :caption: Advanced Topics
+  :caption: Configuration
 
-  advanced-topics
+  configuration
 
 .. releases-docs:
 .. toctree::

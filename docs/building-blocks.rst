@@ -2,12 +2,16 @@
 
     OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
 
-################
-Building Blocks
-################
+.. _building-blocks:
+
+########
+Overview
+########
 
 OpenDDD.NET provides a set of **building blocks** to help structure applications using **Domain-Driven Design (DDD)**.  
 Each block serves a specific purpose in organizing business logic, enforcing boundaries, and maintaining consistency.
+
+.. _bb-aggregates:
 
 ##########
 Aggregates
@@ -19,7 +23,7 @@ It ensures **data integrity** by enforcing business rules and encapsulating stat
 Each aggregate has a single **Aggregate Root**, which is the only entry point for modifications.  
 All external interactions must go through the aggregate root.
 
-In OpenDDD.NET, aggregate roots subclass `AggregateRootBase<TId>`.
+In OpenDDD.NET, aggregate roots subclass ``AggregateRootBase<TId>``.
 
 .. code-block:: csharp
 
@@ -39,6 +43,8 @@ In OpenDDD.NET, aggregate roots subclass `AggregateRootBase<TId>`.
         }
     }
 
+.. _bb-entities:
+
 ########
 Entities
 ########
@@ -46,7 +52,7 @@ Entities
 An **Entity** is a domain object with a unique identity that persists throughout its lifecycle.  
 Entities typically belong to an aggregate and are referenced by their **ID**.
 
-In OpenDDD.NET, entities subclass `EntityBase<TId>`.
+In OpenDDD.NET, entities subclass ``EntityBase<TId>``.
 
 .. code-block:: csharp
 
@@ -60,6 +66,8 @@ In OpenDDD.NET, entities subclass `EntityBase<TId>`.
         }
     }
 
+.. _bb-value-objects:
+
 #############
 Value Objects
 #############
@@ -67,7 +75,7 @@ Value Objects
 A **Value Object** represents a domain concept that is **immutable** and **defined by its values**  
 rather than an identity. Two value objects are considered equal if their properties have the same values.
 
-In OpenDDD.NET, value objects implement the `IValueObject` marker interface.
+In OpenDDD.NET, value objects implement the ``IValueObject`` marker interface.
 
 .. code-block:: csharp
 
@@ -83,6 +91,8 @@ In OpenDDD.NET, value objects implement the `IValueObject` marker interface.
         }
     }
 
+.. _bb-repositories:
+
 ############
 Repositories
 ############
@@ -90,15 +100,15 @@ Repositories
 A **Repository** provides an abstraction for accessing and persisting aggregates.  
 It acts as a collection-like interface for retrieving and storing **aggregates**, keeping the domain logic independent of the database.
 
----------------------
+------------------
 Using Repositories
----------------------
+------------------
 
 In OpenDDD.NET, repositories are implemented by subclassing a **base repository class**.  
 The base class used depends on the configured **persistence provider**.
 
 Currently, OpenDDD.NET supports **Entity Framework Core (EF Core)**,  
-so repositories should subclass `EfCoreRepository<TAggregateRoot, TId>`.
+so repositories should subclass ``EfCoreRepository<TAggregateRoot, TId>``.
 
 .. code-block:: csharp
 
@@ -108,7 +118,7 @@ so repositories should subclass `EfCoreRepository<TAggregateRoot, TId>`.
     }
 
 If no custom repository implementation is provided, OpenDDD.NET will **auto-register** a generic repository.  
-You can inject it using the `IRepository<TAggregateRoot, TId>` interface.
+You can inject it using the ``IRepository<TAggregateRoot, TId>`` interface.
 
 .. code-block:: csharp
 
@@ -129,9 +139,9 @@ You can inject it using the `IRepository<TAggregateRoot, TId>` interface.
         }
     }
 
----------------------
+------------------
 Repository Methods
----------------------
+------------------
 
 Repositories follow a **naming convention** for retrieving and modifying aggregates:
 
@@ -151,6 +161,8 @@ Example usage:
     var orders = await _orderRepository.FindWithAsync(o => o.CustomerName == "Alice", ct);
     await _orderRepository.SaveAsync(new Order(Guid.NewGuid(), "Alice"), ct);
 
+.. _bb-actions:
+
 #######
 Actions
 #######
@@ -158,11 +170,11 @@ Actions
 An **Action** is an application-layer component responsible for executing business logic in response to a **Command**.  
 Actions coordinate domain operations but do not contain domain rules themselves.
 
-----------------------
+------------------
 Defining an Action
-----------------------
+------------------
 
-Actions in OpenDDD.NET subclass `IAction<TCommand, TResponse>`  
+Actions in OpenDDD.NET subclass ``IAction<TCommand, TResponse>`` 
 where `TCommand` represents the **input** and `TResponse` represents the **output**.
 
 .. code-block:: csharp
@@ -191,7 +203,9 @@ Automatic Registration
 By default, OpenDDD.NET **automatically registers all Actions** for dependency injection,  
 so they can be injected where needed.
 
-To disable or modify this behavior, refer to the :ref:`configuration settings <action_auto_registration>`.
+To disable or modify this behavior, refer to the :ref:`configuration settings <config-general-auto-registration>`.
+
+.. _bb-commands:
 
 ########
 Commands
@@ -215,6 +229,10 @@ They contain only **data** and should not implement business logic.
 
 Commands are processed by **Actions**, which apply the requested change to the appropriate aggregate.
 
+In OpenDDD.NET, commands implement the ``ICommand`` marker interface.
+
+.. _bb-domain-events:
+
 #############
 Domain Events
 #############
@@ -222,11 +240,11 @@ Domain Events
 A **Domain Event** represents a significant change within an aggregate or domain service.  
 They allow different parts of the domain to react asynchronously while maintaining **strong consistency** within an aggregate.
 
-In OpenDDD.NET, domain events implement the `IDomainEvent` marker interface.
+In OpenDDD.NET, domain events implement the ``IDomainEvent`` marker interface.
 
-----------------------
+------------------------
 Publishing Domain Events
-----------------------
+------------------------
 
 Domain events can be published from **aggregate roots** and **domain services**.
 
@@ -252,7 +270,7 @@ To publish a domain event from an aggregate, pass the **domain event publisher**
     }
 
 **2. From a Domain Service**  
-To publish a domain event from a domain service, inject `IDomainPublisher` into the constructor.
+To publish a domain event from a domain service, inject ``IDomainPublisher`` into the constructor.
 
 .. code-block:: csharp
 
@@ -279,9 +297,9 @@ To publish a domain event from a domain service, inject `IDomainPublisher` into 
         }
     }
 
-----------------------
+-------------------------
 Event Delivery and Topics
-----------------------
+-------------------------
 
 Domain events are **published on topics** according to **configured naming conventions**  
 and are delivered using the **configured messaging provider**.
@@ -307,7 +325,9 @@ For businesses with **multiple bounded contexts**, replace `"Domain"` with the b
       "DomainEventTopicTemplate": "Bookstore.Customer.{EventName}"
     }
 
-For more details, see :ref:`Messaging Configuration <messaging_configuration>`.
+For more details, see :ref:`Messaging Settings <config-messaging>`.
+
+.. _bb-integration-events:
 
 ##################
 Integration Events
@@ -317,11 +337,11 @@ An **Integration Event** represents a **business event** that is intended for co
 Unlike domain events, which model **internal state changes**, integration events are part of the **Interchange bounded context**  
 and are used to notify external systems or other bounded contexts about important business events.
 
-Integration events implement the `IIntegrationEvent` marker interface.
+Integration events implement the ``IIntegrationEvent`` marker interface.
 
-----------------------
+-----------------------------
 Publishing Integration Events
-----------------------
+-----------------------------
 
 Integration events can be published from **aggregate roots** and **domain services**, just like domain events.
 
@@ -346,7 +366,7 @@ To publish an integration event from an aggregate, pass the **integration event 
     }
 
 **2. From a Domain Service**  
-To publish an integration event from a domain service, inject `IIntegrationPublisher` into the constructor.
+To publish an integration event from a domain service, inject ``IIntegrationPublisher`` into the constructor.
 
 .. code-block:: csharp
 
@@ -381,9 +401,9 @@ To publish an integration event from a domain service, inject `IIntegrationPubli
         }
     }
 
-----------------------
+-------------------------
 Event Delivery and Topics
-----------------------
+-------------------------
 
 Integration events are **published on topics** configured in `appsettings.json`  
 and are delivered using the **configured messaging provider**.
@@ -404,7 +424,9 @@ The supported messaging providers are:
 - **In-Memory** (for simple event propagation within the same process)
 - **Azure Service Bus** (for event-driven communication across distributed services)
 
-For messaging setup and configuration, see :ref:`Messaging Configuration <messaging_configuration>`.
+For messaging setup and configuration, see :ref:`Messaging Settings <config-messaging>`.
+
+.. _bb-event-listeners:
 
 ###############
 Event Listeners
@@ -414,11 +436,11 @@ Event listeners in OpenDDD.NET handle **domain events** and **integration events
 They decouple event processing by allowing different parts of the system to react to changes  
 without direct dependencies.
 
-----------------------
+------------------------------
 Implementing an Event Listener
-----------------------
+------------------------------
 
-To create an event listener, subclass `EventListenerBase<TEvent, TAction>`  
+To create an event listener, subclass ``EventListenerBase<TEvent, TAction>``  
 and implement the `HandleAsync` method to execute the associated **action**.
 
 Example: A listener that sends a welcome email when a **CustomerRegistered** domain event is received.
@@ -453,6 +475,8 @@ Example: A listener that sends a welcome email when a **CustomerRegistered** dom
 Both **domain event listeners** and **integration event listeners** follow the same structure,  
 only differing in the event type they handle.
 
+.. _bb-domain-services:
+
 ###############
 Domain Services
 ###############
@@ -468,15 +492,15 @@ If changes to multiple aggregates are needed, it should **coordinate workflows u
 - Updates to multiple aggregates should be **triggered using domain events**
   to ensure **eventual consistency** rather than transactional consistency.
 
-In OpenDDD.NET, domain services implement the `IDomainService` marker interface.  
+In OpenDDD.NET, domain services implement the ``IDomainService`` marker interface.  
 They are **auto-registered by default**, but this behavior can be changed in configuration.  
-See :ref:`Auto-Registration <auto_registration>` for details.  
+See :ref:`Auto-Registration <config-general-auto-registration>` for details.  
 
-----------------------
+-----------------------------
 Implementing a Domain Service
-----------------------
+-----------------------------
 
-To define a domain service, create a class that implements `IDomainService`  
+To define a domain service, create a class that implements ``IDomainService``  
 and encapsulates the necessary domain logic.  
 
 Example: A domain service that registers a new customer.  
@@ -523,6 +547,8 @@ Example: A domain service that registers a new customer.
         }
     }
 
+.. _bb-infrastructure-services:
+
 #######################
 Infrastructure Services
 #######################
@@ -540,13 +566,13 @@ However, an adapter **can also be an infrastructure service**.
 By convention, OpenDDD.NET first classifies such components as **adapters** 
 but know that they could be both.
 
-In OpenDDD.NET, infrastructure services implement the `IInfrastructureService` marker interface.  
+In OpenDDD.NET, infrastructure services implement the ``IInfrastructureService`` marker interface.  
 They are **auto-registered by default**, but this behavior can be changed in configuration.  
-See :ref:`Auto-Registration <auto_registration>` for details.  
+See :ref:`Auto-Registration <config-general-auto-registration>` for details.  
 
-----------------------
+--------------------------------------
 Implementing an Infrastructure Service
-----------------------
+--------------------------------------
 
 To define an infrastructure service, create a class that encapsulates the required functionality.  
 
@@ -569,20 +595,24 @@ Example: A logging service used for diagnostics.
         }
     }
 
-##################
+.. _bb-ports-and-adapters:
+
+################
 Ports & Adapters
-##################
+################
 
 The **Ports & Adapters** (Hexagonal Architecture) pattern separates the **core domain logic**  
 from **external dependencies** by defining **ports** (interfaces) and **adapters** (implementations).  
 This ensures that the domain remains **decoupled** from infrastructure concerns.
 
-----------------------
+---------------
 Defining a Port
-----------------------
+---------------
 
 A **Port** is an interface that represents an external dependency, such as messaging, databases,  
-or third-party services. In OpenDDD.NET, ports implement the `IPort` marker interface.
+or third-party services.
+
+In OpenDDD.NET, ports implement the ``IPort`` marker interface.
 
 Example: A port for sending emails.
 
@@ -593,11 +623,13 @@ Example: A port for sending emails.
         Task SendEmailAsync(string to, string subject, string body, CancellationToken ct);
     }
 
-----------------------
+-----------------------
 Implementing an Adapter
-----------------------
+-----------------------
 
-An **Adapter** is an implementation of a port that interacts with a specific technology or service.  
+An **Adapter** is an implementation of a port that interacts with a specific technology or service.
+
+The adapter implements the relevant port interface.
 
 Example: A console-based email adapter.
 
