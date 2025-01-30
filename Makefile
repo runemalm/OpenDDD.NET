@@ -18,7 +18,7 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := openddd-net
-BUILD_VERSION := 3.0.0-alpha.2
+BUILD_VERSION := 3.0.0-alpha.3
 
 NUGET_NAME := OpenDDD.NET
 ROOT_NAMESPACE := OpenDDD

@@ -1,93 +1,193 @@
 ﻿using System.Reflection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
+using OpenDDD.Domain.Model.Base;
 using OpenDDD.Domain.Service;
+using OpenDDD.Infrastructure.Events;
+using OpenDDD.Infrastructure.Events.Azure;
+using OpenDDD.Infrastructure.Events.Base;
+using OpenDDD.Infrastructure.Events.InMemory;
+using OpenDDD.Infrastructure.Persistence.EfCore.Base;
+using OpenDDD.Infrastructure.Persistence.EfCore.Startup;
+using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
+using OpenDDD.Infrastructure.Persistence.UoW;
+using OpenDDD.Infrastructure.Repository.EfCore;
+using OpenDDD.Infrastructure.Service;
+using OpenDDD.Infrastructure.TransactionalOutbox;
+using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
 using OpenDDD.Main.Attributes;
-using OpenDDD.Main.Managers;
 using OpenDDD.Main.Options;
-using OpenDDD.Main.StartupFilters;
 
 namespace OpenDDD.Main.Extensions
 {
     public static class OpenDddServiceCollectionExtensions
     {
-        public static IServiceCollection AddOpenDDD(this IServiceCollection services,
+        public static IServiceCollection AddOpenDDD<TDbContext>(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            Action<OpenDddOptions>? configureOptions = null,
+            Action<IServiceCollection>? configureServices = null)
+            where TDbContext : OpenDddDbContextBase
+        {
+            services.AddDbContext<TDbContext>((serviceProvider, optionsBuilder) =>
+            {
+                var options = serviceProvider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+
+                switch (options.EfCore.Database.ToLower())
+                {
+                    case "postgres":
+                        optionsBuilder.UseNpgsql(options.EfCore.ConnectionString);
+                        break;
+                    case "sqlserver":
+                        optionsBuilder.UseSqlServer(options.EfCore.ConnectionString);
+                        break;
+                    case "sqlite":
+                        optionsBuilder.UseSqlite(options.EfCore.ConnectionString);
+                        break;
+                    case "inmemory":
+                        optionsBuilder.UseInMemoryDatabase("OpenDDD");
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Unsupported Database: {options.EfCore.Database}");
+                }
+            });
+            
+            services.AddScoped<OpenDddDbContextBase>(sp => sp.GetRequiredService<TDbContext>());
+
+            return AddOpenDDD(services, configuration, configureOptions, configureServices);
+        }
+
+        public static IServiceCollection AddOpenDDD(
+            this IServiceCollection services,
             IConfiguration configuration,
             Action<OpenDddOptions>? configureOptions = null,
             Action<IServiceCollection>? configureServices = null)
         {
-            // Configure OpenDddOptions
-            services.Configure<OpenDddOptions>(options =>
-            {
-                configuration.GetSection("OpenDDD").Bind(options);
-                configureOptions?.Invoke(options);
+            var options = services.AddAndResolveOptions(configuration, configureOptions);
 
-                if (string.IsNullOrWhiteSpace(options.ConnectionString))
-                {
-                    options.ConnectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
-                }
+            services.AddPersistence(options);
+            services.AddMessaging(options);
+            services.AddTransactionalOutbox();
+            services.AddPublishing();
 
-                if (string.IsNullOrWhiteSpace(options.ConnectionString))
-                {
-                    throw new InvalidOperationException("OpenDDD requires a valid connection string. Please set " +
-                                                        "'OpenDDD:ConnectionString' or " +
-                                                        "'ConnectionStrings:DefaultConnection'.");
-                }
-            });
+            if (options.AutoRegister.Repositories) RegisterEfCoreRepositories(services);
+            if (options.AutoRegister.DomainServices) RegisterDomainServices(services);
+            if (options.AutoRegister.InfrastructureServices) RegisterInfrastructureServices(services);
+            if (options.AutoRegister.Actions) RegisterActions(services);
+            if (options.AutoRegister.EventListeners) RegisterEventListeners(services);
             
-            var options = configuration.GetSection("OpenDDD").Get<OpenDddOptions>();
-
-            // Auto-register domain services
-            if (options!.AutoRegisterDomainServices)
-            {
-                RegisterDomainServices(services);
-            }
-
-            // Auto-register repositories
-            if (options.AutoRegisterRepositories)
-            {
-                RegisterRepositories(services, configuration);
-            }
-            
-            // Auto-register actions
-            if (options.AutoRegisterActions)
-            {
-                RegisterActions(services);
-            }
-
-            // Allow additional service configuration
             configureServices?.Invoke(services);
-
-            // Register the service manager and startup filter
-            RegisterServiceManager(services);
-            services.AddSingleton<IStartupFilter, OpenDddStartupFilter>();
-            
-            // Register the service collection itself so we can use it to start services in the service manager
-            services.AddSingleton(services);
 
             return services;
         }
 
+        private static OpenDddOptions AddAndResolveOptions(this IServiceCollection services,
+            IConfiguration configuration, Action<OpenDddOptions>? configureOptions)
+        {
+            services.Configure<OpenDddOptions>(options =>
+            {
+                configuration.GetSection("OpenDDD").Bind(options);
+                configureOptions?.Invoke(options);
+            });
+            
+            var options = new OpenDddOptions();
+            configuration.GetSection("OpenDDD").Bind(options);
+            configureOptions?.Invoke(options);
+            
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<OpenDddOptions>>().Value);
+
+            return options;
+        }
+        
+        private static void AddPersistence(this IServiceCollection services, OpenDddOptions options)
+        {
+            switch (options.PersistenceProvider.ToLower())
+            {
+                case "efcore":
+                    services.AddEfCore();
+                    break;
+                default:
+                    throw new Exception($"Unsupported PersistenceProvider: {options.PersistenceProvider}");
+            }
+        }
+        
+        private static void AddMessaging(this IServiceCollection services, OpenDddOptions options)
+        {
+            switch (options.MessagingProvider.ToLower())
+            {
+                case "inmemory":
+                    services.AddInMemoryMessaging();
+                    break;
+                case "azureservicebus":
+                    services.AddAzureServiceBus();
+                    break;
+                default:
+                    throw new Exception($"Unsupported MessagingProvider: {options.MessagingProvider}");
+            }
+        }
+        
+        private static void AddTransactionalOutbox(this IServiceCollection services)
+        {
+            services.AddHostedService<OutboxProcessor>();
+        }
+
+        private static void AddPublishing(this IServiceCollection services)
+        {
+            services.AddScoped<IDomainPublisher, DomainPublisher>();
+            services.AddScoped<IIntegrationPublisher, IntegrationPublisher>();
+        }
+
+        private static void AddEfCore(this IServiceCollection services)
+        {
+            services.AddSingleton<EfCoreDatabaseInitializer>();
+            services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
+            services.AddTransient<IOutboxRepository, EfCoreOutboxRepository>();
+            services.AddSingleton<IStartupFilter, EfCoreStartupFilter>();
+        }
+
+        private static void AddAzureServiceBus(this IServiceCollection services)
+        {
+            services.AddSingleton<IMessagingProvider, AzureServiceBusProvider>();
+        }
+        
+        private static void AddInMemoryMessaging(this IServiceCollection services)
+        {
+            services.AddSingleton<IMessagingProvider, InMemoryMessagingProvider>();
+        }
+
         private static void RegisterDomainServices(IServiceCollection services)
         {
-            // Get all types implementing IDomainService or its ancestor interfaces
-            var domainServiceInterfaces = AppDomain.CurrentDomain.GetAssemblies()
+            RegisterServicesByInterface<IDomainService>(services, "domain service");
+        }
+
+        private static void RegisterInfrastructureServices(IServiceCollection services)
+        {
+            RegisterServicesByInterface<IInfrastructureService>(services, "infrastructure service");
+        }
+
+        private static void RegisterServicesByInterface<TServiceMarker>(IServiceCollection services, string serviceTypeName)
+        {
+            // Get all interfaces that implement the marker interface (excluding the marker itself)
+            var serviceInterfaces = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => 
-                    type.IsInterface && 
-                    type != typeof(IDomainService) && 
-                    typeof(IDomainService).IsAssignableFrom(type))
+                .Where(type =>
+                    type.IsInterface &&
+                    type != typeof(TServiceMarker) &&
+                    typeof(TServiceMarker).IsAssignableFrom(type))
                 .ToList();
 
-            foreach (var interfaceType in domainServiceInterfaces)
+            foreach (var interfaceType in serviceInterfaces)
             {
                 // Determine the implementation type by removing the leading 'I' from the interface name
                 var implementationTypeName = interfaceType.Name.Substring(1);
                 var implementationType = interfaceType.Assembly.GetTypes()
-                    .FirstOrDefault(type => type.Name.Equals(implementationTypeName, StringComparison.Ordinal) && interfaceType.IsAssignableFrom(type));
+                    .FirstOrDefault(type => type.Name.Equals(implementationTypeName, StringComparison.Ordinal) &&
+                                            interfaceType.IsAssignableFrom(type));
 
                 if (implementationType != null)
                 {
@@ -97,60 +197,59 @@ namespace OpenDDD.Main.Extensions
 
                     // Register the interface and its implementation
                     services.Add(new ServiceDescriptor(interfaceType, implementationType, lifetime));
-                    Console.WriteLine($"Registered domain service: {interfaceType.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
+                    Console.WriteLine($"Registered {serviceTypeName}: {interfaceType.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
                 }
                 else
                 {
-                    Console.WriteLine($"Warning: No implementation found for domain service interface: {interfaceType.Name}");
+                    Console.WriteLine($"Warning: No implementation found for {serviceTypeName} interface: {interfaceType.Name}");
                 }
             }
         }
 
-        private static void RegisterRepositories(IServiceCollection services, IConfiguration configuration)
+        private static void RegisterEfCoreRepositories(IServiceCollection services)
         {
-            // Get the desired implementation type from configuration
-            var persistenceProvider = configuration.GetValue<string>("OpenDDD:PersistenceProvider") ?? "Postgres";
+            var aggregateRootType = typeof(AggregateRootBase<>);
 
-            // Find all repository interfaces
-            var repositoryInterfaces = AppDomain.CurrentDomain.GetAssemblies()
+            // Get all aggregate root types
+            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => 
-                    type.IsInterface &&
-                    type.Name.EndsWith("Repository") &&
-                    type.GetInterfaces().Any(i => 
-                        i.IsGenericType && 
-                        i.GetGenericTypeDefinition() == typeof(IRepository<,>)
-                    )
-                )
+                .Where(t => t.IsClass && !t.IsAbstract &&
+                            t.BaseType != null &&
+                            t.BaseType.IsGenericType &&
+                            t.BaseType.GetGenericTypeDefinition() == aggregateRootType)
                 .ToList();
 
-            // Find all repository implementations
-            var repositoryImplementations = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => !type.IsInterface && !type.IsAbstract && 
-                               type.Name.StartsWith(persistenceProvider) && 
-                               type.Name.EndsWith("Repository"))
-                .ToList();
-
-            foreach (var interfaceType in repositoryInterfaces)
+            foreach (var aggregateType in aggregateTypes)
             {
-                // Find a matching implementation using the naming convention
-                var implementationType = repositoryImplementations.FirstOrDefault(
-                    impl => impl.Name.Equals($"{persistenceProvider}{interfaceType.Name.Substring(1)}", StringComparison.Ordinal));
+                var idType = aggregateType.BaseType!.GetGenericArguments()[0];
+                var repositoryInterfaceType = typeof(IRepository<,>).MakeGenericType(aggregateType, idType);
 
-                if (implementationType != null && interfaceType.IsAssignableFrom(implementationType))
+                // Find custom repository interfaces extending IRepository<,>
+                var customRepositoryInterface = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(assembly => assembly.GetTypes())
+                    .FirstOrDefault(t => t.IsInterface &&
+                                         repositoryInterfaceType.IsAssignableFrom(t));
+
+                var customRepositoryImplementation = customRepositoryInterface != null
+                    ? AppDomain.CurrentDomain.GetAssemblies()
+                        .SelectMany(assembly => assembly.GetTypes())
+                        .FirstOrDefault(t => !t.IsInterface &&
+                                             !t.IsAbstract &&
+                                             customRepositoryInterface.IsAssignableFrom(t))
+                    : null;
+
+                if (customRepositoryInterface != null && customRepositoryImplementation != null)
                 {
-                    // Check for LifetimeAttribute
-                    var lifetimeAttribute = implementationType.GetCustomAttribute<LifetimeAttribute>();
-                    var lifetime = lifetimeAttribute?.Lifetime ?? ServiceLifetime.Transient;
-
-                    // Register the interface and its implementation
-                    services.Add(new ServiceDescriptor(interfaceType, implementationType, lifetime));
-                    Console.WriteLine($"Registered repository: {interfaceType.Name} with implementation: {implementationType.Name} and lifetime: {lifetime}");
+                    // Register custom repository
+                    services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
+                    Console.WriteLine($"Registered custom repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
                 }
                 else
                 {
-                    Console.WriteLine($"Warning: No implementation found for {interfaceType.Name} with prefix '{persistenceProvider}'");
+                    // Fallback to default repository
+                    var defaultRepositoryImplementationType = typeof(EfCoreRepository<,>).MakeGenericType(aggregateType, idType);
+                    services.AddTransient(repositoryInterfaceType, defaultRepositoryImplementationType);
+                    Console.WriteLine($"Registered default repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
                 }
             }
         }
@@ -174,9 +273,54 @@ namespace OpenDDD.Main.Extensions
             }
         }
         
-        private static void RegisterServiceManager(IServiceCollection services)
+        private static void RegisterEventListeners(IServiceCollection services)
         {
-            services.AddSingleton<IOpenDddServiceManager, OpenDddServiceManager>();
+            // Find all classes deriving from EventListenerBase<,>
+            var listenerTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type =>
+                    type.IsClass &&
+                    !type.IsAbstract &&
+                    IsDerivedFromGenericType(type, typeof(EventListenerBase<,>)))
+                .ToList();
+
+            foreach (var listenerType in listenerTypes)
+            {
+                // Register the listener as a hosted service
+                var addHostedServiceMethod = typeof(ServiceCollectionHostedServiceExtensions)
+                    .GetMethod("AddHostedService", new[] { typeof(IServiceCollection) })
+                    ?.MakeGenericMethod(listenerType);
+
+                if (addHostedServiceMethod != null)
+                {
+                    addHostedServiceMethod.Invoke(null, new object[] { services });
+                    Console.WriteLine($"Registered event listener: {listenerType.Name}");
+                }
+            }
+        }
+
+        private static bool IsDerivedFromGenericType(Type type, Type genericType)
+        {
+            while (type != null && type != typeof(object))
+            {
+                var currentType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+                if (currentType == genericType)
+                {
+                    return true;
+                }
+                type = type.BaseType!;
+            }
+            return false;
+        }
+        
+        private static string GetReadableTypeName(Type type)
+        {
+            if (!type.IsGenericType)
+                return type.Name;
+
+            var genericTypeName = type.Name.Substring(0, type.Name.IndexOf('`'));
+            var genericArgs = string.Join(", ", type.GetGenericArguments().Select(GetReadableTypeName));
+            return $"{genericTypeName}<{genericArgs}>";
         }
     }
 }
