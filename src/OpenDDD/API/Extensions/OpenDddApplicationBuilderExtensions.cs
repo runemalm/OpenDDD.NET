@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OpenDDD.Main.Middleware;
-using OpenDDD.Main.Options;
+using OpenDDD.API.Middleware;
+using OpenDDD.API.Options;
 
-namespace OpenDDD.Main.Extensions
+namespace OpenDDD.API.Extensions
 {
     public static class OpenDddApplicationBuilderExtensions
     {

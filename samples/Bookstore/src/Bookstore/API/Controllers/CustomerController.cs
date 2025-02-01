@@ -1,9 +1,9 @@
-﻿using Bookstore.Application.Actions.GetCustomer;
+﻿using Microsoft.AspNetCore.Mvc;
+using Bookstore.Application.Actions.GetCustomer;
 using Bookstore.Application.Actions.RegisterCustomer;
 using Bookstore.Domain.Model;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Bookstore.Main.Controllers
+namespace Bookstore.API.Controllers
 {
     [ApiController]
     [Route("api/customers")]

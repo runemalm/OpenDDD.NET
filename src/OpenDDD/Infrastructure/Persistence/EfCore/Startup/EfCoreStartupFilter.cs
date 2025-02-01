@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using OpenDDD.Main.Options;
+using OpenDDD.API.Options;
 
 namespace OpenDDD.Infrastructure.Persistence.EfCore.Startup
 {

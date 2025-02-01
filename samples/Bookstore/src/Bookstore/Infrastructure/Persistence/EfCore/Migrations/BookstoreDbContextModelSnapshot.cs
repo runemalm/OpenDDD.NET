@@ -3,19 +3,16 @@ using System;
 using Bookstore.Infrastructure.Persistence.EfCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Bookstore.Main.EfCore.Migrations
+namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 {
     [DbContext(typeof(BookstoreDbContext))]
-    [Migration("20250129203016_Initial")]
-    partial class Initial
+    partial class BookstoreDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");

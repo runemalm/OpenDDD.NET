@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenDDD.API.Options;
 using OpenDDD.Domain.Model.Helpers;
 using OpenDDD.Infrastructure.Events;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.TransactionalOutbox
 {

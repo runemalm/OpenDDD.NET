@@ -2,8 +2,8 @@
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenDDD.API.Options;
 using OpenDDD.Infrastructure.Events.Azure.Options;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Events.Azure
 {

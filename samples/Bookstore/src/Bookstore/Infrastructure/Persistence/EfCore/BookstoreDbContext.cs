@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using Bookstore.Domain.Model;
-using OpenDDD.Main.Options;
+using OpenDDD.API.Options;
 
 namespace Bookstore.Infrastructure.Persistence.EfCore
 {

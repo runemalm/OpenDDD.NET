@@ -20,7 +20,7 @@ HOME := $(shell echo ~)
 PWD := $(shell pwd)
 SRC := $(PWD)/src
 TESTS := $(SRC)/src/Bookstore/Tests
-MIGRATIONS := $(SRC)/Bookstore/Main/EfCore/Migrations
+MIGRATIONS := $(SRC)/Bookstore/Infrastructure/Persistence/EfCore/Migrations
 NETWORK := openddd-sample-bookstore
 
 ##########################################################################

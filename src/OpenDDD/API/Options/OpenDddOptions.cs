@@ -1,6 +1,6 @@
 ﻿using OpenDDD.Infrastructure.Events.Azure.Options;
 
-namespace OpenDDD.Main.Options
+namespace OpenDDD.API.Options
 {
     public class OpenDddOptions
     {

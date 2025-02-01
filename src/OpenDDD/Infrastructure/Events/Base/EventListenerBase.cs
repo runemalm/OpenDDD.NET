@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenDDD.API.Options;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Helpers;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Events.Base
 {

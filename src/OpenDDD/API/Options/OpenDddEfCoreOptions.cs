@@ -1,4 +1,4 @@
-﻿namespace OpenDDD.Main.Options
+﻿namespace OpenDDD.API.Options
 {
     public class OpenDddEfCoreOptions
     {

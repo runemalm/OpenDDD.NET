@@ -4,7 +4,7 @@ using OpenDDD.Domain.Model;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.TransactionalOutbox;
 
-namespace OpenDDD.Main.Middleware
+namespace OpenDDD.API.Middleware
 {
     public class ActionMiddleware
     {

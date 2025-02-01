@@ -1,8 +1,8 @@
 ﻿using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using OpenDDD.API.Options;
 using OpenDDD.Domain.Model.Base;
 using OpenDDD.Infrastructure.TransactionalOutbox;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
 {

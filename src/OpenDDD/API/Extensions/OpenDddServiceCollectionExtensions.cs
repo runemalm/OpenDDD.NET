@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using OpenDDD.API.Attributes;
+using OpenDDD.API.Options;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Base;
@@ -20,10 +22,8 @@ using OpenDDD.Infrastructure.Repository.EfCore;
 using OpenDDD.Infrastructure.Service;
 using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
-using OpenDDD.Main.Attributes;
-using OpenDDD.Main.Options;
 
-namespace OpenDDD.Main.Extensions
+namespace OpenDDD.API.Extensions
 {
     public static class OpenDddServiceCollectionExtensions
     {

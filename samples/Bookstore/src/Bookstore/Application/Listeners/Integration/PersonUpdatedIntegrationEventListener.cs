@@ -1,8 +1,8 @@
 ﻿using OpenDDD.Infrastructure.Events.Base;
-using OpenDDD.Main.Options;
 using OpenDDD.Infrastructure.Events;
 using Bookstore.Application.Actions.UpdateCustomerName;
 using Bookstore.Interchange.Model.Events;
+using OpenDDD.API.Options;
 
 namespace Bookstore.Application.Listeners.Integration
 {

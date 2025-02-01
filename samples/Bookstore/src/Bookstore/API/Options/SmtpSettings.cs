@@ -1,4 +1,4 @@
-﻿namespace Bookstore.Main.Options
+﻿namespace Bookstore.API.Options
 {
     public class SmtpSettings
     {

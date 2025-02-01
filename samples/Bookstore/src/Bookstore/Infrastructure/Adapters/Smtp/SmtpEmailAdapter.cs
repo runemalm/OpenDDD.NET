@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Bookstore.API.Options;
+using Microsoft.Extensions.Options;
 using MimeKit;
 using MailKit.Net.Smtp;
-using Bookstore.Main.Options;
 using Bookstore.Domain.Model.Ports;
 
 namespace Bookstore.Infrastructure.Adapters.Smtp

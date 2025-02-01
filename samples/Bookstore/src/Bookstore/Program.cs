@@ -1,7 +1,7 @@
-using OpenDDD.Main.Extensions;
 using Bookstore.Domain.Model.Ports;
 using Bookstore.Infrastructure.Adapters.Console;
 using Bookstore.Infrastructure.Persistence.EfCore;
+using OpenDDD.API.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +14,7 @@ builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration,
     options =>  
     {  
         options.UseEfCore()
-               .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+               .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
                .UseInMemoryMessaging()
                .SetEventListenerGroup("Bookstore")
                .SetEventTopicTemplates(

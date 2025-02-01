@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace OpenDDD.Main.Attributes
+namespace OpenDDD.API.Attributes
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class LifetimeAttribute : Attribute
