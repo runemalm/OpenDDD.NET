@@ -137,3 +137,20 @@ endif
 apply-migrations: ##@Migrations	 Apply all pending migrations to the database
 	dotnet ef database update \
 		--project $(SRC)/Bookstore
+
+##########################################################################
+# AZURE
+##########################################################################
+
+.PHONY: azure-create-servicebus-namespace
+azure-create-servicebus-namespace: ##@Azure Create the Azure Service Bus namespace
+	az servicebus namespace create --name $(AZURE_SERVICEBUS_NAMESPACE) --resource-group $(AZURE_RESOURCE_GROUP) --location $(AZURE_REGION) --sku Standard
+
+.PHONY: azure-get-servicebus-connection
+azure-get-servicebus-connection: ##@Azure Get the Service Bus connection string
+	az servicebus namespace authorization-rule keys list \
+	    --resource-group $(AZURE_RESOURCE_GROUP) \
+	    --namespace-name $(AZURE_SERVICEBUS_NAMESPACE) \
+	    --name RootManageSharedAccessKey \
+	    --query primaryConnectionString \
+	    --output tsv

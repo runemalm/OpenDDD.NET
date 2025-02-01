@@ -1,6 +1,6 @@
 ﻿namespace OpenDDD.Infrastructure.Events.Azure.Options
 {
-    public class AzureServiceBusOptions
+    public class OpenDddAzureServiceBusOptions
     {
         public string ConnectionString { get; set; } = string.Empty;
         public bool AutoCreateTopics { get; set; } = true;

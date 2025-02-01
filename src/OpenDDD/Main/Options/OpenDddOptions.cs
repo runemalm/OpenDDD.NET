@@ -1,4 +1,6 @@
-﻿namespace OpenDDD.Main.Options
+﻿using OpenDDD.Infrastructure.Events.Azure.Options;
+
+namespace OpenDDD.Main.Options
 {
     public class OpenDddOptions
     {

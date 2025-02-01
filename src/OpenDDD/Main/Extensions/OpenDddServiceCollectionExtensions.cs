@@ -152,7 +152,7 @@ namespace OpenDDD.Main.Extensions
 
         private static void AddAzureServiceBus(this IServiceCollection services)
         {
-            services.AddSingleton<IMessagingProvider, AzureServiceBusProvider>();
+            services.AddSingleton<IMessagingProvider, AzureServiceBusMessagingProvider>();
         }
         
         private static void AddInMemoryMessaging(this IServiceCollection services)

@@ -1,28 +1,46 @@
-﻿using OpenDDD.Infrastructure.Events.Azure.Options;
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OpenDDD.Infrastructure.Events.Azure.Options;
+using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Events.Azure
 {
-    public class AzureServiceBusProvider : IMessagingProvider
+    public class AzureServiceBusMessagingProvider : IMessagingProvider
     {
         private readonly ServiceBusClient _client;
-        private readonly AzureServiceBusOptions _options;
+        private readonly OpenDddAzureServiceBusOptions _options;
+        private readonly ILogger<AzureServiceBusMessagingProvider> _logger;
 
-        public AzureServiceBusProvider(AzureServiceBusOptions options)
+        public AzureServiceBusMessagingProvider(
+            IOptions<OpenDddOptions> options,
+            ILogger<AzureServiceBusMessagingProvider> logger)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-            _client = new ServiceBusClient(options.ConnectionString);
+            var openDddOptions = options.Value ?? throw new ArgumentNullException(nameof(options));
+            _options = openDddOptions.AzureServiceBus ?? throw new InvalidOperationException("AzureServiceBus settings are missing in OpenDddOptions.");
+        
+            if (string.IsNullOrWhiteSpace(_options.ConnectionString))
+            {
+                throw new InvalidOperationException("Azure Service Bus connection string is missing.");
+            }
+
+            _client = new ServiceBusClient(_options.ConnectionString);
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
+            topic = topic.ToLower();
+
             var subscriptionName = consumerGroup;
 
             if (_options.AutoCreateTopics)
             {
-                await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
+                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
             }
+            
+            await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
 
             var processor = _client.CreateProcessor(topic, subscriptionName);
 
@@ -34,15 +52,18 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
             processor.ProcessErrorAsync += args =>
             {
-                Console.WriteLine($"Error processing message in subscription {subscriptionName}: {args.Exception.Message}");
+                _logger.LogError(args.Exception, "Error processing message in subscription {SubscriptionName}", subscriptionName);
                 return Task.CompletedTask;
             };
 
+            _logger.LogInformation("Starting message processor for topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
             await processor.StartProcessingAsync(cancellationToken);
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
         {
+            topic = topic.ToLower();
+
             if (_options.AutoCreateTopics)
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
@@ -50,16 +71,18 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
             var sender = _client.CreateSender(topic);
             await sender.SendMessageAsync(new ServiceBusMessage(message), cancellationToken);
+            _logger.LogInformation("Published message to topic '{Topic}'", topic);
         }
 
         private async Task CreateTopicIfNotExistsAsync(string topic, CancellationToken cancellationToken)
         {
             var adminClient = new ServiceBusAdministrationClient(_options.ConnectionString);
+            topic = topic.ToLower();
 
             if (!await adminClient.TopicExistsAsync(topic, cancellationToken))
             {
                 await adminClient.CreateTopicAsync(topic, cancellationToken);
-                Console.WriteLine($"Created topic: {topic}");
+                _logger.LogInformation("Created topic: {Topic}", topic);
             }
         }
 
@@ -70,7 +93,7 @@ namespace OpenDDD.Infrastructure.Events.Azure
             if (!await adminClient.SubscriptionExistsAsync(topic, subscriptionName, cancellationToken))
             {
                 await adminClient.CreateSubscriptionAsync(topic, subscriptionName, cancellationToken);
-                Console.WriteLine($"Created subscription: {subscriptionName} for topic: {topic}");
+                _logger.LogInformation("Created subscription: {Subscription} for topic: {Topic}", subscriptionName, topic);
             }
         }
     }
