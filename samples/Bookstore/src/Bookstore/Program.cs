@@ -25,7 +25,6 @@ builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration,
     },
     services =>
     {
-        // Add port adapters
         services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
     }
 );
