@@ -397,6 +397,37 @@ Register the adapter in `Program.cs` like this:
 
     builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
 
+Create a configuration class for the `Customer` aggregate (since we chose EF Core as our persistence provider):
+
+.. code-block:: csharp
+
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.EntityFrameworkCore.Metadata.Builders;
+    using OpenDDD.Infrastructure.Persistence.EfCore.Base;
+    using Bookstore.Domain.Model;
+
+    namespace Bookstore.Infrastructure.Persistence.EfCore.Configurations
+    {
+        public class CustomerConfiguration : EfAggregateRootConfigurationBase<Customer, Guid>
+        {
+            public override void Configure(EntityTypeBuilder<Customer> builder)
+            {
+                base.Configure(builder);
+
+                // Don't forget to also enforce these invariants in your domain layer code as well..
+                builder.Property(c => c.Name)
+                       .IsRequired()
+                       .HasMaxLength(100);
+
+                builder.Property(c => c.Email)
+                       .IsRequired()
+                       .HasMaxLength(255);
+
+                // If you add aggregates to your domain model, setup one-to-many etc. here..
+            }
+        }
+    }
+
 --------------------------
 5: Edit `appsettings.json`
 --------------------------
@@ -456,10 +487,31 @@ Find the source code here: `Bookstore Sample Project <https://github.com/runemal
 - **Register a customer** → `POST /api/customers/register-customer`
 - Open **Swagger UI** at `http://localhost:5268/swagger` to explore and test endpoints.
 
+################
+Project Template
+################
+
+A new addition is the **OpenDDD.NET project template**, which is a convenient way to create a new project with all files, configuration and structure already setup for you.
+
+First, install the template package:
+
+.. code-block:: bash
+
+    $ dotnet new install OpenDDD.NET-Templates --prerelease
+
+Then, create a new project:
+
+.. code-block:: bash
+
+    $ dotnet new openddd-net -n Bookstore
+
+This will generate a **Bookstore** project with the correct structure and default configurations in your current working directory.
+
 #################
 Where to Go Next?
 #################
 
-- **Explore Building Blocks**: Learn more about the foundational components of OpenDDD.NET in the :ref:`Building Blocks <building-blocks>` section.
-- **Sample Project**: Check out the sample project mentioned above.
-- **Contribute**: Join the OpenDDD.NET community on GitHub to report issues, ask questions, or contribute to the project.
+- **Dive Deeper**: Learn about the core concepts and architecture in the :ref:`Building Blocks <building-blocks>` section.  
+- **Explore the Sample Project**: Browse the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_ on GitHub for a full implementation.  
+- **Join the Community**: Participate in `OpenDDD.NET Discussions <https://github.com/runemalm/OpenDDD.NET/discussions>`_ to ask questions, share ideas, and contribute.  
+
