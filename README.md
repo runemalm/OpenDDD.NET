@@ -28,7 +28,7 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 
 ## Supported Versions
 
-- .NET 8
+- ASP.NET Core 8
 
 ## Getting Started
 

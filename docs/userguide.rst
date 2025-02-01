@@ -24,7 +24,7 @@ Install OpenDDD.NET using the .NET CLI:
 
     $ dotnet add package OpenDDD.NET --prerelease
 
-The library requires .NET 8 or higher.
+The library requires ASP.NET Core 8 or higher.
 
 ####################
 Quick Start Overview

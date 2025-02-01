@@ -141,9 +141,9 @@ Topic Naming Conventions
 - **Integration Events:** `"Bookstore.Interchange.{EventName}"`  
   (Always includes `"Interchange"` as the middle part)
 
-----------------------
+--------------------------
 Competing Consumer Pattern
-----------------------
+--------------------------
 
 OpenDDD.NET supports the **competing consumer pattern**, allowing multiple instances of a service  
 to process messages from the same event topic. 
