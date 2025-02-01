@@ -1,6 +1,15 @@
 @Bookstore_HostAddress = http://localhost:5268
 
-GET {{Bookstore_HostAddress}}/weatherforecast/
+### Register a new customer
+POST {{Bookstore_HostAddress}}/api/customers/register-customer
+Content-Type: application/json
 Accept: application/json
 
-###
+{
+  "name": "John Doe",
+  "email": "johndoe@example.com"
+}
+
+### Get customer by email
+GET {{Bookstore_HostAddress}}/api/customers/find-by-email?email=johndoe@example.com
+Accept: application/json

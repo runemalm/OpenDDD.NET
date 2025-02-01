@@ -1,34 +1,34 @@
-﻿using Bookstore.API.Options;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using MimeKit;
 using MailKit.Net.Smtp;
 using Bookstore.Domain.Model.Ports;
+using Bookstore.Infrastructure.Adapters.Smtp.Options;
 
 namespace Bookstore.Infrastructure.Adapters.Smtp
 {
     public class SmtpEmailAdapter : IEmailPort
     {
-        private readonly SmtpSettings _smtpSettings;
+        private readonly SmtpOptions _smtpOptions;
 
-        public SmtpEmailAdapter(IOptions<SmtpSettings> smtpSettings)
+        public SmtpEmailAdapter(IOptions<SmtpOptions> smtpSettings)
         {
-            _smtpSettings = smtpSettings.Value;
+            _smtpOptions = smtpSettings.Value;
         }
 
         public async Task SendEmailAsync(string to, string subject, string body, CancellationToken ct)
         {
             var email = new MimeMessage();
-            email.From.Add(new MailboxAddress(_smtpSettings.FromName, _smtpSettings.FromEmail));
+            email.From.Add(new MailboxAddress(_smtpOptions.FromName, _smtpOptions.FromEmail));
             email.To.Add(new MailboxAddress("", to));
             email.Subject = subject;
             email.Body = new TextPart("html") { Text = body };
 
             using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(_smtpSettings.Host, _smtpSettings.Port, _smtpSettings.EnableSsl, ct);
+            await smtp.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port, _smtpOptions.EnableSsl, ct);
         
-            if (!string.IsNullOrEmpty(_smtpSettings.Username))
+            if (!string.IsNullOrEmpty(_smtpOptions.Username))
             {
-                await smtp.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password, ct);
+                await smtp.AuthenticateAsync(_smtpOptions.Username, _smtpOptions.Password, ct);
             }
 
             await smtp.SendAsync(email, ct);

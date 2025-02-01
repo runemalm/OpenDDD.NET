@@ -1,7 +1,7 @@
+using OpenDDD.API.Extensions;
 using Bookstore.Domain.Model.Ports;
 using Bookstore.Infrastructure.Adapters.Console;
 using Bookstore.Infrastructure.Persistence.EfCore;
-using OpenDDD.API.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

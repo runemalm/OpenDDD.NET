@@ -14,10 +14,5 @@ namespace Bookstore.Infrastructure.Persistence.EfCore
         {
             
         }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-        }
     }
 }
