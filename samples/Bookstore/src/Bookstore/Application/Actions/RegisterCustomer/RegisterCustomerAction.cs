@@ -1,6 +1,6 @@
-﻿using Bookstore.Domain.Model;
+﻿using OpenDDD.Application;
+using Bookstore.Domain.Model;
 using Bookstore.Domain.Service;
-using OpenDDD.Application;
 
 namespace Bookstore.Application.Actions.RegisterCustomer
 {

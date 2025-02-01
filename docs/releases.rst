@@ -6,6 +6,13 @@
 Version History
 ###############
 
+**3.0.0-alpha.4 (2025-02-xx)**
+
+- **Messaging Providers**: Fix some issues with the `Azure Service Bus` provider.
+- **Namespace**: Change the name of the namespace `Main` -> `API`.
+- **Project Template**: Add a project template nuget for quick scaffolding of a new project.
+- **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.
+
 **3.0.0-alpha.3 (2025-01-30)**
 
 - **Domain Events**: Added support for domain events to enable communication between domain objects while maintaining encapsulation.
@@ -17,8 +24,6 @@ Version History
 - **Repository Refactoring**: Refactored repository pattern by introducing `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, improving consistency and customization.
 - **Configuration Refactoring**: Restructured OpenDDD.NET configuration system into hierarchical options classes, improving clarity and maintainability.
 
-`View release on GitHub <https://github.com/runemalm/OpenDDD.NET/releases/tag/v3.0.0-alpha.3>`_
-
 **3.0.0-alpha.2 (2025-01-21)**
 
 - **Domain Services:** Added the `IDomainService` interface to mark domain services, which are now auto-registered.
@@ -28,10 +33,8 @@ Version History
 - **Documentation Updates:** Expanded documentation with examples and guides for repositories, domain services, actions and the sample project.
 - **Community:** Added an advanced topics section to the documentation, covering concepts useful for contributors or developers looking to extend the framework’s functionality.
 
-`View release on GitHub <https://github.com/runemalm/OpenDDD.NET/releases/tag/v3.0.0-alpha.2>`_
-
 **3.0.0-alpha.1 (2025-01-19)**
 
 - **Major Version 3**: Initial alpha release with foundational features.
 
-`View release on GitHub <https://github.com/runemalm/OpenDDD.NET/releases/tag/v3.0.0-alpha.1>`_
+`View releases on GitHub <https://github.com/runemalm/OpenDDD.NET/releases>`_

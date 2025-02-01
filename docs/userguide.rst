@@ -1,39 +1,87 @@
-###############
-Getting Started
-###############
-
 .. note::
 
     OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
 
-############
-Introduction
-############
+###############
+Getting Started
+###############
 
-OpenDDD.NET is an open-source framework for building applications using Domain-Driven Design (DDD) principles in .NET. It provides a set of foundational tools and abstractions to help developers create scalable, maintainable, and testable software systems.
+There are multiple ways to start using OpenDDD.NET:
 
-This guide will introduce you to the core concepts and show you how to start using OpenDDD.NET. For more detailed usage examples, refer to the :ref:`Building Blocks <building-blocks>` section.
+- **Use the Project Template** → Generate a new project using the :ref:`project template <userguide-project-template>` to get started quickly with the correct structure and initial configurations.
+- **Setup From Scratch** → Follow the :ref:`step-by-step guide <userguide-step-by-step>` to create a project from scratch.
+- **Explore the Sample Project** → Browse the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_ on GitHub for a fully implemented example.
 
-############
-Installation
-############
+.. _userguide-project-template:
 
-Install OpenDDD.NET using the .NET CLI:
+################
+Project Template
+################
+
+The **OpenDDD.NET project template** provides a quick way to set up a new project with the necessary structure, configuration, and boilerplate code.
+
+**Install the template package:**
+
+.. code-block:: bash
+
+    dotnet new install OpenDDD.NET-Templates --prerelease
+
+**Create a new project:**
+
+.. code-block:: bash
+
+    dotnet new openddd-net -n YourProjectName
+
+.. note::
+
+    Replace `YourProjectName` in the command with the actual name of your project.
+
+.. tip::
+
+    The project template is probably the easiest way to create a new project.
+
+This generates a **YourProjectName** project in your current directory, preconfigured with best practices to get you started quickly.
+
+Continue building your domain model by adding aggregates, domain services, listeners, etc. Refer to the :ref:`Building Blocks <building-blocks>` section for more information.
+
+.. _userguide-step-by-step:
+
+##################
+Step-by-Step Guide
+##################
+
+Follow these steps to setup a new project using OpenDDD.NET from scratch:
+
+-----------------------
+1: Create a new project
+-----------------------
+
+Create a new ASP.NET Core Web API project using the .NET CLI:
+
+.. code-block:: bash
+
+    $ dotnet new webapi -n YourProjectName
+
+.. note::
+
+    Replace `YourProjectName` with the name of your project.
+
+----------------------
+2: Install OpenDDD.NET
+----------------------
+
+Install the OpenDDD.NET framework:
 
 .. code-block:: bash
 
     $ dotnet add package OpenDDD.NET --prerelease
 
-The library requires ASP.NET Core 8 or higher.
+.. note::
 
-####################
-Quick Start Overview
-####################
-
-To begin using OpenDDD.NET, follow these steps:
+    The library requires ASP.NET Core 8 or higher.
 
 --------------------
-1: Edit `Program.cs`
+3: Edit `Program.cs`
 --------------------
 
 Add OpenDDD.NET services and middleware to your application in the `Program.cs` file:
@@ -41,14 +89,14 @@ Add OpenDDD.NET services and middleware to your application in the `Program.cs` 
 .. code-block:: csharp
 
     using OpenDDD.API.Extensions;
-    using Bookstore.Domain.Model.Ports;
-    using Bookstore.Infrastructure.Adapters.Console;
-    using Bookstore.Infrastructure.Persistence.EfCore;
+    using YourProjectName.Domain.Model.Ports;
+    using YourProjectName.Infrastructure.Adapters.Console;
+    using YourProjectName.Infrastructure.Persistence.EfCore;
 
     var builder = WebApplication.CreateBuilder(args);
 
     // Add OpenDDD Services
-    builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration);
+    builder.Services.AddOpenDDD<YourProjectNameDbContext>(builder.Configuration);
 
     var app = builder.Build();
 
@@ -60,8 +108,12 @@ Add OpenDDD.NET services and middleware to your application in the `Program.cs` 
 
     app.Run();
 
+.. note::
+
+    We will show you in later steps how to create the classes `YourProjectNameDbContext`, `IEmailPort` and `ConsoleEmailAdapter`.
+
 ---------------
-2: Domain Layer
+4: Domain Layer
 ---------------
 
 Create aggregates, entities, value objects, domain events, domain services, ports and repository interfaces to represent your domain model.
@@ -72,7 +124,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model.Base;
 
-    namespace Bookstore.Domain.Model
+    namespace YourProjectName.Domain.Model
     {
         public class Customer : AggregateRootBase<Guid>
         {
@@ -98,7 +150,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model;
 
-    namespace Bookstore.Domain.Model.Events
+    namespace YourProjectName.Domain.Model.Events
     {
         public class CustomerRegistered : IDomainEvent
         {
@@ -128,7 +180,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model;
 
-    namespace Bookstore.Domain.Model
+    namespace YourProjectName.Domain.Model
     {
         public interface ICustomerRepository : IRepository<Customer, Guid>
         {
@@ -139,9 +191,9 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Domain.Service;
-    using Bookstore.Domain.Model;
+    using YourProjectName.Domain.Model;
 
-    namespace Bookstore.Domain.Service
+    namespace YourProjectName.Domain.Service
     {
         public interface ICustomerDomainService : IDomainService
         {
@@ -152,10 +204,10 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Domain.Model;
-    using Bookstore.Domain.Model;
-    using Bookstore.Domain.Model.Events;
+    using YourProjectName.Domain.Model;
+    using YourProjectName.Domain.Model.Events;
 
-    namespace Bookstore.Domain.Service
+    namespace YourProjectName.Domain.Service
     {
         public class CustomerDomainService : ICustomerDomainService
         {
@@ -197,7 +249,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model.Ports;
 
-    namespace Bookstore.Domain.Model.Ports
+    namespace YourProjectName.Domain.Model.Ports
     {
         public interface IEmailPort : IPort
         {
@@ -206,7 +258,7 @@ Example definitions:
     }
 
 --------------------
-3: Application Layer
+5: Application Layer
 --------------------
 
 Create commands, actions and event listeners to handle application logic.
@@ -217,7 +269,7 @@ Example definitions:
 
     using OpenDDD.Application;
 
-    namespace Bookstore.Application.Actions.RegisterCustomer
+    namespace YourProjectName.Application.Actions.RegisterCustomer
     {
         public class RegisterCustomerCommand : ICommand
         {
@@ -236,11 +288,11 @@ Example definitions:
 
 .. code-block:: csharp
 
-    using Bookstore.Domain.Model;
-    using Bookstore.Domain.Service;
     using OpenDDD.Application;
+    using YourProjectName.Domain.Model;
+    using YourProjectName.Domain.Service;
 
-    namespace Bookstore.Application.Actions.RegisterCustomer
+    namespace YourProjectName.Application.Actions.RegisterCustomer
     {
         public class RegisterCustomerAction : IAction<RegisterCustomerCommand, Customer>
         {
@@ -271,10 +323,10 @@ Example definitions:
     using OpenDDD.Infrastructure.Events.Base;
     using OpenDDD.API.Options;
     using OpenDDD.Infrastructure.Events;
-    using Bookstore.Application.Actions.SendWelcomeEmail;
-    using Bookstore.Domain.Model.Events;
+    using YourProjectName.Application.Actions.SendWelcomeEmail;
+    using YourProjectName.Domain.Model.Events;
 
-    namespace Bookstore.Application.Listeners.Domain
+    namespace YourProjectName.Application.Listeners.Domain
     {
         public class CustomerRegisteredListener : EventListenerBase<CustomerRegistered, SendWelcomeEmailAction>
         {
@@ -296,9 +348,9 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Application;
-    using Bookstore.Domain.Model.Ports;
+    using YourProjectName.Domain.Model.Ports;
 
-    namespace Bookstore.Application.Actions.SendWelcomeEmail
+    namespace YourProjectName.Application.Actions.SendWelcomeEmail
     {
         public class SendWelcomeEmailAction : IAction<SendWelcomeEmailCommand, object>
         {
@@ -317,8 +369,8 @@ Example definitions:
                 if (string.IsNullOrWhiteSpace(command.RecipientName))
                     throw new ArgumentException("Recipient name cannot be empty.", nameof(command.RecipientName));
 
-                var subject = "Welcome to Bookstore!";
-                var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- Bookstore Team";
+                var subject = "Welcome to YourProjectName!";
+                var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- YourProjectName Team";
 
                 // Send email
                 await _emailPort.SendEmailAsync(command.RecipientEmail, subject, body, ct);
@@ -329,10 +381,10 @@ Example definitions:
     }
 
 -----------------------
-4: Infrastructure Layer
+6: Infrastructure Layer
 -----------------------
 
-Create your repository and port implementations.
+Create your repository, port implementations and the YourProjectNameDbContext class.
 
 Example definitions:
 
@@ -341,9 +393,9 @@ Example definitions:
     using Microsoft.EntityFrameworkCore;
     using OpenDDD.Infrastructure.Persistence.UoW;
     using OpenDDD.Infrastructure.Repository.EfCore;
-    using Bookstore.Domain.Model;
+    using YourProjectName.Domain.Model;
 
-    namespace Bookstore.Infrastructure.Repositories.EfCore
+    namespace YourProjectName.Infrastructure.Repositories.EfCore
     {
         public class EfCoreCustomerRepository : EfCoreRepository<Customer, Guid>, ICustomerRepository
         {
@@ -370,9 +422,9 @@ Example definitions:
 
 .. code-block:: csharp
 
-    using Bookstore.Domain.Model.Ports;
+    using YourProjectName.Domain.Model.Ports;
 
-    namespace Bookstore.Infrastructure.Adapters.Console
+    namespace YourProjectName.Infrastructure.Adapters.Console
     {
         public class ConsoleEmailAdapter : IEmailPort
         {
@@ -397,16 +449,16 @@ Register the adapter in `Program.cs` like this:
 
     builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
 
-Create a configuration class for the `Customer` aggregate (since we chose EF Core as our persistence provider):
+Create an EF Core configuration class for the `Customer` aggregate:
 
 .. code-block:: csharp
 
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Metadata.Builders;
     using OpenDDD.Infrastructure.Persistence.EfCore.Base;
-    using Bookstore.Domain.Model;
+    using YourProjectName.Domain.Model;
 
-    namespace Bookstore.Infrastructure.Persistence.EfCore.Configurations
+    namespace YourProjectName.Infrastructure.Persistence.EfCore.Configurations
     {
         public class CustomerConfiguration : EfAggregateRootConfigurationBase<Customer, Guid>
         {
@@ -414,7 +466,8 @@ Create a configuration class for the `Customer` aggregate (since we chose EF Cor
             {
                 base.Configure(builder);
 
-                // Don't forget to also enforce these invariants in your domain layer code as well..
+                // Always enforce domain invariants in the domain layer.
+                // Optionally, apply database constraints for additional safety.
                 builder.Property(c => c.Name)
                        .IsRequired()
                        .HasMaxLength(100);
@@ -423,13 +476,45 @@ Create a configuration class for the `Customer` aggregate (since we chose EF Cor
                        .IsRequired()
                        .HasMaxLength(255);
 
-                // If you add aggregates to your domain model, setup one-to-many etc. here..
+                // Configure relationships (if applicable)
+                // Example: One-to-many relationship
+                // builder.HasMany(c => c.Orders)
+                //        .WithOne(o => o.Customer)
+                //        .HasForeignKey(o => o.CustomerId);
+            }
+        }
+    }
+
+Create the YourProjectNameDbContext class by subclassing OpenDddDbContextBase:
+
+.. code-block:: csharp
+
+    using Microsoft.EntityFrameworkCore;
+    using OpenDDD.Infrastructure.Persistence.EfCore.Base;
+    using OpenDDD.API.Options;
+    using YourProjectName.Domain.Model;
+
+    namespace YourProjectName.Infrastructure.Persistence.EfCore
+    {
+        public class YourProjectNameDbContext : OpenDddDbContextBase
+        {
+            public DbSet<Customer> Customers { get; set; }
+
+            public YourProjectNameDbContext(DbContextOptions<YourProjectNameDbContext> options, OpenDddOptions openDddOptions)
+                : base(options, openDddOptions)
+            {
+                
+            }
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+                base.OnModelCreating(modelBuilder);
             }
         }
     }
 
 --------------------------
-5: Edit `appsettings.json`
+7: Edit `appsettings.json`
 --------------------------
 
 Add the following configuration to your `appsettings.json` file to customize OpenDDD.NET behavior:
@@ -440,16 +525,16 @@ Add the following configuration to your `appsettings.json` file to customize Ope
       "PersistenceProvider": "EfCore",
       "EfCore": {
         "Database": "SQLite",
-        "ConnectionString": "DataSource=Main/EfCore/Bookstore.db;Cache=Shared"
+        "ConnectionString": "DataSource=Infrastructure/Persistence/EfCore/YourProjectName.db;Cache=Shared"
       },
       "MessagingProvider": "InMemory",
       "Events": {
-        "DomainEventTopic": "Bookstore.Domain.{EventName}",
-        "IntegrationEventTopic": "Bookstore.Interchange.{EventName}",
+        "DomainEventTopic": "YourProjectName.Domain.{EventName}",
+        "IntegrationEventTopic": "YourProjectName.Interchange.{EventName}",
         "ListenerGroup": "Default"
       },
       "AzureServiceBus": {
-        "ConnectionString": "Endpoint=sb://your-servicebus.servicebus.windows.net/;SharedAccessKeyName=your-key;SharedAccessKey=your-key",
+        "ConnectionString": "",
         "AutoCreateTopics": true
       },
       "AutoRegister": {
@@ -462,15 +547,68 @@ Add the following configuration to your `appsettings.json` file to customize Ope
       }
     }
 
-For a full list of configuration options, see :ref:`Configuration <config>`.
+For all information about configuration, see :ref:`Configuration <config>`.
 
-##############
-Sample Project
-##############
+--------------------------------
+8: Create the EF Core migrations
+--------------------------------
+
+Before running the application, create the **initial EF Core migrations** for setting up the database schema.
+
+Run the following command:
+
+.. code-block:: bash
+
+    dotnet ef migrations add InitialCreate --output-dir Infrastructure/Persistence/EfCore/Migrations
+
+The migrations will be automatically applied by OpenDDD.NET when you run the application.
+
+----------------------
+9: Run the Application
+----------------------
+
+Now you are ready to run the application:
+
+.. code-block:: bash
+
+    dotnet run
+
+**Access Swagger UI**
+
+Once the application is running, open a web browser and navigate to:
+
+.. code-block:: none
+
+    http://localhost:5000/swagger (or the correct port)
+
+Swagger UI provides an interactive interface to explore and test the API endpoints.
+
+To register a new customer, send a `POST` request to:
+
+.. code-block:: none
+
+    POST /api/customers/register-customer
+
+Fill in the request body with:
+
+.. code-block:: json
+
+    {
+      "name": "Alice",
+      "email": "alice@example.com"
+    }
+
+Click **Execute** to run the request.
+
+.. _userguide-sample-project:
+
+##################
+Run Sample Project
+##################
 
 The `Bookstore` sample project demonstrates how to build a **DDD-based** application using OpenDDD.NET.  
 It includes **domain models, repositories, actions, and event-driven processing**.
-All the example code from the guide above were taken from the sample project.
+Most of the example code in the documentation is taken from the sample project.
 
 Find the source code here: `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_.
 
@@ -487,31 +625,10 @@ Find the source code here: `Bookstore Sample Project <https://github.com/runemal
 - **Register a customer** → `POST /api/customers/register-customer`
 - Open **Swagger UI** at `http://localhost:5268/swagger` to explore and test endpoints.
 
-################
-Project Template
-################
+##########
+Next Steps
+##########
 
-A new addition is the **OpenDDD.NET project template**, which is a convenient way to create a new project with all files, configuration and structure already setup for you.
-
-First, install the template package:
-
-.. code-block:: bash
-
-    $ dotnet new install OpenDDD.NET-Templates --prerelease
-
-Then, create a new project:
-
-.. code-block:: bash
-
-    $ dotnet new openddd-net -n Bookstore
-
-This will generate a **Bookstore** project with the correct structure and default configurations in your current working directory.
-
-#################
-Where to Go Next?
-#################
-
-- **Dive Deeper**: Learn about the core concepts and architecture in the :ref:`Building Blocks <building-blocks>` section.  
-- **Explore the Sample Project**: Browse the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_ on GitHub for a full implementation.  
-- **Join the Community**: Participate in `OpenDDD.NET Discussions <https://github.com/runemalm/OpenDDD.NET/discussions>`_ to ask questions, share ideas, and contribute.  
-
+- **Learn the Core Concepts** → The :ref:`Building Blocks <building-blocks>` section provides full documentation on each DDD building block in OpenDDD.NET.  
+- **See a Full Implementation** → Explore the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_ on GitHub.  
+- **Get Involved** → Join the `OpenDDD.NET Discussions <https://github.com/runemalm/OpenDDD.NET/discussions>`_ to ask questions, share insights, and contribute.  

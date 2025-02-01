@@ -1,4 +1,4 @@
-.. _configuration:
+.. _config:
 
 #############
 Configuration
@@ -207,6 +207,7 @@ Instead of `appsettings.json`, OpenDDD.NET can be configured **dynamically** in 
 Summary
 *******
 
-- **Choose JSON or Fluent API** → Both provide full control over OpenDDD.NET settings.
-- **Configure persistence, messaging, and auto-registration** to match your needs.
-- **Use listener groups** for scalable applications.
+- **Choose JSON and/or Fluent API** → Both fully configure OpenDDD.NET.  
+- **Define persistence, messaging, and auto-registration** based on your needs.  
+- **Use listener groups** to scale applications horizontally.  
+- **Follow event naming conventions** for structured messaging.  

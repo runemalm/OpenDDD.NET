@@ -92,6 +92,13 @@ Explore the project in the repository: [Bookstore Sample Project](https://github
 
 ## Release History
 
+**3.0.0-alpha.4 (2025-02-xx)**
+
+- **Messaging Providers**: Fix some issues with the `Azure Service Bus` provider.
+- **Namespace**: Change the name of the namespace `Main` -> `API`.
+- **Project Template**: Add a project template nuget for quick scaffolding of a new project.
+- **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.
+
 **3.0.0-alpha.3 (2025-01-30)**
 
 - **Domain Events**: Added support for domain events to enable communication between domain objects while maintaining encapsulation.
