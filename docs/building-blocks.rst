@@ -448,7 +448,7 @@ Example: A listener that sends a welcome email when a **CustomerRegistered** dom
 .. code-block:: csharp
 
     using OpenDDD.Infrastructure.Events.Base;
-    using OpenDDD.Main.Options;
+    using OpenDDD.API.Options;
     using OpenDDD.Infrastructure.Events;
     using Bookstore.Application.Actions.SendWelcomeEmail;
     using Bookstore.Domain.Model.Events;

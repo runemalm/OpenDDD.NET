@@ -40,7 +40,7 @@ Add OpenDDD.NET services and middleware to your application in the `Program.cs` 
 
 .. code-block:: csharp
 
-    using OpenDDD.Main.Extensions;
+    using OpenDDD.API.Extensions;
     using Bookstore.Domain.Model.Ports;
     using Bookstore.Infrastructure.Adapters.Console;
     using Bookstore.Infrastructure.Persistence.EfCore;
@@ -269,7 +269,7 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Infrastructure.Events.Base;
-    using OpenDDD.Main.Options;
+    using OpenDDD.API.Options;
     using OpenDDD.Infrastructure.Events;
     using Bookstore.Application.Actions.SendWelcomeEmail;
     using Bookstore.Domain.Model.Events;

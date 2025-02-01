@@ -49,7 +49,7 @@ To get started with OpenDDD.NET, follow these simple steps:
 3. **Set up OpenDDD.NET**: Register OpenDDD services and middleware in your `Program.cs` file.
 
    ```csharp
-   using OpenDDD.Main.Extensions;
+   using OpenDDD.API.Extensions;
 
    var builder = WebApplication.CreateBuilder(args);
 
