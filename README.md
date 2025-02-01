@@ -7,6 +7,8 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 
 > **Note:** OpenDDD.NET is currently in an alpha state as part of new major version 3. Use with caution in production environments.
 
+Consider **starring** and/or **following** the project to stay updated with the latest developments.
+
 ## Key Features
 
 - **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
@@ -28,7 +30,7 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 
 - .NET 8
 
-## Example Usage
+## Getting Started
 
 To get started with OpenDDD.NET, follow these simple steps:
 
@@ -80,20 +82,7 @@ For detailed guides and examples, refer to the documentation.
 
 ## Documentation
 
-The official OpenDDD.NET documentation provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
-
-### 📖 Read the Docs  
-Visit the documentation: **[OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/)**  
-
-### 🛠 Topics Covered  
-- **Getting Started**: Installation, setup, and basic usage  
-- **Domain Modeling**: Aggregates, entities, and value objects  
-- **Repositories & Persistence**: Using EF Core and selecting database provider  
-- **Event-Driven Architecture**: Domain events, integration events, and event listeners  
-- **Infrastructure & Services**: Auto-registration, messaging providers, and more  
-
-### ⭐ Stay Updated
-If you find OpenDDD.NET useful, consider **starring** the repository and **following** the project on GitHub to stay updated with the latest developments.
+The official [OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/) provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
 
 ## Sample Project
 
