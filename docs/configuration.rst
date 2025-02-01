@@ -1,27 +1,25 @@
-.. _config:
+.. _configuration:
 
 #############
 Configuration
 #############
 
-OpenDDD.NET provides a flexible configuration system that allows you to customize its behavior in two ways:
+OpenDDD.NET **leverages .NET's built-in configuration system**, allowing you to define settings using standard .NET conventions.
 
-1. **appsettings.json** – The settings can be defined in this configuration file.
-2. **Fluent Methods** – Configuration can also be done programmatically using fluent methods in the `Program.cs` file.
+You can configure OpenDDD.NET using:
 
-Both approaches offer full control over the framework's settings, so you can choose the method that best suits your project's needs.
+1. **appsettings.json** – Define structured configuration in a file.
+2. **Fluent API** – Configure programmatically in `Program.cs`.
 
-This guide covers the key configuration options available in OpenDDD.NET, including examples for both approaches.
+These options allow flexibility based on your **environment**, **deployment strategy**, and **runtime needs**.
 
-.. _config-general:
+This guide covers **persistence, messaging, auto-registration, and fluent configuration**, with examples for both approaches.
 
-################
-General Settings
-################
+*******************
+1. General Settings
+*******************
 
-The main configuration section for OpenDDD.NET is `"OpenDDD"` in `appsettings.json`.
-
-Example:
+The **main configuration section** for OpenDDD.NET is `"OpenDDD"` in `appsettings.json`:
 
 .. code-block:: json
 
@@ -38,25 +36,26 @@ Example:
       }
     }
 
-.. _config-general-auto-registration:
+**Key settings:**
 
------------------
-Auto-Registration
------------------
+- **PersistenceProvider** → Defines the database provider (e.g., `"EfCore"`).
+- **MessagingProvider** → Sets the event messaging system (`"InMemory"` or `"AzureServiceBus"`).
+- **AutoRegister** → Controls automatic registration of components.
 
-OpenDDD.NET automatically registers several components by default.  
-You can enable or disable this behavior in the `"AutoRegister"` section.
+********************
+2. Auto-Registration
+********************
 
-- **Actions** → Registers all `IAction<TCommand, TResponse>` implementations.
-- **Domain Services** → Registers all `IDomainService` implementations.
-- **Repositories** → Registers all `IRepository<TAggregate, TId>` implementations.
-- **Infrastructure Services** → Registers all `IInfrastructureService` implementations.
-- **Event Listeners** → Registers all `EventListenerBase<TEvent, TAction>` implementations.
-- **EfCore Configurations** → Registers Entity Framework Core configurations.
+By default, OpenDDD.NET **automatically registers** common components:
 
-To disable auto-registration for a component type, set it to `false`.  
+- **Actions** → `IAction<TCommand, TResponse>`
+- **Domain Services** → `IDomainService`
+- **Repositories** → `IRepository<TAggregate, TId>`
+- **Infrastructure Services** → `IInfrastructureService`
+- **Event Listeners** → `EventListenerBase<TEvent, TAction>`
+- **EF Core Configurations** → `EfAggregateRootConfigurationBase<TAggregateRoot, TId>` and `EfEntityConfigurationBase<TEntity, TId>`
 
-Example:
+To disable auto-registration for specific components, set them to `false`:
 
 .. code-block:: json
 
@@ -65,15 +64,11 @@ Example:
       "DomainServices": true
     }
 
-.. _config-persistence:
+**************
+3. Persistence
+**************
 
-#######################
-Persistence Settings
-#######################
-
-OpenDDD.NET supports **Entity Framework Core (EF Core)** as its persistence provider.
-
-Example configuration:
+OpenDDD.NET **uses EF Core** for persistence. Configure it in `appsettings.json`:
 
 .. code-block:: json
 
@@ -81,14 +76,11 @@ Example configuration:
       "PersistenceProvider": "EfCore",
       "EfCore": {
         "Database": "SQLite",
-        "ConnectionString": "DataSource=Main/EfCore/Bookstore.db;Cache=Shared"
+        "ConnectionString": "DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared"
       }
     }
 
-The **PersistenceProvider** setting determines which persistence provider is used.  
-Currently, the only supported provider is `"EfCore"`.
-
-To change database to e.g. **SQL Server**, update the database and connection string:
+To switch to **SQL Server**, update the `Database` and `ConnectionString`:
 
 .. code-block:: json
 
@@ -97,14 +89,13 @@ To change database to e.g. **SQL Server**, update the database and connection st
       "ConnectionString": "Server=myServer;Database=myDb;User Id=myUser;Password=myPass;"
     }
 
-.. _config-messaging:
+You can choose any database provider `supported by EF Core <https://learn.microsoft.com/en-us/ef/core/providers/?tabs=dotnet-core-cli>`_.
 
-##################
-Messaging Settings
-##################
+************
+4. Messaging
+************
 
-OpenDDD.NET supports event-driven messaging using **domain events** and **integration events**.  
-Each event type has its own **dedicated topic**.
+OpenDDD.NET **supports event-driven architecture** using **domain events** and **integration events**.
 
 Example configuration:
 
@@ -123,44 +114,71 @@ Example configuration:
       }
     }
 
-------------------
-Messaging Provider
-------------------
+-----------------------
+**Messaging Providers**
+-----------------------
 
-**MessagingProvider** specifies the message bus to be used for event processing:
+- `"InMemory"` → Local event processing.
+- `"AzureServiceBus"` → Distributed event processing across services.
 
-- `"InMemory"` → Local message bus for event processing within the same application instance.
-- `"AzureServiceBus"` → Distributed message bus for event processing across services.
+We will add more messaging providers as we go. If you want to create a provider, you can check out `how to contribute to the source code <https://github.com/runemalm/OpenDDD.NET/blob/master/CONTRIBUTING.md>`_.
 
-------------------------
-Topic Naming Conventions
-------------------------
+----------------------------
+**Topic Naming Conventions**
+----------------------------
 
-- **Domain Events:** `"Bookstore.Domain.{EventName}"`  
-  (or `"Bookstore.{BoundedContext}.{EventName}"` for multi-context applications)
-- **Integration Events:** `"Bookstore.Interchange.{EventName}"`  
-  (Always includes `"Interchange"` as the middle part)
+- **Domain Events:** `"Bookstore.Domain.{EventName}"`
+- **Integration Events:** `"Bookstore.Interchange.{EventName}"`
 
---------------------------
-Competing Consumer Pattern
---------------------------
+Use `Domain` when you have a single bounded context. Replace it with the specific name when you have multiple, (e.g. Bookstore.Booking.{EventName}).
 
-OpenDDD.NET supports the **competing consumer pattern**, allowing multiple instances of a service  
-to process messages from the same event topic. 
+Since there will only ever be one interchange context, the `Ìnterchange` part will never change for integration event topics.
 
-**ListenerGroup** specifies which **consumer group** the application instance belongs to.  
-Services in the same listener group compete for messages, ensuring **load balancing**  
-while preventing duplicate processing within the group.
+------------------------------
+**Listener Groups & Scaling**
+------------------------------
 
-.. _config-fluent:
+OpenDDD.NET **supports horizontal scaling** by allowing multiple service instances to process events concurrently.  
 
-############################
-Fluent Configuration Example
-############################
+This is achieved using **Listener Groups**:  
 
-OpenDDD.NET can also be configured using fluent methods in `Program.cs` when adding the services.
+- **All instances within the same Listener Group** compete for messages, ensuring events are processed only once.  
+- **Each deployed instance of a service** can scale horizontally while preventing duplicate processing.  
 
-Here’s an example configuration using the fluent API:
+**Example: Scaling a Monolith**
+
+If you deploy a **Bookstore monolith** with multiple instances, all instances can share the same listener group:
+
+.. code-block:: json
+
+    "Events": {
+      "ListenerGroup": "Default"
+    }
+
+**Example: Scaling Multiple Services**
+
+If your system has **multiple services**, each service group can use its own Listener Group:
+
+.. code-block:: json
+
+    "Events": {
+      "ListenerGroup": "Booking"
+    }
+
+**Result:**  
+
+- All instances of the **Booking** service compete for events in the `"Booking"` group.
+- The **Shipping** service can have its own `"Service"` listener group.
+- The **Catalogue** service can have its own `"Catalogue"` listener group, etc..
+- This enables **independent scaling** for each group of services.
+
+Read more about the `Competing Consumer <https://learn.microsoft.com/en-us/azure/architecture/patterns/competing-consumers>`_ pattern here.
+
+***********************
+5. Fluent Configuration
+***********************
+
+Instead of `appsettings.json`, OpenDDD.NET can be configured **dynamically** in `Program.cs`:
 
 .. code-block:: csharp
 
@@ -168,7 +186,7 @@ Here’s an example configuration using the fluent API:
         options =>  
         {  
             options.UseEfCore()
-                   .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+                   .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
                    .UseInMemoryMessaging()
                    .SetEventListenerGroup("Default")
                    .SetEventTopicTemplates(
@@ -179,4 +197,16 @@ Here’s an example configuration using the fluent API:
         }
     );
 
-This method allows you to customize the framework’s settings programmatically without needing to rely on the `appsettings.json` file.
+**Advantages of Fluent Configuration:**
+
+- **Dynamic setup** without modifying `appsettings.json`.
+- **Overrides JSON settings** when used together.
+- **Useful for runtime configuration and dynamic overrides**.
+
+*******
+Summary
+*******
+
+- **Choose JSON or Fluent API** → Both provide full control over OpenDDD.NET settings.
+- **Configure persistence, messaging, and auto-registration** to match your needs.
+- **Use listener groups** for scalable applications.
