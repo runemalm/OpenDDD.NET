@@ -203,7 +203,7 @@ Automatic Registration
 By default, OpenDDD.NET **automatically registers all Actions** for dependency injection,  
 so they can be injected where needed.
 
-To disable or modify this behavior, refer to the :ref:`configuration settings <config-general-auto-registration>`.
+To disable or modify this behavior, refer to the :ref:`configuration settings <config-auto-registration>`.
 
 .. _bb-commands:
 

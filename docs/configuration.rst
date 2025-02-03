@@ -42,6 +42,8 @@ The **main configuration section** for OpenDDD.NET is `"OpenDDD"` in `appsetting
 - **MessagingProvider** → Sets the event messaging system (`"InMemory"` or `"AzureServiceBus"`).
 - **AutoRegister** → Controls automatic registration of components.
 
+.. _config-auto-registration:
+
 ********************
 2. Auto-Registration
 ********************

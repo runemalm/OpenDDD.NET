@@ -67,6 +67,8 @@ namespace OpenDDD.Infrastructure.Repository.EfCore
             {
                 DbContext.Entry(existingEntity).CurrentValues.SetValues(aggregateRoot);
             }
+            
+            await DbContext.SaveChangesAsync(ct);
         }
 
         public async Task DeleteAsync(TAggregateRoot aggregateRoot, CancellationToken ct)

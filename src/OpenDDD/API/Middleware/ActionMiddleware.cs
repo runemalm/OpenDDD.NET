@@ -27,26 +27,26 @@ namespace OpenDDD.API.Middleware
 
             try
             {
-                _logger.LogInformation("Executing action for request: {RequestPath}", context.Request.Path);
+                _logger.LogDebug("Executing action for request: {RequestPath}", context.Request.Path);
 
                 await unitOfWork.StartAsync(ct);
                 await _next(context);
 
                 foreach (var domainEvent in domainPublisher.GetPublishedEvents())
                 {
-                    _logger.LogInformation("Saving domain event to outbox: {EventType}", domainEvent.GetType().Name);
+                    _logger.LogDebug("Saving domain event to outbox: {EventType}", domainEvent.GetType().Name);
                     await outboxRepository.SaveEventAsync(domainEvent, ct);
                 }
 
                 foreach (var integrationEvent in integrationPublisher.GetPublishedEvents())
                 {
-                    _logger.LogInformation("Saving integration event to outbox: {EventType}", integrationEvent.GetType().Name);
+                    _logger.LogDebug("Saving integration event to outbox: {EventType}", integrationEvent.GetType().Name);
                     await outboxRepository.SaveEventAsync(integrationEvent, ct);
                 }
 
                 await unitOfWork.CommitAsync(ct);
 
-                _logger.LogInformation("Action execution completed successfully.");
+                _logger.LogDebug("Action execution completed successfully.");
             }
             catch (Exception ex)
             {
