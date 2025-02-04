@@ -1,8 +1,9 @@
 ﻿using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events;
+using OpenDDD.API.Options;
 using Bookstore.Application.Actions.SendWelcomeEmail;
 using Bookstore.Domain.Model.Events;
-using OpenDDD.API.Options;
+using OpenDDD.API.HostedServices;
 
 namespace Bookstore.Application.Listeners.Domain
 {
@@ -12,8 +13,9 @@ namespace Bookstore.Application.Listeners.Domain
             IMessagingProvider messagingProvider,
             OpenDddOptions options,
             IServiceScopeFactory serviceScopeFactory,
+            StartupHostedService startupService,
             ILogger<CustomerRegisteredListener> logger)
-            : base(messagingProvider, options, serviceScopeFactory, logger) { }
+            : base(messagingProvider, options, serviceScopeFactory, startupService, logger) { }
 
         public override async Task HandleAsync(CustomerRegistered domainEvent, SendWelcomeEmailAction action, CancellationToken ct)
         {

@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
 using OpenDDD.Domain.Model.Helpers;
 using OpenDDD.Infrastructure.Events;
@@ -10,19 +12,29 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
     public class OutboxProcessor : BackgroundService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly StartupHostedService _startupService;
         private readonly ILogger<OutboxProcessor> _logger;
-        private readonly OpenDddEventsOptions _eventOptions;
+        private readonly OpenDddOptions _options;
 
-        public OutboxProcessor(IServiceScopeFactory serviceScopeFactory, ILogger<OutboxProcessor> logger, OpenDddOptions options)
+        public OutboxProcessor(
+            IServiceScopeFactory serviceScopeFactory, 
+            StartupHostedService startupService,
+            ILogger<OutboxProcessor> logger, 
+            IOptions<OpenDddOptions> options)
         {
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
+            _startupService = startupService;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _eventOptions = options?.Events ?? throw new ArgumentNullException(nameof(options.Events));
+            _options = options.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Outbox Processor started.");
+
+            _logger.LogInformation("Waiting for database setup to complete before starting outbox processing...");
+            await _startupService.StartupCompleted;
+            _logger.LogInformation("Database setup completed. Starting outbox processing...");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -40,7 +52,7 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
                         {
                             // Determine topic dynamically using helper
                             var topic = EventTopicHelper.DetermineTopic(outboxEntry.EventType, 
-                                outboxEntry.EventName, _eventOptions, _logger);
+                                outboxEntry.EventName, _options.Events, _logger);
 
                             _logger.LogDebug("Publishing outbox event {EventId} to topic {Topic}", outboxEntry.Id, topic);
 

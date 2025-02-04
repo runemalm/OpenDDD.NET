@@ -9,8 +9,8 @@ namespace Bookstore.Infrastructure.Persistence.EfCore
     {
         public DbSet<Customer> Customers { get; set; }
 
-        public BookstoreDbContext(DbContextOptions<BookstoreDbContext> options, OpenDddOptions openDddOptions)
-            : base(options, openDddOptions)
+        public BookstoreDbContext(DbContextOptions<BookstoreDbContext> options, OpenDddOptions openDddOptions, ILogger<BookstoreDbContext> logger)
+            : base(options, openDddOptions, logger)
         {
             
         }

@@ -5,7 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenDDD.API.Attributes;
+using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
+using OpenDDD.API.StartupFilters;
 using OpenDDD.Application;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Base;
@@ -15,7 +17,6 @@ using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
-using OpenDDD.Infrastructure.Persistence.EfCore.Startup;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
@@ -74,6 +75,7 @@ namespace OpenDDD.API.Extensions
             services.AddMessaging(options);
             services.AddTransactionalOutbox();
             services.AddPublishing();
+            services.AddStartup();
 
             if (options.AutoRegister.Repositories) RegisterEfCoreRepositories(services);
             if (options.AutoRegister.DomainServices) RegisterDomainServices(services);
@@ -135,6 +137,13 @@ namespace OpenDDD.API.Extensions
         {
             services.AddHostedService<OutboxProcessor>();
         }
+        
+        private static void AddStartup(this IServiceCollection services)
+        {
+            services.AddSingleton<StartupHostedService>();
+            services.AddHostedService(sp => sp.GetRequiredService<StartupHostedService>());
+            services.AddSingleton<IStartupFilter, StartupFilter>();
+        }
 
         private static void AddPublishing(this IServiceCollection services)
         {
@@ -144,10 +153,8 @@ namespace OpenDDD.API.Extensions
 
         private static void AddEfCore(this IServiceCollection services)
         {
-            services.AddSingleton<EfCoreDatabaseInitializer>();
             services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
             services.AddTransient<IOutboxRepository, EfCoreOutboxRepository>();
-            services.AddSingleton<IStartupFilter, EfCoreStartupFilter>();
         }
 
         private static void AddAzureServiceBus(this IServiceCollection services)
