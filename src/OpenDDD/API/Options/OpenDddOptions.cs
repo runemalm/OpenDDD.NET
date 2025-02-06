@@ -80,6 +80,7 @@ namespace OpenDDD.API.Options
             AutoRegister.InfrastructureServices = true;
             AutoRegister.EventListeners = true;
             AutoRegister.EfCoreConfigurations = true;
+            AutoRegister.EfCoreSeeders = true;
             return this;
         }
 
@@ -91,6 +92,7 @@ namespace OpenDDD.API.Options
             AutoRegister.InfrastructureServices = false;
             AutoRegister.EventListeners = false;
             AutoRegister.EfCoreConfigurations = false;
+            AutoRegister.EfCoreSeeders = false;
             return this;
         }
     }

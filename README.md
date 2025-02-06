@@ -95,6 +95,7 @@ Explore the project in the repository: [Bookstore Sample Project](https://github
 **3.0.0-alpha.4 (2025-02-xx)**
 
 - **Messaging Providers**: Fix some issues with the `Azure Service Bus` provider.
+- **Seeders**: Add support for seeders to seed aggregates on application start.
 - **Namespace**: Change the name of the namespace `Main` -> `API`.
 - **Project Template**: Add a project template nuget for quick scaffolding of a new project.
 - **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.

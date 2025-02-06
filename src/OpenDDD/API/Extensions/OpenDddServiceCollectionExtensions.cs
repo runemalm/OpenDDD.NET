@@ -17,6 +17,7 @@ using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
+using OpenDDD.Infrastructure.Persistence.EfCore.Seeders;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
@@ -82,6 +83,7 @@ namespace OpenDDD.API.Extensions
             if (options.AutoRegister.InfrastructureServices) RegisterInfrastructureServices(services);
             if (options.AutoRegister.Actions) RegisterActions(services);
             if (options.AutoRegister.EventListeners) RegisterEventListeners(services);
+            if (options.AutoRegister.EfCoreSeeders) RegisterEfCoreSeeders(services);
             
             configureServices?.Invoke(services);
 
@@ -303,6 +305,20 @@ namespace OpenDDD.API.Extensions
                     addHostedServiceMethod.Invoke(null, new object[] { services });
                     Console.WriteLine($"Registered event listener: {listenerType.Name}");
                 }
+            }
+        }
+
+        private static void RegisterEfCoreSeeders(IServiceCollection services)
+        {
+            var seederTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsClass && !type.IsAbstract && typeof(IEfCoreSeeder).IsAssignableFrom(type))
+                .ToList();
+
+            foreach (var seederType in seederTypes)
+            {
+                services.AddTransient(typeof(IEfCoreSeeder), seederType);
+                Console.WriteLine($"Registered EF Core seeder: {seederType.Name} with lifetime: Transient");
             }
         }
 
