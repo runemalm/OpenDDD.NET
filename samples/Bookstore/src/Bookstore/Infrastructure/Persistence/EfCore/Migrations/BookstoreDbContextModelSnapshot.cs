@@ -82,7 +82,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("OrderId")
+                    b.Property<Guid>("OrderId")
                         .HasColumnType("TEXT");
 
                     b.Property<float>("Price")
@@ -156,7 +156,9 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                 {
                     b.HasOne("Bookstore.Domain.Model.Order", null)
                         .WithMany("LineItems")
-                        .HasForeignKey("OrderId");
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Bookstore.Domain.Model.Order", b =>

@@ -10,7 +10,9 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Configurations
         {
             base.Configure(builder);
             
-            // Custom configurations here
+            // Define the OrderId foreign key (shadow property)
+            builder.Property<Guid>("OrderId")
+                .IsRequired();
         }
     }
 }

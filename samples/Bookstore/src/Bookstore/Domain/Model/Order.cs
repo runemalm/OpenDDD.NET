@@ -14,11 +14,15 @@ namespace Bookstore.Domain.Model
             Validate();
         }
 
-        public static Order Create(Guid customerId, ICollection<LineItem> lineItems)
+        public static Order Create(Guid customerId)
         {
-            var order = new Order(Guid.NewGuid(), customerId);
-            order.LineItems = lineItems ?? new List<LineItem>();
-            return order;
+            return new Order(Guid.NewGuid(), customerId);
+        }
+
+        public void AddLineItem(Guid bookId, float price)
+        {
+            var lineItem = LineItem.Create(bookId, price);
+            LineItems.Add(lineItem);
         }
 
         private void Validate()

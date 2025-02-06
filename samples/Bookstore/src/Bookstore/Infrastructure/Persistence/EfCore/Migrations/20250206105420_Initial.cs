@@ -80,7 +80,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     BookId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Price = table.Column<float>(type: "REAL", nullable: false),
-                    OrderId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    OrderId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -91,7 +91,8 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                         name: "FK_LineItems_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
