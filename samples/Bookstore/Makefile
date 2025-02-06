@@ -154,3 +154,37 @@ azure-get-servicebus-connection: ##@Azure Get the Service Bus connection string
 	    --name RootManageSharedAccessKey \
 	    --query primaryConnectionString \
 	    --output tsv
+
+##########################################################################
+# RABBITMQ
+##########################################################################
+
+.PHONY: rabbitmq-start
+rabbitmq-start: ##@@RabbitMQ	 Start a RabbitMQ container
+	docker run -d --name rabbitmq --hostname rabbitmq \
+		-e RABBITMQ_DEFAULT_USER=guest \
+		-e RABBITMQ_DEFAULT_PASS=guest \
+		-p 5672:5672 -p 15672:15672 rabbitmq:management
+	@echo "RabbitMQ started. Management UI available at http://localhost:15672"
+
+.PHONY: rabbitmq-stop
+rabbitmq-stop: ##@RabbitMQ	 Stop the RabbitMQ container
+	docker stop rabbitmq
+	@echo "RabbitMQ stopped."
+
+.PHONY: rabbitmq-status
+rabbitmq-status: ##@RabbitMQ	 Check RabbitMQ container status
+	docker ps | grep rabbitmq || echo "RabbitMQ is not running."
+
+.PHONY: rabbitmq-get-connection
+rabbitmq-get-connection: ##@RabbitMQ	 Get the RabbitMQ connection string
+	@echo "amqp://guest:guest@localhost:5672/"
+
+.PHONY: rabbitmq-clean
+rabbitmq-clean: ##@RabbitMQ	 Remove RabbitMQ container and its volumes
+	docker rm -f rabbitmq || true
+	@echo "RabbitMQ container removed."
+
+.PHONY: rabbitmq-logs
+rabbitmq-logs: ##@RabbitMQ	 Show RabbitMQ logs
+	docker logs -f rabbitmq
