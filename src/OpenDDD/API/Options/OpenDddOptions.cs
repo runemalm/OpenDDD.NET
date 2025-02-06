@@ -1,4 +1,5 @@
 ﻿using OpenDDD.Infrastructure.Events.Azure.Options;
+using OpenDDD.Infrastructure.Events.RabbitMq.Options;
 
 namespace OpenDDD.API.Options
 {
@@ -10,6 +11,7 @@ namespace OpenDDD.API.Options
         public OpenDddAutoRegisterOptions AutoRegister { get; set; } = new();
         public OpenDddEventsOptions Events { get; set; } = new();
         public OpenDddAzureServiceBusOptions AzureServiceBus { get; set; } = new();
+        public OpenDddRabbitMqOptions RabbitMq { get; set; } = new();
 
         // Fluent methods for configuring persistence
         public OpenDddOptions UseEfCore()
@@ -46,6 +48,12 @@ namespace OpenDDD.API.Options
         public OpenDddOptions UseInMemoryMessaging()
         {
             MessagingProvider = "InMemory";
+            return this;
+        }
+        
+        public OpenDddOptions UseRabbitMqMessaging()
+        {
+            MessagingProvider = "RabbitMq";
             return this;
         }
 

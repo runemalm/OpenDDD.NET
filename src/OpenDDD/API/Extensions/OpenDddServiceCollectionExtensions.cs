@@ -16,6 +16,7 @@ using OpenDDD.Infrastructure.Events;
 using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.InMemory;
+using OpenDDD.Infrastructure.Events.RabbitMq;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.EfCore.Seeders;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
@@ -130,6 +131,9 @@ namespace OpenDDD.API.Extensions
                 case "azureservicebus":
                     services.AddAzureServiceBus();
                     break;
+                case "rabbitmq":
+                    services.AddRabbitMq();
+                    break;
                 default:
                     throw new Exception($"Unsupported MessagingProvider: {options.MessagingProvider}");
             }
@@ -162,6 +166,11 @@ namespace OpenDDD.API.Extensions
         private static void AddAzureServiceBus(this IServiceCollection services)
         {
             services.AddSingleton<IMessagingProvider, AzureServiceBusMessagingProvider>();
+        }
+        
+        private static void AddRabbitMq(this IServiceCollection services)
+        {
+            services.AddSingleton<IMessagingProvider, RabbitMqMessagingProvider>();
         }
         
         private static void AddInMemoryMessaging(this IServiceCollection services)
