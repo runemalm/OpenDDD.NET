@@ -76,8 +76,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("BookName")
-                        .IsRequired()
+                    b.Property<Guid>("BookId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -96,7 +95,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("LineItem");
+                    b.ToTable("LineItems", (string)null);
                 });
 
             modelBuilder.Entity("Bookstore.Domain.Model.Order", b =>

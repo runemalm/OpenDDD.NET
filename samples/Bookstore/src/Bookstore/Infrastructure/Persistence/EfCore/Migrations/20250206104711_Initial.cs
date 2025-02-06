@@ -74,11 +74,11 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "LineItem",
+                name: "LineItems",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    BookName = table.Column<string>(type: "TEXT", nullable: false),
+                    BookId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Price = table.Column<float>(type: "REAL", nullable: false),
                     OrderId = table.Column<Guid>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -86,17 +86,17 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LineItem", x => x.Id);
+                    table.PrimaryKey("PK_LineItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LineItem_Orders_OrderId",
+                        name: "FK_LineItems_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_LineItem_OrderId",
-                table: "LineItem",
+                name: "IX_LineItems_OrderId",
+                table: "LineItems",
                 column: "OrderId");
         }
 
@@ -110,7 +110,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                 name: "Customers");
 
             migrationBuilder.DropTable(
-                name: "LineItem");
+                name: "LineItems");
 
             migrationBuilder.DropTable(
                 name: "OutboxEntries");

@@ -4,9 +4,9 @@ using Bookstore.Domain.Model;
 
 namespace Bookstore.Infrastructure.Persistence.EfCore.Configurations
 {
-    public class BookConfiguration : EfAggregateRootConfigurationBase<Book, Guid>
+    public class LineItemConfiguration : EfEntityConfigurationBase<LineItem, Guid>
     {
-        public override void Configure(EntityTypeBuilder<Book> builder)
+        public override void Configure(EntityTypeBuilder<LineItem> builder)
         {
             base.Configure(builder);
             

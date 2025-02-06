@@ -8,23 +8,17 @@ namespace Bookstore.Domain.Model
         public string Author { get; private set; }
         public int Year { get; private set; }
 
-        // private Book() : base(Guid.Empty)
-        // {
-        //     
-        // }
-        
+        private Book(Guid id, string name, string author, int year) : base(id)
+        {
+            Name = name;
+            Author = author;
+            Year = year;
+            Validate();
+        }
+
         public static Book Create(string name, string author, int year)
         {
-            var book = new Book
-            {
-                Id = Guid.NewGuid(),
-                Name = name,
-                Author = author,
-                Year = year
-            };
-
-            book.Validate();
-            return book;
+            return new Book(Guid.NewGuid(), name, author, year);
         }
 
         private void Validate()

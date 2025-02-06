@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 {
     [DbContext(typeof(BookstoreDbContext))]
-    [Migration("20250206101828_Initial")]
+    [Migration("20250206104711_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -79,8 +79,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("BookName")
-                        .IsRequired()
+                    b.Property<Guid>("BookId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -99,7 +98,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("LineItem");
+                    b.ToTable("LineItems", (string)null);
                 });
 
             modelBuilder.Entity("Bookstore.Domain.Model.Order", b =>
