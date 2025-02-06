@@ -17,6 +17,34 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
 
+            modelBuilder.Entity("Bookstore.Domain.Model.Book", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Books", (string)null);
+                });
+
             modelBuilder.Entity("Bookstore.Domain.Model.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -39,7 +67,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("Bookstore.Domain.Model.LineItem", b =>
@@ -88,7 +116,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("OpenDDD.Infrastructure.TransactionalOutbox.OutboxEntry", b =>
