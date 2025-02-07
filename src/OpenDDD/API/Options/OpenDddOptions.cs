@@ -1,4 +1,5 @@
 ﻿using OpenDDD.Infrastructure.Events.Azure.Options;
+using OpenDDD.Infrastructure.Events.Kafka.Options;
 using OpenDDD.Infrastructure.Events.RabbitMq.Options;
 
 namespace OpenDDD.API.Options
@@ -12,7 +13,8 @@ namespace OpenDDD.API.Options
         public OpenDddEventsOptions Events { get; set; } = new();
         public OpenDddAzureServiceBusOptions AzureServiceBus { get; set; } = new();
         public OpenDddRabbitMqOptions RabbitMq { get; set; } = new();
-
+        public OpenDddKafkaOptions Kafka { get; set; } = new();
+        
         // Fluent methods for configuring persistence
         public OpenDddOptions UseEfCore()
         {
@@ -51,9 +53,31 @@ namespace OpenDDD.API.Options
             return this;
         }
         
-        public OpenDddOptions UseRabbitMqMessaging()
+        public OpenDddOptions UseRabbitMq(
+            string? hostName = null, 
+            int? port = null, 
+            string? username = null, 
+            string? password = null, 
+            string? virtualHost = null)
         {
             MessagingProvider = "RabbitMq";
+
+            RabbitMq.HostName ??= hostName;
+            if (port.HasValue) 
+            {
+                RabbitMq.Port = port.Value;
+            }
+            RabbitMq.Username ??= username;
+            RabbitMq.Password ??= password;
+            RabbitMq.VirtualHost ??= virtualHost;
+
+            return this;
+        }
+
+        public OpenDddOptions UseKafka(string? bootstrapServers = null)
+        {
+            MessagingProvider = "Kafka";
+            Kafka.BootstrapServers ??= bootstrapServers;
             return this;
         }
 
