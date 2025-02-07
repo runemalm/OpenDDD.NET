@@ -15,7 +15,7 @@ builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration,
     {  
         options.UseEfCore()
                .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
-               .UseInMemoryMessaging()
+               .UseKafka()
                .SetEventListenerGroup("Bookstore")
                .SetEventTopicTemplates(
                    "Bookstore.Domain.{EventName}",

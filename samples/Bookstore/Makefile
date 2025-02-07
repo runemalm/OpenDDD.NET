@@ -23,6 +23,15 @@ TESTS := $(SRC)/src/Bookstore/Tests
 MIGRATIONS := $(SRC)/Bookstore/Infrastructure/Persistence/EfCore/Migrations
 NETWORK := openddd-sample-bookstore
 
+RABBITMQ_PORT := 5672
+
+ZOOKEEPER_CONTAINER := bookstore-zookeeper
+
+KAFKA_NETWORK := $(NETWORK)
+KAFKA_CONTAINER := bookstore-kafka
+KAFKA_BROKER := localhost:9092
+KAFKA_ZOOKEEPER := localhost:2181
+
 ##########################################################################
 # CUSTOM MENU
 ##########################################################################
@@ -143,11 +152,11 @@ apply-migrations: ##@Migrations	 Apply all pending migrations to the database
 ##########################################################################
 
 .PHONY: azure-create-servicebus-namespace
-azure-create-servicebus-namespace: ##@Azure Create the Azure Service Bus namespace
+azure-create-servicebus-namespace: ##@Azure	 Create the Azure Service Bus namespace
 	az servicebus namespace create --name $(AZURE_SERVICEBUS_NAMESPACE) --resource-group $(AZURE_RESOURCE_GROUP) --location $(AZURE_REGION) --sku Standard
 
 .PHONY: azure-get-servicebus-connection
-azure-get-servicebus-connection: ##@Azure Get the Service Bus connection string
+azure-get-servicebus-connection: ##@Azure	 Get the Service Bus connection string
 	az servicebus namespace authorization-rule keys list \
 	    --resource-group $(AZURE_RESOURCE_GROUP) \
 	    --namespace-name $(AZURE_SERVICEBUS_NAMESPACE) \
@@ -162,9 +171,9 @@ azure-get-servicebus-connection: ##@Azure Get the Service Bus connection string
 .PHONY: rabbitmq-start
 rabbitmq-start: ##@@RabbitMQ	 Start a RabbitMQ container
 	docker run -d --name rabbitmq --hostname rabbitmq \
-		-e RABBITMQ_DEFAULT_USER=guest \
-		-e RABBITMQ_DEFAULT_PASS=guest \
-		-p 5672:5672 -p 15672:15672 rabbitmq:management
+		-e RABBITMQ_DEFAULT_USER=$(RABBITMQ_DEFAULT_USER) \
+		-e RABBITMQ_DEFAULT_PASS=$(RABBITMQ_DEFAULT_PASS) \
+		-p 5672:$(RABBITMQ_PORT) -p 15672:15672 rabbitmq:management
 	@echo "RabbitMQ started. Management UI available at http://localhost:15672"
 
 .PHONY: rabbitmq-stop
@@ -178,7 +187,7 @@ rabbitmq-status: ##@RabbitMQ	 Check RabbitMQ container status
 
 .PHONY: rabbitmq-get-connection
 rabbitmq-get-connection: ##@RabbitMQ	 Get the RabbitMQ connection string
-	@echo "amqp://guest:guest@localhost:5672/"
+	@echo "amqp://$(RABBITMQ_DEFAULT_USER):$(RABBITMQ_DEFAULT_PASS)@localhost:$(RABBITMQ_PORT)/"
 
 .PHONY: rabbitmq-clean
 rabbitmq-clean: ##@RabbitMQ	 Remove RabbitMQ container and its volumes
@@ -188,3 +197,70 @@ rabbitmq-clean: ##@RabbitMQ	 Remove RabbitMQ container and its volumes
 .PHONY: rabbitmq-logs
 rabbitmq-logs: ##@RabbitMQ	 Show RabbitMQ logs
 	docker logs -f rabbitmq
+
+##########################################################################
+# KAFKA
+##########################################################################
+
+.PHONY: kafka-start
+kafka-start: ##@Kafka	 Start Kafka and Zookeeper using Docker
+	@docker network inspect $(KAFKA_NETWORK) >/dev/null 2>&1 || docker network create $(KAFKA_NETWORK)
+	@docker run -d --rm --name $(ZOOKEEPER_CONTAINER) --network $(KAFKA_NETWORK) -p 2181:2181 \
+	    wurstmeister/zookeeper:latest
+	@docker run -d --rm --name $(KAFKA_CONTAINER) --network $(KAFKA_NETWORK) -p 9092:9092 \
+	    -e KAFKA_BROKER_ID=1 \
+	    -e KAFKA_ZOOKEEPER_CONNECT=$(ZOOKEEPER_CONTAINER):2181 \
+	    -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 \
+	    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
+	    -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+	    wurstmeister/kafka:latest
+
+.PHONY: kafka-stop
+kafka-stop: ##@Kafka	 Stop Kafka and Zookeeper
+	@docker stop $(KAFKA_CONTAINER) || true
+	@docker stop $(ZOOKEEPER_CONTAINER) || true
+
+.PHONY: kafka-logs
+kafka-logs: ##@Kafka	 Show Kafka logs
+	@docker logs -f $(KAFKA_CONTAINER)
+
+.PHONY: kafka-shell
+kafka-shell: ##@@Kafka	 Open a shell inside the Kafka container
+	docker exec -it $(KAFKA_CONTAINER) /bin/sh
+
+.PHONY: kafka-create-topic
+kafka-create-topic: ##@Kafka	 Create a Kafka topic (uses NAME)
+ifndef NAME
+	$(error Topic name not specified. Usage: make kafka-create-topic NAME=<TopicName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-topics.sh --create --topic $(NAME) --bootstrap-server $(KAFKA_BROKER) --replication-factor 1 --partitions 1
+
+.PHONY: kafka-list-brokers
+kafka-list-brokers: ##@Kafka	 List Kafka broker configurations
+	docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type brokers
+
+.PHONY: kafka-list-topics
+kafka-list-topics: ##@Kafka	 List all Kafka topics
+	@docker exec -it $(KAFKA_CONTAINER) kafka-topics.sh --list --bootstrap-server $(KAFKA_BROKER)
+
+.PHONY: kafka-broker-status
+kafka-broker-status: ##@Kafka	 Show Kafka broker status
+	docker exec -it bookstore-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+
+.PHONY: kafka-list-consumers
+kafka-list-consumers: ##@Kafka	 List active Kafka consumer groups
+	docker exec -it bookstore-kafka /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+
+.PHONY: kafka-consume
+kafka-consume: ##@Kafka	 Consume messages from a Kafka topic (uses NAME)
+ifndef NAME
+	$(error Topic name not specified. Usage: make kafka-consume NAME=<TopicName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-console-consumer.sh --bootstrap-server $(KAFKA_BROKER) --topic $(NAME) --from-beginning
+
+.PHONY: kafka-produce
+kafka-produce: ##@Kafka	 Produce messages to a Kafka topic (uses NAME)
+ifndef NAME
+	$(error Topic name not specified. Usage: make kafka-produce NAME=<TopicName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-console-producer.sh --broker-list $(KAFKA_BROKER) --topic $(NAME)
