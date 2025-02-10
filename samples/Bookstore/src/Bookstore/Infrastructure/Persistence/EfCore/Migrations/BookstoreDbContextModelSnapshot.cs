@@ -139,11 +139,6 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("Processed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(false);
-
                     b.Property<DateTime?>("ProcessedAt")
                         .HasColumnType("TEXT");
 

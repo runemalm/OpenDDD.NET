@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 {
     [DbContext(typeof(BookstoreDbContext))]
-    [Migration("20250206105420_Initial")]
+    [Migration("20250210171119_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -141,11 +141,6 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("Processed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("ProcessedAt")
                         .HasColumnType("TEXT");

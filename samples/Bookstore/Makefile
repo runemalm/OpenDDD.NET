@@ -32,6 +32,10 @@ KAFKA_CONTAINER := bookstore-kafka
 KAFKA_BROKER := localhost:9092
 KAFKA_ZOOKEEPER := localhost:2181
 
+POSTGRES_CONTAINER := bookstore-postgres
+POSTGRES_PORT := 5432
+POSTGRES_DB := bookstore
+
 ##########################################################################
 # CUSTOM MENU
 ##########################################################################
@@ -264,3 +268,40 @@ ifndef NAME
 	$(error Topic name not specified. Usage: make kafka-produce NAME=<TopicName>)
 endif
 	@docker exec -it $(KAFKA_CONTAINER) kafka-console-producer.sh --broker-list $(KAFKA_BROKER) --topic $(NAME)
+
+##########################################################################
+# POSTGRESQL
+##########################################################################
+
+.PHONY: postgres-start
+postgres-start: ##@PostgreSQL	 Start a PostgreSQL container
+	@docker run -d --name $(POSTGRES_CONTAINER) --network $(NETWORK) \
+	    -e POSTGRES_DB=$(POSTGRES_DB) \
+	    -e POSTGRES_USER=$(POSTGRES_USER) \
+	    -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
+	    -p $(POSTGRES_PORT):5432 postgres:latest
+	@echo "PostgreSQL started on port $(POSTGRES_PORT)."
+
+.PHONY: postgres-stop
+postgres-stop: ##@PostgreSQL	 Stop the PostgreSQL container
+	@docker stop $(POSTGRES_CONTAINER) || true
+	@echo "PostgreSQL stopped."
+
+.PHONY: postgres-clean
+postgres-clean: ##@PostgreSQL	 Remove PostgreSQL container and its volumes
+	@docker rm -f $(POSTGRES_CONTAINER) || true
+	@echo "PostgreSQL container removed."
+
+.PHONY: postgres-logs
+postgres-logs: ##@PostgreSQL	 Show PostgreSQL logs
+	@docker logs -f $(POSTGRES_CONTAINER)
+
+.PHONY: postgres-shell
+postgres-shell: ##@PostgreSQL	 Open a shell inside the PostgreSQL container
+	docker exec -it $(POSTGRES_CONTAINER) psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
+
+.PHONY: postgres-connection-strings
+postgres-connection-strings: ##@PostgreSQL    Display the connection strings for PostgreSQL
+	@echo "PostgreSQL Connection String (Key-Value/DSN): host=localhost port=$(POSTGRES_PORT) dbname=$(POSTGRES_DB) user=$(POSTGRES_USER) password=$(POSTGRES_PASSWORD)"
+	@echo "PostgreSQL Connection String (URI): postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)"
+	@echo "PostgreSQL Connection String (JDBC): jdbc:postgresql://localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?user=$(POSTGRES_USER)&password=$(POSTGRES_PASSWORD)"

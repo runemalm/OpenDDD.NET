@@ -10,12 +10,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
+// builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
+builder.Services.AddOpenDDD(builder.Configuration,
     options =>  
     {  
-        options.UseEfCore()
-               .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
-               .UseKafka()
+        options
+                .UseOpenDddPostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password")
+                // .UseEfCore()
+                // .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
+               .UseInMemoryMessaging()
+               // .UseKafka()
                .SetEventListenerGroup("Bookstore")
                .SetEventTopicTemplates(
                    "Bookstore.Domain.{EventName}",

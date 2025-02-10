@@ -65,8 +65,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     EventName = table.Column<string>(type: "TEXT", nullable: false),
                     Payload = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    ProcessedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Processed = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                    ProcessedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
