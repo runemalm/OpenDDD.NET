@@ -8,6 +8,6 @@
         public bool InfrastructureServices { get; set; } = true;
         public bool EventListeners { get; set; } = true;
         public bool EfCoreConfigurations { get; set; } = true;
-        public bool EfCoreSeeders { get; set; } = true;
+        public bool Seeders { get; set; } = true;
     }
 }

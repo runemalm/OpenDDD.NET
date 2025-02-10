@@ -9,13 +9,28 @@ namespace OpenDDD.API.Options
         public string PersistenceProvider { get; set; } = "EfCore";
         public string MessagingProvider { get; set; } = "InMemory";
         public OpenDddEfCoreOptions EfCore { get; set; } = new();
+        public OpenDddPersistenceOptions OpenDddPersistenceProvider { get; set; } = new();
         public OpenDddAutoRegisterOptions AutoRegister { get; set; } = new();
         public OpenDddEventsOptions Events { get; set; } = new();
         public OpenDddAzureServiceBusOptions AzureServiceBus { get; set; } = new();
         public OpenDddRabbitMqOptions RabbitMq { get; set; } = new();
         public OpenDddKafkaOptions Kafka { get; set; } = new();
-        
+
         // Fluent methods for configuring persistence
+        public OpenDddOptions UseOpenDddPersistence()
+        {
+            PersistenceProvider = "OpenDDD";
+            return this;
+        }
+
+        public OpenDddOptions UseOpenDddPostgres(string connectionString)
+        {
+            UseOpenDddPersistence();
+            OpenDddPersistenceProvider.Database = "Postgres";
+            OpenDddPersistenceProvider.ConnectionString = connectionString;
+            return this;
+        }
+
         public OpenDddOptions UseEfCore()
         {
             PersistenceProvider = "EfCore";
@@ -112,7 +127,7 @@ namespace OpenDDD.API.Options
             AutoRegister.InfrastructureServices = true;
             AutoRegister.EventListeners = true;
             AutoRegister.EfCoreConfigurations = true;
-            AutoRegister.EfCoreSeeders = true;
+            AutoRegister.Seeders = true;
             return this;
         }
 
@@ -124,7 +139,7 @@ namespace OpenDDD.API.Options
             AutoRegister.InfrastructureServices = false;
             AutoRegister.EventListeners = false;
             AutoRegister.EfCoreConfigurations = false;
-            AutoRegister.EfCoreSeeders = false;
+            AutoRegister.Seeders = false;
             return this;
         }
     }

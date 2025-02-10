@@ -1,90 +1,74 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using OpenDDD.Infrastructure.Persistence.EfCore.Base;
+using Microsoft.Extensions.Logging;
+using OpenDDD.Domain.Model;
+using OpenDDD.Infrastructure.Persistence.DatabaseSession;
+using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.UoW;
+using OpenDDD.Infrastructure.TransactionalOutbox;
 
 namespace OpenDDD.Infrastructure.Persistence.EfCore.UoW
 {
     public class EfCoreUnitOfWork : UnitOfWorkBase
     {
-        public readonly OpenDddDbContextBase DbContext;
-        private IDbContextTransaction? _currentTransaction;
-        private bool _isInMemoryDatabase;
+        public readonly EfCoreDatabaseSession Session;
+        private readonly bool _isInMemoryDatabase;
 
-        public EfCoreUnitOfWork(OpenDddDbContextBase dbContext)
+        public EfCoreUnitOfWork(
+            IDatabaseSession databaseSession,
+            IDomainPublisher domainPublisher,
+            IIntegrationPublisher integrationPublisher,
+            IOutboxRepository outboxRepository,
+            ILogger<EfCoreUnitOfWork> logger)
+            : base(domainPublisher, integrationPublisher, outboxRepository, logger)
         {
-            DbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            _isInMemoryDatabase = dbContext.Database.IsInMemory();
+            Session = databaseSession as EfCoreDatabaseSession 
+                ?? throw new InvalidOperationException("Invalid database session type for EfCoreUnitOfWork. Expected EfCoreDatabaseSession.");
+            
+            _isInMemoryDatabase = Session.DbContext.Database.IsInMemory();
         }
 
         protected override async Task BeginTransactionInternalAsync(CancellationToken ct)
         {
-            if (_isInMemoryDatabase)
+            if (!_isInMemoryDatabase)
             {
-                _currentTransaction = null;
-                return;
+                await Session.BeginTransactionAsync(ct);
             }
-
-            if (_currentTransaction != null)
-            {
-                throw new InvalidOperationException("A transaction is already in progress.");
-            }
-
-            _currentTransaction = await DbContext.Database.BeginTransactionAsync(ct);
         }
 
         protected override async Task CommitTransactionInternalAsync(CancellationToken ct)
         {
-            if (_isInMemoryDatabase)
-            {
-                await DbContext.SaveChangesAsync(ct);
-                return;
-            }
-
-            if (_currentTransaction == null)
-            {
-                throw new InvalidOperationException("No transaction in progress.");
-            }
-
             try
             {
-                await DbContext.SaveChangesAsync(ct);
-                await _currentTransaction.CommitAsync(ct);
+                if (!_isInMemoryDatabase)
+                {
+                    await Session.CommitTransactionAsync(ct);
+                }
             }
             finally
             {
-                DisposeTransaction();
+                await DisposeTransactionAsync();
             }
         }
 
         protected override async Task RollbackTransactionInternalAsync(CancellationToken ct)
         {
-            if (_isInMemoryDatabase)
+            if (!_isInMemoryDatabase)
             {
-                return;
-            }
-
-            if (_currentTransaction != null)
-            {
-                await _currentTransaction.RollbackAsync(ct);
-                DisposeTransaction();
+                await Session.RollbackTransactionAsync(ct);
             }
         }
 
         protected override void DisposeInternal()
         {
-            DisposeTransaction();
-            DbContext.Dispose();
+            
         }
 
-        private void DisposeTransaction()
+        private async Task DisposeTransactionAsync()
         {
             if (!_isInMemoryDatabase)
             {
-                _currentTransaction?.Dispose();
+                await Session.RollbackTransactionAsync();
             }
-
-            _currentTransaction = null;
         }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using OpenDDD.API.Attributes;
 using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
@@ -18,14 +19,23 @@ using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Events.Kafka;
 using OpenDDD.Infrastructure.Events.RabbitMq;
+using OpenDDD.Infrastructure.Persistence.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
+using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.EfCore.Seeders;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.UoW.Postgres;
+using OpenDDD.Infrastructure.Persistence.Serializers;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
+using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
 using OpenDDD.Infrastructure.Service;
 using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
+using OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.Postgres;
 
 namespace OpenDDD.API.Extensions
 {
@@ -38,26 +48,38 @@ namespace OpenDDD.API.Extensions
             Action<IServiceCollection>? configureServices = null)
             where TDbContext : OpenDddDbContextBase
         {
+            var options = new OpenDddOptions();
+            configuration.GetSection("OpenDDD").Bind(options);
+            configureOptions?.Invoke(options);
+
+            // Prevent using EF Core generic DbContext with OpenDDD persistence
+            if (options.PersistenceProvider.Equals("openddd", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Cannot use 'AddOpenDDD<TDbContext>' with OpenDDD persistence. " +
+                    "Use 'AddOpenDDD' instead without specifying a DbContext.");
+            }
+
             services.AddDbContext<TDbContext>((serviceProvider, optionsBuilder) =>
             {
-                var options = serviceProvider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var resolvedOptions = serviceProvider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
 
-                switch (options.EfCore.Database.ToLower())
+                switch (resolvedOptions.EfCore.Database.ToLower())
                 {
                     case "postgres":
-                        optionsBuilder.UseNpgsql(options.EfCore.ConnectionString);
+                        optionsBuilder.UseNpgsql(resolvedOptions.EfCore.ConnectionString);
                         break;
                     case "sqlserver":
-                        optionsBuilder.UseSqlServer(options.EfCore.ConnectionString);
+                        optionsBuilder.UseSqlServer(resolvedOptions.EfCore.ConnectionString);
                         break;
                     case "sqlite":
-                        optionsBuilder.UseSqlite(options.EfCore.ConnectionString);
+                        optionsBuilder.UseSqlite(resolvedOptions.EfCore.ConnectionString);
                         break;
                     case "inmemory":
                         optionsBuilder.UseInMemoryDatabase("OpenDDD");
                         break;
                     default:
-                        throw new InvalidOperationException($"Unsupported Database: {options.EfCore.Database}");
+                        throw new InvalidOperationException($"Unsupported Database: {resolvedOptions.EfCore.Database}");
                 }
             });
             
@@ -80,12 +102,10 @@ namespace OpenDDD.API.Extensions
             services.AddPublishing();
             services.AddStartup();
 
-            if (options.AutoRegister.Repositories) RegisterEfCoreRepositories(services);
             if (options.AutoRegister.DomainServices) RegisterDomainServices(services);
             if (options.AutoRegister.InfrastructureServices) RegisterInfrastructureServices(services);
             if (options.AutoRegister.Actions) RegisterActions(services);
             if (options.AutoRegister.EventListeners) RegisterEventListeners(services);
-            if (options.AutoRegister.EfCoreSeeders) RegisterEfCoreSeeders(services);
             
             configureServices?.Invoke(services);
 
@@ -115,7 +135,10 @@ namespace OpenDDD.API.Extensions
             switch (options.PersistenceProvider.ToLower())
             {
                 case "efcore":
-                    services.AddEfCore();
+                    services.AddEfCore(options);
+                    break;
+                case "openddd":
+                    services.AddOpenDddPersistence(options);
                     break;
                 default:
                     throw new Exception($"Unsupported PersistenceProvider: {options.PersistenceProvider}");
@@ -161,10 +184,47 @@ namespace OpenDDD.API.Extensions
             services.AddScoped<IIntegrationPublisher, IntegrationPublisher>();
         }
 
-        private static void AddEfCore(this IServiceCollection services)
+        private static void AddEfCore(this IServiceCollection services, OpenDddOptions options)
         {
             services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
             services.AddTransient<IOutboxRepository, EfCoreOutboxRepository>();
+            services.AddScoped<EfCoreDatabaseSession>();
+            services.AddScoped<IDatabaseSession>(provider => provider.GetRequiredService<EfCoreDatabaseSession>());
+            
+            if (options.AutoRegister.Repositories) RegisterEfCoreRepositories(services);
+            if (options.AutoRegister.Seeders) RegisterEfCoreSeeders(services);
+        }
+        
+        private static void AddOpenDddPersistence(this IServiceCollection services, OpenDddOptions options)
+        {
+            switch (options.OpenDddPersistenceProvider.Database.ToLower())
+            {
+                case "postgres":
+                    services.AddPostgresOpenDddPersistence(options);
+                    break;
+                default:
+                    throw new Exception($"Unsupported OpenDDD Database: {options.OpenDddPersistenceProvider.Database}");
+            }
+            
+            services.AddScoped<IAggregateSerializer, OpenDddAggregateSerializer>();
+        }
+        
+        private static void AddPostgresOpenDddPersistence(this IServiceCollection services, OpenDddOptions options)
+        {
+            services.AddScoped<PostgresDatabaseSession>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var connectionString = options.OpenDddPersistenceProvider.ConnectionString;
+                var connection = new NpgsqlConnection(connectionString);
+                return new PostgresDatabaseSession(connection);
+            });
+            services.AddScoped<IDatabaseSession>(provider => provider.GetRequiredService<PostgresDatabaseSession>());
+
+            services.AddScoped<IUnitOfWork, PostgresOpenDddUnitOfWork>();
+            services.AddScoped<IOutboxRepository, PostgresOpenDddOutboxRepository>();
+
+            if (options.AutoRegister.Repositories) RegisterOpenDddPostgresRepositories(services);
+            if (options.AutoRegister.Seeders) RegisterPostgresOpenDddSeeders(services);
         }
 
         private static void AddAzureServiceBus(this IServiceCollection services)
@@ -237,7 +297,6 @@ namespace OpenDDD.API.Extensions
         {
             var aggregateRootType = typeof(AggregateRootBase<>);
 
-            // Get all aggregate root types
             var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(t => t.IsClass && !t.IsAbstract &&
@@ -254,29 +313,76 @@ namespace OpenDDD.API.Extensions
                 // Find custom repository interfaces extending IRepository<,>
                 var customRepositoryInterface = AppDomain.CurrentDomain.GetAssemblies()
                     .SelectMany(assembly => assembly.GetTypes())
-                    .FirstOrDefault(t => t.IsInterface &&
-                                         repositoryInterfaceType.IsAssignableFrom(t));
+                    .FirstOrDefault(t => t.IsInterface && repositoryInterfaceType.IsAssignableFrom(t));
 
                 var customRepositoryImplementation = customRepositoryInterface != null
                     ? AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(assembly => assembly.GetTypes())
                         .FirstOrDefault(t => !t.IsInterface &&
                                              !t.IsAbstract &&
-                                             customRepositoryInterface.IsAssignableFrom(t))
+                                             customRepositoryInterface.IsAssignableFrom(t) &&
+                                             t.BaseType?.Name.Contains("EfCore") == true) // Ensure it's an EF Core repository
                     : null;
 
                 if (customRepositoryInterface != null && customRepositoryImplementation != null)
                 {
-                    // Register custom repository
+                    // Register custom EF Core repository
                     services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
-                    Console.WriteLine($"Registered custom repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
+                    Console.WriteLine($"Registered custom EF Core repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
                 }
                 else
                 {
-                    // Fallback to default repository
+                    // Fallback to default EF Core repository
                     var defaultRepositoryImplementationType = typeof(EfCoreRepository<,>).MakeGenericType(aggregateType, idType);
                     services.AddTransient(repositoryInterfaceType, defaultRepositoryImplementationType);
-                    Console.WriteLine($"Registered default repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
+                    Console.WriteLine($"Registered default EF Core repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
+                }
+            }
+        }
+
+        private static void RegisterOpenDddPostgresRepositories(IServiceCollection services)
+        {
+            var aggregateRootType = typeof(AggregateRootBase<>);
+
+            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(t => t.IsClass && !t.IsAbstract &&
+                            t.BaseType != null &&
+                            t.BaseType.IsGenericType &&
+                            t.BaseType.GetGenericTypeDefinition() == aggregateRootType)
+                .ToList();
+
+            foreach (var aggregateType in aggregateTypes)
+            {
+                var idType = aggregateType.BaseType!.GetGenericArguments()[0];
+                var repositoryInterfaceType = typeof(IRepository<,>).MakeGenericType(aggregateType, idType);
+
+                // Find custom repository interfaces extending IRepository<,>
+                var customRepositoryInterface = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(assembly => assembly.GetTypes())
+                    .FirstOrDefault(t => t.IsInterface && repositoryInterfaceType.IsAssignableFrom(t));
+
+                var customRepositoryImplementation = customRepositoryInterface != null
+                    ? AppDomain.CurrentDomain.GetAssemblies()
+                        .SelectMany(assembly => assembly.GetTypes())
+                        .FirstOrDefault(t => !t.IsInterface &&
+                                             !t.IsAbstract &&
+                                             customRepositoryInterface.IsAssignableFrom(t) &&
+                                             t.BaseType?.Name.Contains("PostgresOpenDdd") == true) // Ensure it's a PostgreSQL repository
+                    : null;
+
+                if (customRepositoryInterface != null && customRepositoryImplementation != null)
+                {
+                    // Register custom PostgreSQL OpenDDD repository
+                    services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
+                    Console.WriteLine($"Registered custom PostgreSQL OpenDDD repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
+                }
+                else
+                {
+                    // Fallback to default PostgreSQL OpenDDD repository
+                    var defaultRepositoryImplementationType = typeof(PostgresOpenDddRepository<,>).MakeGenericType(aggregateType, idType);
+                    services.AddTransient(repositoryInterfaceType, defaultRepositoryImplementationType);
+                    Console.WriteLine($"Registered default PostgreSQL OpenDDD repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
                 }
             }
         }
@@ -337,6 +443,20 @@ namespace OpenDDD.API.Extensions
             {
                 services.AddTransient(typeof(IEfCoreSeeder), seederType);
                 Console.WriteLine($"Registered EF Core seeder: {seederType.Name} with lifetime: Transient");
+            }
+        }
+        
+        private static void RegisterPostgresOpenDddSeeders(IServiceCollection services)
+        {
+            var seederTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsClass && !type.IsAbstract && typeof(IPostgresOpenDddSeeder).IsAssignableFrom(type))
+                .ToList();
+
+            foreach (var seederType in seederTypes)
+            {
+                services.AddTransient(typeof(IPostgresOpenDddSeeder), seederType);
+                Console.WriteLine($"Registered Postgres OpenDdd seeder: {seederType.Name} with lifetime: Transient");
             }
         }
 

@@ -1,9 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.EfCore.Seeders;
+using OpenDDD.API.Options;
+using OpenDDD.API.Extensions;
+using OpenDDD.Domain.Model.Base;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
+using Npgsql;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders;
 
 namespace OpenDDD.API.HostedServices
 {
@@ -21,44 +28,182 @@ namespace OpenDDD.API.HostedServices
 
         public Task StartupCompleted => _startupCompleted.Task;
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken ct)
         {
-            _logger.LogInformation("Starting database migration and seeding...");
+            _logger.LogInformation("Starting database initialization...");
 
             using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetService<OpenDddDbContextBase>();
+            var options = scope.ServiceProvider.GetRequiredService<OpenDddOptions>();
 
+            if (options.PersistenceProvider.Equals("efcore", StringComparison.OrdinalIgnoreCase))
+            {
+                await InitializeEfCore(scope, ct);
+            }
+            else if (options.PersistenceProvider.Equals("openddd", StringComparison.OrdinalIgnoreCase))
+            {
+                await InitializePostgres(scope, ct);
+            }
+
+            _logger.LogInformation("Database initialization completed.");
+            _startupCompleted.SetResult(true);
+        }
+
+        private async Task InitializeEfCore(IServiceScope scope, CancellationToken ct)
+        {
+            // Migrate
+            _logger.LogInformation("Applying EF Core migrations...");
+
+            var dbContext = scope.ServiceProvider.GetService<OpenDddDbContextBase>();
             if (dbContext == null)
             {
-                _logger.LogWarning("No OpenDddDbContextBase found. Skipping database initialization.");
-                _startupCompleted.SetResult(true); // Allow dependent services to start
+                _logger.LogWarning("No OpenDddDbContextBase found. Skipping EF Core migration.");
                 return;
             }
 
-            _logger.LogInformation($"Applying migrations for {dbContext.GetType().Name}...");
-            await dbContext.Database.MigrateAsync(cancellationToken);
-            _logger.LogInformation("Database is up-to-date.");
+            await dbContext.Database.MigrateAsync(ct);
+            _logger.LogInformation("EF Core migrations applied.");
 
+            // Seed
             var seeders = scope.ServiceProvider.GetServices<IEfCoreSeeder>().ToList();
             if (seeders.Any())
             {
-                _logger.LogInformation($"Executing {seeders.Count} registered seeders...");
+                _logger.LogInformation($"Executing {seeders.Count} EF Core seeders...");
                 foreach (var seeder in seeders)
                 {
                     _logger.LogInformation($"Running {seeder.GetType().Name}...");
-                    await seeder.ExecuteAsync(dbContext, cancellationToken);
+                    await seeder.ExecuteAsync(dbContext, ct);
                     _logger.LogInformation($"{seeder.GetType().Name} completed successfully.");
                 }
             }
             else
             {
-                _logger.LogInformation("No seeders registered. Skipping seeding.");
+                _logger.LogInformation("No EF Core seeders found.");
             }
-
-            _logger.LogInformation("Database setup completed.");
-            _startupCompleted.SetResult(true); // Allow other services to proceed
         }
 
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        private async Task InitializePostgres(IServiceScope scope, CancellationToken ct)
+        {
+            // Ensure tables
+            _logger.LogInformation("Ensuring PostgreSQL tables exist...");
+
+            var databaseSession = scope.ServiceProvider.GetRequiredService<PostgresDatabaseSession>();
+
+            await using var connection = databaseSession.Connection;
+            await connection.OpenAsync(ct);
+            await using var transaction = await connection.BeginTransactionAsync(ct);
+
+            await EnsurePostgresOutboxTableAsync(connection, transaction, ct);
+            await EnsurePostgresAggregateTablesAsync(connection, transaction, ct);
+            
+            await transaction.CommitAsync(ct);
+            
+            // Execute seeders
+            var seeders = scope.ServiceProvider.GetServices<IPostgresOpenDddSeeder>().ToList();
+            if (seeders.Any())
+            {
+                _logger.LogInformation($"Executing {seeders.Count} PostgreSQL OpenDDD seeders...");
+                foreach (var seeder in seeders)
+                {
+                    _logger.LogInformation($"Running {seeder.GetType().Name}...");
+                    await seeder.ExecuteAsync(databaseSession, ct);
+                    _logger.LogInformation($"{seeder.GetType().Name} completed successfully.");
+                }
+            }
+            else
+            {
+                _logger.LogInformation("No PostgreSQL OpenDDD seeders found.");
+            }
+        }
+
+        public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
+
+        private async Task EnsurePostgresOutboxTableAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken ct)
+        {
+            // Ensure Outbox Table Exists
+            const string outboxTable = "outbox_entries";
+            _logger.LogInformation($"Checking outbox table: {outboxTable}");
+
+            var outboxTableExistsQuery = $@"
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = '{outboxTable}'
+                );";
+
+            await using var checkOutboxCmd = new NpgsqlCommand(outboxTableExistsQuery, connection, transaction);
+            var outboxTableExists = (bool)(await checkOutboxCmd.ExecuteScalarAsync(ct) ?? false);
+
+            if (!outboxTableExists)
+            {
+                _logger.LogInformation($"Creating outbox table: {outboxTable}");
+
+                var createOutboxTableQuery = $@"
+                    CREATE TABLE {outboxTable} (
+                        id UUID PRIMARY KEY,
+                        event_type TEXT NOT NULL,
+                        event_name TEXT NOT NULL,
+                        payload JSONB NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                        processed_at TIMESTAMP NULL
+                    );
+                    CREATE INDEX idx_{outboxTable}_processed ON {outboxTable} (processed_at);";
+
+                await using var createOutboxCmd = new NpgsqlCommand(createOutboxTableQuery, connection, transaction);
+                await createOutboxCmd.ExecuteNonQueryAsync(ct);
+
+                _logger.LogInformation($"Outbox table {outboxTable} created.");
+            }
+        }
+
+        private async Task EnsurePostgresAggregateTablesAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken ct)
+        {
+            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .Where(t => t.IsClass && !t.IsAbstract && InheritsFromAggregateRoot(t))
+                .ToList();
+
+            foreach (var aggregateType in aggregateTypes)
+            {
+                var tableName = aggregateType.Name.ToLower().Pluralize();
+                _logger.LogInformation($"Checking table: {tableName}");
+
+                var tableExistsQuery = $@"
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = '{tableName}'
+                    );";
+
+                await using var checkCmd = new NpgsqlCommand(tableExistsQuery, connection, transaction);
+                var tableExists = (bool)(await checkCmd.ExecuteScalarAsync(ct) ?? false);
+
+                if (!tableExists)
+                {
+                    _logger.LogInformation($"Creating table: {tableName}");
+
+                    var createTableQuery = $@"
+                        CREATE TABLE {tableName} (
+                            id UUID PRIMARY KEY,
+                            data JSONB NOT NULL
+                        );
+                        CREATE INDEX idx_{tableName}_data ON {tableName} USING GIN (data);";
+
+                    await using var createCmd = new NpgsqlCommand(createTableQuery, connection, transaction);
+                    await createCmd.ExecuteNonQueryAsync(ct);
+
+                    _logger.LogInformation($"Table {tableName} created.");
+                }
+            }
+        }
+
+        private static bool InheritsFromAggregateRoot(Type type)
+        {
+            while (type != null && type != typeof(object))
+            {
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AggregateRootBase<>))
+                    return true;
+
+                type = type.BaseType!;
+            }
+            return false;
+        }
     }
 }

@@ -8,6 +8,5 @@
         public string Payload { get; set; } = null!;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? ProcessedAt { get; set; }
-        public bool Processed { get; set; } = false;
     }
 }

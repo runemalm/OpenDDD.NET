@@ -11,19 +11,14 @@ namespace OpenDDD.Infrastructure.Repository.EfCore
         where TAggregateRoot : AggregateRootBase<TId>
         where TId : notnull
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly EfCoreUnitOfWork _unitOfWork;
         protected readonly DbContext DbContext;
 
         public EfCoreRepository(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-
-            if (_unitOfWork is not EfCoreUnitOfWork efCoreUnitOfWork)
-            {
-                throw new InvalidOperationException($"The provided IUnitOfWork is not of type {nameof(EfCoreUnitOfWork)}.");
-            }
-
-            DbContext = efCoreUnitOfWork.DbContext;
+            _unitOfWork = unitOfWork as EfCoreUnitOfWork 
+                          ?? throw new InvalidOperationException("Invalid unit of work type.");
+            DbContext = _unitOfWork.Session.DbContext;
         }
 
         public async Task<TAggregateRoot?> FindAsync(TId id, CancellationToken ct)

@@ -4,6 +4,7 @@ using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
 using OpenDDD.Domain.Model;
 using OpenDDD.Domain.Model.Helpers;
+using OpenDDD.Infrastructure.Persistence.UoW;
 
 namespace OpenDDD.Infrastructure.Events.Base
 {
@@ -44,23 +45,29 @@ namespace OpenDDD.Infrastructure.Events.Base
 
             await _messagingProvider.SubscribeAsync(topic, consumerGroup, async (message, token) =>
             {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                var action = scope.ServiceProvider.GetRequiredService<TAction>();
+
                 try
                 {
                     var @event = EventSerializer.Deserialize<TEvent>(message);
                     _logger.LogInformation("Received event '{EventType}' from topic '{Topic}'.", typeof(TEvent).Name, topic);
 
-                    using var scope = _serviceScopeFactory.CreateScope();
-                    var action = scope.ServiceProvider.GetRequiredService<TAction>();
+                    await unitOfWork.StartAsync(token);
 
                     _logger.LogInformation("Executing action '{ActionType}' for event '{EventType}'.", typeof(TAction).Name, typeof(TEvent).Name);
                     
                     await HandleAsync(@event, action, token);
-                    
+
+                    await unitOfWork.CommitAsync(token);
+
                     _logger.LogInformation("Successfully processed event '{EventType}'.", typeof(TEvent).Name);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing event '{EventType}'.", typeof(TEvent).Name);
+                    _logger.LogError(ex, "Error processing event '{EventType}', rolling back transaction.", typeof(TEvent).Name);
+                    await unitOfWork.RollbackAsync(token);
                 }
             }, ct);
         }

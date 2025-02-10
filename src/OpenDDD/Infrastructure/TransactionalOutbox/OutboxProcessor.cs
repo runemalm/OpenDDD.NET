@@ -6,6 +6,7 @@ using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
 using OpenDDD.Domain.Model.Helpers;
 using OpenDDD.Infrastructure.Events;
+using OpenDDD.Infrastructure.Persistence.DatabaseSession;
 
 namespace OpenDDD.Infrastructure.TransactionalOutbox
 {
@@ -17,9 +18,9 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
         private readonly OpenDddOptions _options;
 
         public OutboxProcessor(
-            IServiceScopeFactory serviceScopeFactory, 
+            IServiceScopeFactory serviceScopeFactory,
             StartupHostedService startupService,
-            ILogger<OutboxProcessor> logger, 
+            ILogger<OutboxProcessor> logger,
             IOptions<OpenDddOptions> options)
         {
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
@@ -32,25 +33,34 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
         {
             _logger.LogInformation("Outbox Processor started.");
 
+            // Ensure database setup is complete
             _logger.LogInformation("Waiting for database setup to complete before starting outbox processing...");
             await _startupService.StartupCompleted;
             _logger.LogInformation("Database setup completed. Starting outbox processing...");
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
+            var messagingProvider = scope.ServiceProvider.GetRequiredService<IMessagingProvider>();
+
+            var databaseSession = scope.ServiceProvider.GetService<IDatabaseSession>();
+            if (databaseSession == null)
+            {
+                _logger.LogError("No valid database session found for persistence provider: {PersistenceProvider}", _options.PersistenceProvider);
+                return;
+            }
+
+            await databaseSession.OpenConnectionAsync(stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    using var scope = _serviceScopeFactory.CreateScope();
-                    var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
-                    var messagingProvider = scope.ServiceProvider.GetRequiredService<IMessagingProvider>();
-
                     var pendingEvents = await outboxRepository.GetPendingEventsAsync(stoppingToken);
 
                     foreach (var outboxEntry in pendingEvents)
                     {
                         try
                         {
-                            // Determine topic dynamically using helper
                             var topic = EventTopicHelper.DetermineTopic(outboxEntry.EventType, 
                                 outboxEntry.EventName, _options.Events, _logger);
 

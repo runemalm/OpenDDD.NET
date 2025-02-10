@@ -1,27 +1,28 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OpenDDD.Domain.Model;
 using OpenDDD.Infrastructure.Events;
-using OpenDDD.Infrastructure.Persistence.EfCore.Base;
+using OpenDDD.Infrastructure.Persistence.DatabaseSession;
+using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
 
 namespace OpenDDD.Infrastructure.TransactionalOutbox.EfCore
 {
     public class EfCoreOutboxRepository : IOutboxRepository
     {
-        private readonly OpenDddDbContextBase _dbContext;
+        private readonly EfCoreDatabaseSession _session;
 
-        public EfCoreOutboxRepository(OpenDddDbContextBase dbContext)
+        public EfCoreOutboxRepository(IDatabaseSession session)
         {
-            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            if (session is not EfCoreDatabaseSession efCoreSession)
+                throw new ArgumentException("Expected EfCoreDatabaseSession", nameof(session));
+
+            _session = efCoreSession;
         }
 
-        public async Task SaveEventAsync<TEvent>(TEvent @event, CancellationToken ct)
-            where TEvent : IEvent
+        public async Task SaveEventAsync<TEvent>(TEvent @event, CancellationToken ct) where TEvent : IEvent
         {
-            var eventClassType = @event.GetType(); 
-    
-            var serializedPayload = EventSerializer.Serialize(@event, eventClassType);
-    
-            // Determine event type and name based on convention
+            await _session.OpenConnectionAsync(ct);
+
+            var serializedPayload = EventSerializer.Serialize(@event, @event.GetType());
             var eventType = @event is IIntegrationEvent ? "Integration" : "Domain";
             var eventName = @event.GetType().Name.Replace("IntegrationEvent", "");
 
@@ -32,31 +33,33 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.EfCore
                 EventName = eventName,
                 Payload = serializedPayload,
                 CreatedAt = DateTime.UtcNow,
-                Processed = false
+                ProcessedAt = null
             };
 
-            await _dbContext.Set<OutboxEntry>().AddAsync(outboxEntry, ct);
-            await _dbContext.SaveChangesAsync(ct);
+            await _session.DbContext.Set<OutboxEntry>().AddAsync(outboxEntry, ct);
+            await _session.DbContext.SaveChangesAsync(ct);
         }
 
         public async Task<List<OutboxEntry>> GetPendingEventsAsync(CancellationToken ct)
         {
-            return await _dbContext.Set<OutboxEntry>()
-                .Where(e => !e.Processed)
+            await _session.OpenConnectionAsync(ct);
+
+            return await _session.DbContext.Set<OutboxEntry>()
+                .Where(e => e.ProcessedAt == null)
                 .OrderBy(e => e.CreatedAt)
                 .ToListAsync(ct);
         }
 
         public async Task MarkEventAsProcessedAsync(Guid eventId, CancellationToken ct)
         {
-            var entry = await _dbContext.Set<OutboxEntry>().FindAsync(new object[] { eventId }, ct);
+            await _session.OpenConnectionAsync(ct);
+
+            var entry = await _session.DbContext.Set<OutboxEntry>().FindAsync(new object[] { eventId }, ct);
 
             if (entry == null) return;
 
-            entry.Processed = true;
             entry.ProcessedAt = DateTime.UtcNow;
-
-            await _dbContext.SaveChangesAsync(ct);
+            await _session.DbContext.SaveChangesAsync(ct);
         }
     }
 }
