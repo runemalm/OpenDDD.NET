@@ -73,7 +73,7 @@ namespace OpenDDD.API.Extensions
                         optionsBuilder.UseSqlServer(resolvedOptions.SqlServer.ConnectionString);
                         break;
                     case "sqlite":
-                        optionsBuilder.UseSqlite(resolvedOptions.SqlLite.ConnectionString);
+                        optionsBuilder.UseSqlite(resolvedOptions.Sqlite.ConnectionString);
                         break;
                     case "inmemory":
                         optionsBuilder.UseInMemoryDatabase("OpenDDD");

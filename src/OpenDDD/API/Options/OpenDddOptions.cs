@@ -11,7 +11,7 @@ namespace OpenDDD.API.Options
         public string MessagingProvider { get; set; } = "InMemory";
 
         public OpenDddPostgresOptions Postgres { get; set; } = new();
-        public OpenDddSqlLiteOptions SqlLite { get; set; } = new();
+        public OpenDddSqliteOptions Sqlite { get; set; } = new();
         public OpenDddSqlServerOptions SqlServer { get; set; } = new();
         public OpenDddEventsOptions Events { get; set; } = new();
         public OpenDddAzureServiceBusOptions AzureServiceBus { get; set; } = new();
@@ -33,10 +33,10 @@ namespace OpenDDD.API.Options
             return this;
         }
 
-        public OpenDddOptions UseSqlLite(string connectionString)
+        public OpenDddOptions UseSqlite(string connectionString)
         {
-            DatabaseProvider = "SqlLite";
-            SqlLite.ConnectionString = connectionString;
+            DatabaseProvider = "SQLite";
+            Sqlite.ConnectionString = connectionString;
             return this;
         }
         
