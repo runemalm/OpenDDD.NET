@@ -1,9 +1,9 @@
 ﻿using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events;
 using OpenDDD.API.Options;
+using OpenDDD.API.HostedServices;
 using Bookstore.Application.Actions.SendWelcomeEmail;
 using Bookstore.Domain.Model.Events;
-using OpenDDD.API.HostedServices;
 
 namespace Bookstore.Application.Listeners.Domain
 {

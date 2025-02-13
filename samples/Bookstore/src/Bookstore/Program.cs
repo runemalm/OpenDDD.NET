@@ -15,13 +15,13 @@ builder.Services.AddOpenDDD(builder.Configuration,
     options =>  
     {  
         options
-                .UseOpenDddPostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password")
+                .UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password")
                 // .UseEfCore()
                 // .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
                .UseInMemoryMessaging()
                // .UseKafka()
                .SetEventListenerGroup("Bookstore")
-               .SetEventTopicTemplates(
+               .SetEventTopics(
                    "Bookstore.Domain.{EventName}",
                    "Bookstore.Interchange.{EventName}"
                 )

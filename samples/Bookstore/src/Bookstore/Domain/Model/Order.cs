@@ -11,7 +11,6 @@ namespace Bookstore.Domain.Model
         {
             CustomerId = customerId;
             LineItems = new List<LineItem>();
-            Validate();
         }
 
         public static Order Create(Guid customerId)
@@ -23,15 +22,6 @@ namespace Bookstore.Domain.Model
         {
             var lineItem = LineItem.Create(bookId, price);
             LineItems.Add(lineItem);
-        }
-
-        private void Validate()
-        {
-            if (Id == Guid.Empty)
-                throw new ArgumentException("Order ID cannot be empty.", nameof(Id));
-
-            if (CustomerId == Guid.Empty)
-                throw new ArgumentException("Customer ID cannot be empty.", nameof(CustomerId));
         }
     }
 }

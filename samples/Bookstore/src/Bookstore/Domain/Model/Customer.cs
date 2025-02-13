@@ -11,7 +11,6 @@ namespace Bookstore.Domain.Model
         {
             Name = name;
             Email = email;
-            Validate();
         }
 
         public static Customer Create(string name, string email)
@@ -22,19 +21,6 @@ namespace Bookstore.Domain.Model
         public void ChangeName(string name)
         {
             Name = name;
-            Validate();
-        }
-
-        private void Validate()
-        {
-            if (Id == Guid.Empty)
-                throw new ArgumentException("Customer ID cannot be empty.", nameof(Id));
-
-            if (string.IsNullOrWhiteSpace(Name))
-                throw new ArgumentException("Customer name cannot be empty.", nameof(Name));
-
-            if (string.IsNullOrWhiteSpace(Email) || !Email.Contains("@"))
-                throw new ArgumentException("Invalid email address.", nameof(Email));
         }
     }
 }

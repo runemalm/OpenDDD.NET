@@ -7,8 +7,6 @@ namespace Bookstore.Interchange.Model.Events
         public string Email { get; set; }
         public string FullName { get; set; }
 
-        public PersonUpdatedIntegrationEvent() { }
-
         public PersonUpdatedIntegrationEvent(string email, string fullName)
         {
             Email = email;
