@@ -9,5 +9,27 @@
         public bool EventListeners { get; set; } = true;
         public bool EfCoreConfigurations { get; set; } = true;
         public bool Seeders { get; set; } = true;
+
+        public void EnableAll()
+        {
+            Actions = true;
+            DomainServices = true;
+            Repositories = true;
+            InfrastructureServices = true;
+            EventListeners = true;
+            EfCoreConfigurations = true;
+            Seeders = true;
+        }
+
+        public void DisableAll()
+        {
+            Actions = false;
+            DomainServices = false;
+            Repositories = false;
+            InfrastructureServices = false;
+            EventListeners = false;
+            EfCoreConfigurations = false;
+            Seeders = false;
+        }
     }
 }

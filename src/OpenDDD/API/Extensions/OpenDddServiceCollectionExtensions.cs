@@ -64,22 +64,22 @@ namespace OpenDDD.API.Extensions
             {
                 var resolvedOptions = serviceProvider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
 
-                switch (resolvedOptions.EfCore.Database.ToLower())
+                switch (resolvedOptions.DatabaseProvider.ToLower())
                 {
                     case "postgres":
-                        optionsBuilder.UseNpgsql(resolvedOptions.EfCore.ConnectionString);
+                        optionsBuilder.UseNpgsql(resolvedOptions.Postgres.ConnectionString);
                         break;
                     case "sqlserver":
-                        optionsBuilder.UseSqlServer(resolvedOptions.EfCore.ConnectionString);
+                        optionsBuilder.UseSqlServer(resolvedOptions.SqlServer.ConnectionString);
                         break;
                     case "sqlite":
-                        optionsBuilder.UseSqlite(resolvedOptions.EfCore.ConnectionString);
+                        optionsBuilder.UseSqlite(resolvedOptions.SqlLite.ConnectionString);
                         break;
                     case "inmemory":
                         optionsBuilder.UseInMemoryDatabase("OpenDDD");
                         break;
                     default:
-                        throw new InvalidOperationException($"Unsupported Database: {resolvedOptions.EfCore.Database}");
+                        throw new InvalidOperationException($"Unsupported Database: {resolvedOptions.DatabaseProvider}");
                 }
             });
             
@@ -197,13 +197,13 @@ namespace OpenDDD.API.Extensions
         
         private static void AddOpenDddPersistence(this IServiceCollection services, OpenDddOptions options)
         {
-            switch (options.OpenDddPersistenceProvider.Database.ToLower())
+            switch (options.DatabaseProvider.ToLower())
             {
                 case "postgres":
                     services.AddPostgresOpenDddPersistence(options);
                     break;
                 default:
-                    throw new Exception($"Unsupported OpenDDD Database: {options.OpenDddPersistenceProvider.Database}");
+                    throw new Exception($"Unsupported Database Provider: {options.DatabaseProvider}");
             }
             
             services.AddScoped<IAggregateSerializer, OpenDddAggregateSerializer>();
@@ -214,7 +214,7 @@ namespace OpenDDD.API.Extensions
             services.AddScoped<PostgresDatabaseSession>(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
-                var connectionString = options.OpenDddPersistenceProvider.ConnectionString;
+                var connectionString = options.Postgres.ConnectionString;
                 var connection = new NpgsqlConnection(connectionString);
                 return new PostgresDatabaseSession(connection);
             });

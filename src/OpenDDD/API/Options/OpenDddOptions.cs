@@ -6,140 +6,110 @@ namespace OpenDDD.API.Options
 {
     public class OpenDddOptions
     {
-        public string PersistenceProvider { get; set; } = "EfCore";
+        public string PersistenceProvider { get; set; } = "OpenDdd";
+        public string DatabaseProvider { get; set; } = "Postgres";
         public string MessagingProvider { get; set; } = "InMemory";
-        public OpenDddEfCoreOptions EfCore { get; set; } = new();
-        public OpenDddPersistenceOptions OpenDddPersistenceProvider { get; set; } = new();
-        public OpenDddAutoRegisterOptions AutoRegister { get; set; } = new();
+
+        public OpenDddPostgresOptions Postgres { get; set; } = new();
+        public OpenDddSqlLiteOptions SqlLite { get; set; } = new();
+        public OpenDddSqlServerOptions SqlServer { get; set; } = new();
         public OpenDddEventsOptions Events { get; set; } = new();
         public OpenDddAzureServiceBusOptions AzureServiceBus { get; set; } = new();
         public OpenDddRabbitMqOptions RabbitMq { get; set; } = new();
         public OpenDddKafkaOptions Kafka { get; set; } = new();
+        public OpenDddAutoRegisterOptions AutoRegister { get; set; } = new();
 
-        // Fluent methods for configuring persistence
-        public OpenDddOptions UseOpenDddPersistence()
-        {
-            PersistenceProvider = "OpenDDD";
-            return this;
-        }
-
-        public OpenDddOptions UseOpenDddPostgres(string connectionString)
-        {
-            UseOpenDddPersistence();
-            OpenDddPersistenceProvider.Database = "Postgres";
-            OpenDddPersistenceProvider.ConnectionString = connectionString;
-            return this;
-        }
-
+        // Use Methods for Persistence
         public OpenDddOptions UseEfCore()
         {
             PersistenceProvider = "EfCore";
             return this;
         }
 
-        public OpenDddOptions UseSQLite(string connectionString)
-        {
-            UseEfCore();
-            EfCore.Database = "SQLite";
-            EfCore.ConnectionString = connectionString;
-            return this;
-        }
-
         public OpenDddOptions UsePostgres(string connectionString)
         {
-            UseEfCore();
-            EfCore.Database = "Postgres";
-            EfCore.ConnectionString = connectionString;
+            DatabaseProvider = "Postgres";
+            Postgres.ConnectionString = connectionString;
             return this;
         }
 
+        public OpenDddOptions UseSqlLite(string connectionString)
+        {
+            DatabaseProvider = "SqlLite";
+            SqlLite.ConnectionString = connectionString;
+            return this;
+        }
+        
         public OpenDddOptions UseSqlServer(string connectionString)
         {
-            UseEfCore();
-            EfCore.Database = "SqlServer";
-            EfCore.ConnectionString = connectionString;
+            DatabaseProvider = "SqlServer";
+            SqlServer.ConnectionString = connectionString;
             return this;
         }
 
-        // Fluent methods for configuring messaging providers
+        // Use Methods for Messaging
         public OpenDddOptions UseInMemoryMessaging()
         {
             MessagingProvider = "InMemory";
             return this;
         }
-        
-        public OpenDddOptions UseRabbitMq(
-            string? hostName = null, 
-            int? port = null, 
-            string? username = null, 
-            string? password = null, 
-            string? virtualHost = null)
+
+        public OpenDddOptions UseRabbitMq(string hostName, int port, string username, string password, string virtualHost = "/")
         {
             MessagingProvider = "RabbitMq";
-
-            RabbitMq.HostName ??= hostName;
-            if (port.HasValue) 
+            RabbitMq = new OpenDddRabbitMqOptions
             {
-                RabbitMq.Port = port.Value;
-            }
-            RabbitMq.Username ??= username;
-            RabbitMq.Password ??= password;
-            RabbitMq.VirtualHost ??= virtualHost;
-
+                HostName = hostName,
+                Port = port,
+                Username = username,
+                Password = password,
+                VirtualHost = virtualHost
+            };
             return this;
         }
 
-        public OpenDddOptions UseKafka(string? bootstrapServers = null)
+        public OpenDddOptions UseKafka(string bootstrapServers)
         {
             MessagingProvider = "Kafka";
-            Kafka.BootstrapServers ??= bootstrapServers;
+            Kafka = new OpenDddKafkaOptions { BootstrapServers = bootstrapServers };
             return this;
         }
 
         public OpenDddOptions UseAzureServiceBus(string connectionString, bool autoCreateTopics = true)
         {
             MessagingProvider = "AzureServiceBus";
-            AzureServiceBus.ConnectionString = connectionString;
-            AzureServiceBus.AutoCreateTopics = autoCreateTopics;
+            AzureServiceBus = new OpenDddAzureServiceBusOptions
+            {
+                ConnectionString = connectionString,
+                AutoCreateTopics = autoCreateTopics
+            };
             return this;
         }
 
-        // Fluent methods for event configuration
+        // Event Configuration
         public OpenDddOptions SetEventListenerGroup(string group)
         {
             Events.ListenerGroup = group;
             return this;
         }
 
-        public OpenDddOptions SetEventTopicTemplates(string domainEventTopicTemplate, string integrationEventTopicTemplate)
+        public OpenDddOptions SetEventTopics(string domainEventTemplate, string integrationEventTemplate)
         {
-            Events.DomainEventTopicTemplate = domainEventTopicTemplate;
-            Events.IntegrationEventTopicTemplate = integrationEventTopicTemplate;
+            Events.DomainEventTopicTemplate = domainEventTemplate;
+            Events.IntegrationEventTopicTemplate = integrationEventTemplate;
             return this;
         }
 
-        // Fluent methods for auto-registration settings
+        // Auto-Registration Configuration
         public OpenDddOptions EnableAutoRegistration()
         {
-            AutoRegister.Actions = true;
-            AutoRegister.DomainServices = true;
-            AutoRegister.Repositories = true;
-            AutoRegister.InfrastructureServices = true;
-            AutoRegister.EventListeners = true;
-            AutoRegister.EfCoreConfigurations = true;
-            AutoRegister.Seeders = true;
+            AutoRegister.EnableAll();
             return this;
         }
 
         public OpenDddOptions DisableAutoRegistration()
         {
-            AutoRegister.Actions = false;
-            AutoRegister.DomainServices = false;
-            AutoRegister.Repositories = false;
-            AutoRegister.InfrastructureServices = false;
-            AutoRegister.EventListeners = false;
-            AutoRegister.EfCoreConfigurations = false;
-            AutoRegister.Seeders = false;
+            AutoRegister.DisableAll();
             return this;
         }
     }
