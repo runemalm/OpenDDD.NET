@@ -8,448 +8,463 @@
 Overview
 ########
 
-OpenDDD.NET provides a set of **building blocks** to help structure applications using **Domain-Driven Design (DDD)**.  
+OpenDDD.NET provides implementations of the tactical design **building blocks** used in **Domain-Driven Design (DDD)**.  
 Each block serves a specific purpose in organizing business logic, enforcing boundaries, and maintaining consistency.
 
-.. _bb-aggregates:
+.. _building-blocks-aggregates:
 
 ##########
 Aggregates
 ##########
 
-An **Aggregate** is a cluster of related domain objects that are treated as a single unit.  
-It ensures **data integrity** by enforcing business rules and encapsulating state changes.
+An **aggregate** is a cluster of domain objects that are treated as a single unit. OpenDDD.NET provides implementations for **Aggregate Roots, Entities, and Value Objects** to maintain consistency and encapsulation.
 
-Each aggregate has a single **Aggregate Root**, which is the only entry point for modifications.  
-All external interactions must go through the aggregate root.
+Aggregate Root
+--------------
 
-In OpenDDD.NET, aggregate roots subclass ``AggregateRootBase<TId>``.
-
-.. code-block:: csharp
-
-    public class Order : AggregateRootBase<Guid>
-    {
-        public string CustomerName { get; private set; }
-        public List<OrderItem> Items { get; private set; } = new();
-
-        public Order(Guid id, string customerName) : base(id)
-        {
-            CustomerName = customerName;
-        }
-
-        public void AddItem(OrderItem item)
-        {
-            Items.Add(item);
-        }
-    }
-
-.. _bb-entities:
-
-########
-Entities
-########
-
-An **Entity** is a domain object with a unique identity that persists throughout its lifecycle.  
-Entities typically belong to an aggregate and are referenced by their **ID**.
-
-In OpenDDD.NET, entities subclass ``EntityBase<TId>``.
+An **Aggregate Root** is the entry point to an aggregate. It enforces invariants and ensures that all modifications go through it.
 
 .. code-block:: csharp
 
-    public class Product : EntityBase<Guid>
-    {
-        public string Name { get; private set; }
+    using OpenDDD.Domain.Model.Base;
 
-        public Product(Guid id, string name) : base(id)
+    namespace Bookstore.Domain.Model
+    {
+        public class Order : AggregateRootBase<Guid>
         {
-            Name = name;
+            public Guid CustomerId { get; private set; }
+            public ICollection<LineItem> LineItems { get; private set; }
+
+            private Order(Guid id, Guid customerId) : base(id)
+            {
+                CustomerId = customerId;
+                LineItems = new List<LineItem>();
+            }
+
+            public static Order Create(Guid customerId)
+            {
+                return new Order(Guid.NewGuid(), customerId);
+            }
+
+            public void AddLineItem(Guid bookId, float price)
+            {
+                var lineItem = LineItem.Create(bookId, price);
+                LineItems.Add(lineItem);
+            }
         }
     }
 
-.. _bb-value-objects:
+Entity
+------
 
-#############
-Value Objects
-#############
-
-A **Value Object** represents a domain concept that is **immutable** and **defined by its values**  
-rather than an identity. Two value objects are considered equal if their properties have the same values.
-
-In OpenDDD.NET, value objects implement the ``IValueObject`` marker interface.
+An **Entity** has a unique identity within an aggregate and a lifecycle managed by its Aggregate Root.
 
 .. code-block:: csharp
 
-    public class Money : IValueObject
-    {
-        public decimal Amount { get; }
-        public string Currency { get; }
+    using OpenDDD.Domain.Model.Base;
 
-        public Money(decimal amount, string currency)
+    namespace Bookstore.Domain.Model
+    {
+        public class LineItem : EntityBase<Guid>
         {
-            Amount = amount;
-            Currency = currency;
+            public Guid BookId { get; private set; }
+            public float Price { get; private set; }
+
+            private LineItem(Guid id, Guid bookId, float price) : base(id)
+            {
+                BookId = bookId;
+                Price = price;
+            }
+
+            public static LineItem Create(Guid bookId, float price)
+            {
+                return new LineItem(Guid.NewGuid(), bookId, price);
+            }
         }
     }
 
-.. _bb-repositories:
+Value Object
+------------
+
+A **Value Object** represents a concept with no unique identity. They are immutable and define attributes.
+
+.. code-block:: csharp
+
+    using OpenDDD.Domain.Model.Base;
+
+    namespace Bookstore.Domain.Model
+    {
+        public class Money : IValueObject
+        {
+            public decimal Amount { get; }
+            public string Currency { get; }
+
+            public Money(decimal amount, string currency)
+            {
+                Amount = amount;
+                Currency = currency;
+            }
+        }
+    }
+
+.. _building-blocks-repositories:
 
 ############
 Repositories
 ############
 
-A **Repository** provides an abstraction for accessing and persisting aggregates.  
-It acts as a collection-like interface for retrieving and storing **aggregates**, keeping the domain logic independent of the database.
+Repositories provide a **collection-like interface** for retrieving and persisting aggregates. All repositories implement `IRepository<TAggregateRoot, TId>`, ensuring a **consistent API** and **clear naming conventions**. Aggregates are stored as **serialized JSON documents** in the configured database.
 
-------------------
-Using Repositories
-------------------
+IRepository<TAggregateRoot, TId>
+--------------------------------
 
-In OpenDDD.NET, repositories are implemented by subclassing a **base repository class**.  
-The base class used depends on the configured **persistence provider**.
-
-Currently, OpenDDD.NET supports **Entity Framework Core (EF Core)**,  
-so repositories should subclass ``EfCoreRepository<TAggregateRoot, TId>``.
+All repositories implement `IRepository<TAggregateRoot, TId>`, which provides standard data access methods:
 
 .. code-block:: csharp
 
-    public class EfCoreOrderRepository : EfCoreRepository<Order, Guid>, IOrderRepository
+    using System.Linq.Expressions;
+
+    namespace OpenDDD.Domain.Model
     {
-        public EfCoreOrderRepository(IUnitOfWork unitOfWork) : base(unitOfWork) { }
-    }
-
-If no custom repository implementation is provided, OpenDDD.NET will **auto-register** a generic repository.  
-You can inject it using the ``IRepository<TAggregateRoot, TId>`` interface.
-
-.. code-block:: csharp
-
-    public class PlaceOrderAction : IAction<PlaceOrderCommand, Guid>
-    {
-        private readonly IRepository<Order, Guid> _orderRepository;
-
-        public PlaceOrderAction(IRepository<Order, Guid> orderRepository)
+        public interface IRepository<TAggregateRoot, in TId> 
+            where TAggregateRoot : IAggregateRoot<TId>
+            where TId : notnull
         {
-            _orderRepository = orderRepository;
-        }
-
-        public async Task<Guid> ExecuteAsync(PlaceOrderCommand command, CancellationToken ct)
-        {
-            var order = new Order(Guid.NewGuid(), command.CustomerName);
-            await _orderRepository.SaveAsync(order, ct);
-            return order.Id;
+            Task<TAggregateRoot> GetAsync(TId id, CancellationToken ct);
+            Task<TAggregateRoot?> FindAsync(TId id, CancellationToken ct);
+            Task<IEnumerable<TAggregateRoot>> FindWithAsync(Expression<Func<TAggregateRoot, bool>> filterExpression, CancellationToken ct);
+            Task<IEnumerable<TAggregateRoot>> FindAllAsync(CancellationToken ct);
+            Task SaveAsync(TAggregateRoot aggregateRoot, CancellationToken ct);
+            Task DeleteAsync(TAggregateRoot aggregateRoot, CancellationToken ct);
         }
     }
 
-------------------
-Repository Methods
-------------------
+Method Naming Conventions
+-------------------------
 
-Repositories follow a **naming convention** for retrieving and modifying aggregates:
+All repositories follow a **consistent naming convention** for data retrieval:
 
-- **GetAsync(id)** → Retrieves a single aggregate by ID.  
-  Throws an exception if **none or multiple** exist.  
-- **FindAsync(id)** → Finds an aggregate by ID, returning `null` if not found.  
-- **FindWithAsync(filter)** → Finds aggregates matching a **LINQ filter**.  
-- **FindAllAsync()** → Retrieves **all aggregates** of the given type.  
-- **SaveAsync(aggregate)** → **Upserts** an aggregate (creates or updates).  
-- **DeleteAsync(aggregate)** → Deletes the given aggregate.
+.. list-table::
+   :header-rows: 1
 
-Example usage:
+   * - **Method**
+     - **Description**
+     - **Behavior**
+   * - **GetAsync**
+     - Retrieves a single aggregate by Id
+     - **Throws** if not found
+   * - **FindAsync**
+     - Retrieves a single aggregate by Id
+     - Returns `null` if not found
+   * - **FindBy**
+     - Retrieves a single aggregate by a specific field
+     - **Throws** if multiple exist
+   * - **FindWithAsync**
+     - Retrieves multiple aggregates matching a filter
+     - Returns a **collection**
+   * - **FindAllAsync**
+     - Retrieves all aggregates of a type
+     - Returns a **collection**
+   * - **SaveAsync**
+     - Saves an aggregate
+     - Inserts if new, updates if existing
+   * - **DeleteAsync**
+     - Deletes an aggregate
+     - Removes it from the repository
+
+.. note::  
+
+    The terms **Get**, **Find**, **By**, and **With** have specific semantics in method names.
+
+Auto-Registration
+-----------------
+
+Repositories are **auto-registered** with `IRepository<TAggregateRoot, TId>`. If a custom repository interface exists (e.g., `ICustomerRepository`), it is registered with its corresponding implementation instead.
+
+**Example: Default Auto-Registered Repository**
+
+- `IRepository<Guid, Customer>` → `PostgresOpenDddRepository<Guid, Customer>`
+
+**Example: Custom Auto-Registered Repository**
+
+- `ICustomerRepository` → `PostgresOpenDddCustomerRepository`
+
+Auto-registration can be **disabled in the configuration**.
+
+Create a Custom Repository
+--------------------------
+
+If an aggregate requires additional query methods, create a **custom repository** by subclassing a base repository class for your configured database- and persistence provider.
+
+**Example: Custom PostgreSQL Repository**
 
 .. code-block:: csharp
 
-    var order = await _orderRepository.GetAsync(orderId, ct);
-    var orders = await _orderRepository.FindWithAsync(o => o.CustomerName == "Alice", ct);
-    await _orderRepository.SaveAsync(new Order(Guid.NewGuid(), "Alice"), ct);
+    using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
+    using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
+    using OpenDDD.Infrastructure.Persistence.Serializers;
+    using Npgsql;
+    using Bookstore.Domain.Model;
 
-.. _bb-actions:
-
-#######
-Actions
-#######
-
-An **Action** is an application-layer component responsible for executing business logic in response to a **Command**.  
-Actions coordinate domain operations but do not contain domain rules themselves.
-
-------------------
-Defining an Action
-------------------
-
-Actions in OpenDDD.NET subclass ``IAction<TCommand, TResponse>`` 
-where `TCommand` represents the **input** and `TResponse` represents the **output**.
-
-.. code-block:: csharp
-
-    public class PlaceOrderAction : IAction<PlaceOrderCommand, Guid>
+    namespace Bookstore.Infrastructure.Repositories.OpenDdd.Postgres
     {
-        private readonly IRepository<Order, Guid> _orderRepository;
-
-        public PlaceOrderAction(IRepository<Order, Guid> orderRepository)
+        public class PostgresOpenDddCustomerRepository : PostgresOpenDddRepository<Customer, Guid>, ICustomerRepository
         {
-            _orderRepository = orderRepository;
-        }
+            private readonly ILogger<PostgresOpenDddCustomerRepository> _logger;
 
-        public async Task<Guid> ExecuteAsync(PlaceOrderCommand command, CancellationToken ct)
-        {
-            var order = new Order(Guid.NewGuid(), command.CustomerName);
-            await _orderRepository.SaveAsync(order, ct);
-            return order.Id;
+            public PostgresOpenDddCustomerRepository(
+                PostgresDatabaseSession session, 
+                IAggregateSerializer serializer) 
+                : base(session, serializer)
+            {
+                
+            }
+
+            public async Task<Customer> GetByEmailAsync(string email, CancellationToken ct)
+            {
+                // Implement your additional method..
+            }
         }
     }
 
-----------------------
-Automatic Registration
-----------------------
+Using EF Core
+-------------
 
-By default, OpenDDD.NET **automatically registers all Actions** for dependency injection,  
-so they can be injected where needed.
+By default, OpenDDD.NET uses its **custom persistence provider**, which follows a **document storage model**. This aligns closely with **DDD aggregate patterns** (including Alistair Cockburn’s **Entity pattern**) by storing aggregates **as serialized JSON documents**.
 
-To disable or modify this behavior, refer to the :ref:`configuration settings <config-auto-registration>`.
+If you for some reason need **relational storage**, you can configure **EF Core** as the persistence provider. In that case, you must define:
 
-.. _bb-commands:
+- A subclass of `OpenDddDbContextBase`
+- Subclasses of `EfAggregateRootConfigurationBase` for aggregates
+- Subclasses of `EfEntityConfigurationBase` for entities
+- Subclasses of `EfCoreRepository<TAggregateRoot, TId>` for custom repositories
+- Use the `AddOpenDdd<TDbContext>` overload when registering OpenDDD to specify your custom DbContext
 
-########
+See the **Bookstore sample project** for examples.
+
+Summary
+-------
+
+- Repositories implement `IRepository<TAggregateRoot, TId>`, ensuring a **consistent API**.
+- Aggregates are stored as **JSON documents** in the configured database.
+- **Auto-registration** registers repositories unless overridden by a custom interface.
+- **Custom repositories** can be created by subclassing a base repository class.
+- **EF Core** can be used instead by configuring it properly.
+
+.. _building-blocks-actions-and-commands:
+
+##################
+Actions & Commands
+##################
+
+OpenDDD.NET separates **commands** (which represent an intent) from **actions** (which execute behavior). Actions drive domain logic by delegating to **aggregate roots** and/or **domain services**.
+
 Commands
-########
+--------
 
-A **Command** represents a request to perform an operation on an **Aggregate**.  
-Commands should express **intent** and clearly indicate the desired state change within the domain.  
-They contain only **data** and should not implement business logic.
+A **Command** represents an explicit request to perform an operation. Commands do not return values and should not contain business logic.
 
 .. code-block:: csharp
 
-    public class PlaceOrderCommand : ICommand
-    {
-        public string CustomerName { get; }
+    using OpenDDD.Application;
 
-        public PlaceOrderCommand(string customerName)
+    namespace Bookstore.Application.Actions.RegisterCustomer
+    {
+        public class RegisterCustomerCommand : ICommand
         {
-            CustomerName = customerName;
+            public string Name { get; set; }
+            public string Email { get; set; }
+
+            public RegisterCustomerCommand(string name, string email)
+            {
+                Name = name;
+                Email = email;
+            }
         }
     }
 
-Commands are processed by **Actions**, which apply the requested change to the appropriate aggregate.
+Actions
+-------
 
-In OpenDDD.NET, commands implement the ``ICommand`` marker interface.
+An **Action** handles a command by executing the application logic. Actions are stateless and encapsulate high-level operations.
 
-.. _bb-domain-events:
+.. code-block:: csharp
 
-#############
+    using OpenDDD.Application;
+    using Bookstore.Domain.Model;
+    using Bookstore.Domain.Service;
+
+    namespace Bookstore.Application.Actions.RegisterCustomer
+    {
+        public class RegisterCustomerAction : IAction<RegisterCustomerCommand, Customer>
+        {
+            private readonly ICustomerDomainService _customerDomainService;
+
+            public RegisterCustomerAction(ICustomerDomainService customerDomainService)
+            {
+                _customerDomainService = customerDomainService;
+            }
+
+            public async Task<Customer> ExecuteAsync(RegisterCustomerCommand command, CancellationToken ct)
+            {
+                var customer = await _customerDomainService.RegisterAsync(command.Name, command.Email, ct);
+                return customer;
+            }
+        }
+    }
+
+.. _building-blocks-events:
+
+######
+Events
+######
+
+Events capture **state changes** in the domain and enable **decoupled communication**. OpenDDD.NET supports **Domain Events** and **Integration Events**.
+
 Domain Events
-#############
+-------------
 
-A **Domain Event** represents a significant change within an aggregate or domain service.  
-They allow different parts of the domain to react asynchronously while maintaining **strong consistency** within an aggregate.
+A **Domain Event** represents a significant change within the domain.
 
-In OpenDDD.NET, domain events implement the ``IDomainEvent`` marker interface.
-
-------------------------
-Publishing Domain Events
-------------------------
-
-Domain events can be published from **aggregate roots** and **domain services**.
-
-**1. From an Aggregate Root**  
-To publish a domain event from an aggregate, pass the **domain event publisher** as an argument to the aggregate method.
+**Defining a Domain Event:**
 
 .. code-block:: csharp
 
-    public class Customer : AggregateRootBase<Guid>
+    using OpenDDD.Domain.Model;
+
+    public class CustomerRegistered : IDomainEvent
     {
-        public string Name { get; private set; }
-        public string Email { get; private set; }
+        public Guid CustomerId { get; }
+        public string Email { get; }
 
-        private Customer() : base(Guid.Empty) { }
-
-        public static Customer Register(string name, string email, IDomainPublisher domainPublisher)
+        public CustomerRegistered(Guid customerId, string email)
         {
-            var customer = new Customer(Guid.NewGuid(), name, email);
-            var domainEvent = new CustomerRegistered(customer.Id, customer.Name, customer.Email, DateTime.UtcNow);
-            domainPublisher.PublishAsync(domainEvent, CancellationToken.None);
-            return customer;
+            CustomerId = customerId;
+            Email = email;
         }
     }
 
-**2. From a Domain Service**  
-To publish a domain event from a domain service, inject ``IDomainPublisher`` into the constructor.
-
-.. code-block:: csharp
-
-    public class CustomerDomainService : ICustomerDomainService
-    {
-        private readonly ICustomerRepository _customerRepository;
-        private readonly IDomainPublisher _domainPublisher;
-
-        public CustomerDomainService(ICustomerRepository customerRepository, IDomainPublisher domainPublisher)
-        {
-            _customerRepository = customerRepository;
-            _domainPublisher = domainPublisher;
-        }
-
-        public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
-        {
-            var customer = new Customer(Guid.NewGuid(), name, email);
-            await _customerRepository.SaveAsync(customer, ct);
-
-            var domainEvent = new CustomerRegistered(customer.Id, customer.Name, customer.Email, DateTime.UtcNow);
-            await _domainPublisher.PublishAsync(domainEvent, ct);
-
-            return customer;
-        }
-    }
-
--------------------------
-Event Delivery and Topics
--------------------------
-
-Domain events are **published on topics** according to **configured naming conventions**  
-and are delivered using the **configured messaging provider**.
-
-The supported messaging providers are:
-
-- **In-Memory** (for local event handling)
-- **Azure Service Bus** (for distributed event processing)
-
-By default, topics are named using the format:
-
-.. code-block:: json
-
-    "Events": {
-      "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}"
-    }
-
-For businesses with **multiple bounded contexts**, replace `"Domain"` with the bounded context name:
-
-.. code-block:: json
-
-    "Events": {
-      "DomainEventTopicTemplate": "Bookstore.Customer.{EventName}"
-    }
-
-For more details, see :ref:`Messaging Settings <config-messaging>`.
-
-.. _bb-integration-events:
-
-##################
 Integration Events
-##################
+------------------
 
-An **Integration Event** represents a **business event** that is intended for communication **across bounded contexts**.  
-Unlike domain events, which model **internal state changes**, integration events are part of the **Interchange bounded context**  
-and are used to notify external systems or other bounded contexts about important business events.
+An **Integration Event** notifies external bounded contexts of domain changes. It is part of your **interchange context** project.
 
-Integration events implement the ``IIntegrationEvent`` marker interface.
-
------------------------------
-Publishing Integration Events
------------------------------
-
-Integration events can be published from **aggregate roots** and **domain services**, just like domain events.
-
-**1. From an Aggregate Root**  
-To publish an integration event from an aggregate, pass the **integration event publisher** as an argument to the aggregate method.
+**Defining an Integration Event:**
 
 .. code-block:: csharp
 
-    public class Order : AggregateRootBase<Guid>
+    using OpenDDD.Domain.Model;
+
+    namespace Bookstore.Interchange.Model.Events
     {
-        public string CustomerName { get; private set; }
-
-        private Order() : base(Guid.Empty) { }
-
-        public static Order Place(Guid orderId, string customerName, IIntegrationPublisher integrationPublisher)
+        public class PersonUpdatedIntegrationEvent : IIntegrationEvent
         {
-            var order = new Order(orderId, customerName);
-            var integrationEvent = new OrderCreatedIntegrationEvent(order.Id, order.CustomerName);
-            integrationPublisher.PublishAsync(integrationEvent, CancellationToken.None);
-            return order;
+            public string Email { get; set; }
+            public string FullName { get; set; }
+
+            public PersonUpdatedIntegrationEvent(string email, string fullName)
+            {
+                Email = email;
+                FullName = fullName;
+            }
         }
     }
 
-**2. From a Domain Service**  
-To publish an integration event from a domain service, inject ``IIntegrationPublisher`` into the constructor.
+Publishing Events
+-----------------
+
+Events are published using `IDomainPublisher` (for domain events) or `IIntegrationPublisher` (for integration events).
+
+**Publishing a Domain Event from a Domain Service:**
 
 .. code-block:: csharp
 
-    public class CustomerDomainService : ICustomerDomainService
+    using OpenDDD.Domain.Model;
+    using Bookstore.Domain.Model;
+    using Bookstore.Domain.Model.Events;
+
+    namespace Bookstore.Domain.Service
     {
-        private readonly ICustomerRepository _customerRepository;
-        private readonly IDomainPublisher _domainPublisher;
-        private readonly IIntegrationPublisher _integrationPublisher;
-
-        public CustomerDomainService(
-            ICustomerRepository customerRepository, 
-            IDomainPublisher domainPublisher, 
-            IIntegrationPublisher integrationPublisher)
+        public class CustomerDomainService : ICustomerDomainService
         {
-            _customerRepository = customerRepository;
-            _domainPublisher = domainPublisher;
-            _integrationPublisher = integrationPublisher;
-        }
+            private readonly ICustomerRepository _customerRepository;
+            private readonly IDomainPublisher _domainPublisher;
 
-        public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
-        {
-            var customer = new Customer(Guid.NewGuid(), name, email);
-            await _customerRepository.SaveAsync(customer, ct);
+            public CustomerDomainService(ICustomerRepository customerRepository, IDomainPublisher domainPublisher)
+            {
+                _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
+                _domainPublisher = domainPublisher ?? throw new ArgumentNullException(nameof(domainPublisher));
+            }
 
-            var domainEvent = new CustomerRegistered(customer.Id, customer.Name, customer.Email, DateTime.UtcNow);
-            await _domainPublisher.PublishAsync(domainEvent, ct);
+            public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new ArgumentException("Customer name cannot be empty.", nameof(name));
 
-            var integrationEvent = new PersonUpdatedIntegrationEvent(customer.Email, customer.Name);
-            await _integrationPublisher.PublishAsync(integrationEvent, ct);
+                if (string.IsNullOrWhiteSpace(email))
+                    throw new ArgumentException("Customer email cannot be empty.", nameof(email));
+                
+                var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
-            return customer;
+                if (existingCustomer != null)
+                    throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+
+                var newCustomer = Customer.Create(name, email);
+
+                await _customerRepository.SaveAsync(newCustomer, ct);
+
+                var domainEvent = new CustomerRegistered(newCustomer.Id, newCustomer.Name, newCustomer.Email, DateTime.UtcNow);
+                await _domainPublisher.PublishAsync(domainEvent, ct);
+
+                return newCustomer;
+            }
         }
     }
 
--------------------------
-Event Delivery and Topics
--------------------------
+**Publishing a Domain Event from an Aggregate:**
 
-Integration events are **published on topics** configured in `appsettings.json`  
-and are delivered using the **configured messaging provider**.
+.. code-block:: csharp
 
-Since integration events always belong to the **Interchange bounded context**,  
-their topic naming convention always includes `"Interchange"` as the middle part:
+    using OpenDDD.Domain.Model;
+    using OpenDDD.Domain.Model.Base;
+    using Bookstore.Domain.Model.Events;
 
-.. code-block:: json
+    namespace Bookstore.Domain.Model
+    {
+        public class Customer : AggregateRootBase<Guid>
+        {
+            public string Name { get; private set; }
+            public string Email { get; private set; }
 
-    "Events": {
-      "IntegrationEventTopicTemplate": "Bookstore.Interchange.{EventName}"
+            // ...
+
+            public Task ChangeNameAsync(string name, IDomainPublisher domainPublisher, CancellationToken ct)
+            {
+                Name = name;
+                
+                var domainEvent = new CustomerChangedName(Id, Name);
+                await domainPublisher.PublishAsync(domainEvent, ct);
+            }
+        }
     }
 
-This is unlike domain event topics which always have either `"Domain"` (single bounded context) or the name of the **bounded context** as middle part:
+**Publishing an Integration Event:**
 
-The supported messaging providers are:
+Follow the same procedure to publish an integration event as you publish a domain event, but use the *IIntegrationPublisher* instead of the *IDomainPublisher*.
 
-- **In-Memory** (for simple event propagation within the same process)
-- **Azure Service Bus** (for event-driven communication across distributed services)
+Listening to Events
+-------------------
 
-For messaging setup and configuration, see :ref:`Messaging Settings <config-messaging>`.
+Event listeners handle **asynchronous reactions** to events. Derive from the base listener class and implement the ``HandleAsync`` method. This method must create the command corresponding to the **intent** of the reaction that you create by invoking the corresponding **action**.
 
-.. _bb-event-listeners:
-
-###############
-Event Listeners
-###############
-
-Event listeners in OpenDDD.NET handle **domain events** and **integration events** asynchronously.  
-They decouple event processing by allowing different parts of the system to react to changes  
-without direct dependencies.
-
-------------------------------
-Implementing an Event Listener
-------------------------------
-
-To create an event listener, subclass ``EventListenerBase<TEvent, TAction>``  
-and implement the `HandleAsync` method to execute the associated **action**.
-
-Example: A listener that sends a welcome email when a **CustomerRegistered** domain event is received.
+**Defining an Event Listener:**
 
 .. code-block:: csharp
 
     using OpenDDD.Infrastructure.Events.Base;
-    using OpenDDD.API.Options;
     using OpenDDD.Infrastructure.Events;
+    using OpenDDD.API.Options;
+    using OpenDDD.API.HostedServices;
     using Bookstore.Application.Actions.SendWelcomeEmail;
     using Bookstore.Domain.Model.Events;
 
@@ -461,8 +476,9 @@ Example: A listener that sends a welcome email when a **CustomerRegistered** dom
                 IMessagingProvider messagingProvider,
                 OpenDddOptions options,
                 IServiceScopeFactory serviceScopeFactory,
+                StartupHostedService startupService,
                 ILogger<CustomerRegisteredListener> logger)
-                : base(messagingProvider, options, serviceScopeFactory, logger) { }
+                : base(messagingProvider, options, serviceScopeFactory, startupService, logger) { }
 
             public override async Task HandleAsync(CustomerRegistered domainEvent, SendWelcomeEmailAction action, CancellationToken ct)
             {
@@ -472,38 +488,70 @@ Example: A listener that sends a welcome email when a **CustomerRegistered** dom
         }
     }
 
-Both **domain event listeners** and **integration event listeners** follow the same structure,  
-only differing in the event type they handle.
+Topic Configuration
+-------------------
 
-.. _bb-domain-services:
+Event topics can be customized in `OpenDddOptions`:
+
+.. code-block:: json
+
+    "OpenDDD": {
+        "Events": {
+            "DomainEventTopic": "Bookstore.Domain.{EventName}",
+            "IntegrationEventTopic": "Bookstore.Interchange.{EventName}",
+            "ListenerGroup": "Default"
+        }
+    }
+
+If you only have one bounded context, use *Domain* as middle part of the domain event topic template. If you have multiple contexts, use the name of the bounded context instead.
+
+Example: Domain event topic templates when multiple bounded contexts
+
+- Bookstore.Customer.CustomerCreated
+- Bookstore.Order.OrderPlaced
+- Bookstore.Tracking.TrackingUpdated
+
+A **listener group** defines a set of **competing consumers** for a topic. Each event is delivered **at least once** to the group, with only one instance in the group processing it. Multiple listener groups can receive the same event independently.
+
+Summary
+-------
+
+- **Domain Events** capture internal changes within aggregates.
+- **Integration Events** notify external systems of changes.
+- **Publishers** (`IDomainPublisher`, `IIntegrationPublisher`) send events.
+- **Listeners** react to events asynchronously.
+- **Topics** are configurable in `OpenDddOptions`.
+
+.. _building-blocks-domain-services:
 
 ###############
 Domain Services
 ###############
 
-A **Domain Service** encapsulates domain logic that does not naturally belong to a single aggregate.  
-It is used when an operation requires **business logic that spans multiple aggregates**  
-or depends on **domain-wide policies** that cannot be placed inside a single aggregate.  
+A **Domain Service** provides domain-specific logic that **does not fit within an aggregate**. Unlike application services (actions), domain services belong to the **domain layer** and contain **pure business logic**.
 
-A domain service must **only update one aggregate per operation**.
-If changes to multiple aggregates are needed, it should **coordinate workflows using domain events** to maintain **eventual consistency** across aggregates.
+Domain services are typically used when:  
 
-- The domain service can **query multiple aggregates** to make decisions.
-- Updates to multiple aggregates should be **triggered using domain events**
-  to ensure **eventual consistency** rather than transactional consistency.
+- The logic **does not belong to an aggregate (entities or value objects)**.  
+- The operation involves **external dependencies** (e.g., repositories, external services) but is still **domain logic**.  
+- Business rules need to be **shared across multiple use cases**.  
 
-In OpenDDD.NET, domain services implement the ``IDomainService`` marker interface.  
-They are **auto-registered by default**, but this behavior can be changed in configuration.  
-See :ref:`Auto-Registration <config-general-auto-registration>` for details.  
+**Example domain service interface:**
 
------------------------------
-Implementing a Domain Service
------------------------------
+.. code-block:: csharp
 
-To define a domain service, create a class that implements ``IDomainService``  
-and encapsulates the necessary domain logic.  
+    using OpenDDD.Domain.Service;
+    using Bookstore.Domain.Model;
 
-Example: A domain service that registers a new customer.  
+    namespace Bookstore.Domain.Service
+    {
+        public interface ICustomerDomainService : IDomainService
+        {
+            Task<Customer> RegisterAsync(string name, string email, CancellationToken ct);
+        }
+    }
+
+**Implementation:**
 
 .. code-block:: csharp
 
@@ -526,139 +574,191 @@ Example: A domain service that registers a new customer.
 
             public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
             {
-                if (string.IsNullOrWhiteSpace(name))
-                    throw new ArgumentException("Customer name cannot be empty.", nameof(name));
-
-                if (string.IsNullOrWhiteSpace(email))
-                    throw new ArgumentException("Customer email cannot be empty.", nameof(email));
-
                 var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
+
                 if (existingCustomer != null)
                     throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
 
-                var customer = new Customer(Guid.NewGuid(), name, email);
-                await _customerRepository.SaveAsync(customer, ct);
+                var newCustomer = Customer.Create(name, email);
 
-                var domainEvent = new CustomerRegistered(customer.Id, customer.Name, customer.Email, DateTime.UtcNow);
+                await _customerRepository.SaveAsync(newCustomer, ct);
+
+                var domainEvent = new CustomerRegistered(newCustomer.Id, newCustomer.Name, newCustomer.Email, DateTime.UtcNow);
                 await _domainPublisher.PublishAsync(domainEvent, ct);
 
-                return customer;
+                return newCustomer;
             }
         }
     }
 
-.. _bb-infrastructure-services:
+**Key Characteristics of Domain Services:**
+
+- They contain **domain logic** but **are not part of an aggregate**.
+- They do **not manage state**; they operate on domain objects.
+- They can depend on **repositories, domain events, or external services** via ports.
+
+Domain services **should not** be used for:
+
+- Simple operations that belong to an **aggregate root**.
+- Coordinating application workflows (use **actions** instead).
+- Infrastructure concerns like logging or email (use **infrastructure services**).
+
+.. _building-blocks-infrastructure-services:
 
 #######################
 Infrastructure Services
 #######################
 
-An **Infrastructure Service** provides technical capabilities that support the application  
-but do not belong to the domain model.  
+An **Infrastructure Service** handles technical concerns that are **not part of the domain model**. These services provide access to external systems, such as databases, file storage, or system clocks.
 
-In OpenDDD.NET, infrastructure services are primarily used **internally by the framework**  
-for features like **event handling, persistence, and messaging**.  
+Unlike domain services, **infrastructure services belong to the infrastructure layer** and are typically implemented using frameworks or third-party libraries.
 
-In a typical application, port **adapters** are preferred over infrastructure services  
-for handling **external integrations**.  
-
-However, an adapter **can also be an infrastructure service**.
-By convention, OpenDDD.NET first classifies such components as **adapters** 
-but know that they could be both.
-
-In OpenDDD.NET, infrastructure services implement the ``IInfrastructureService`` marker interface.  
-They are **auto-registered by default**, but this behavior can be changed in configuration.  
-See :ref:`Auto-Registration <config-general-auto-registration>` for details.  
-
---------------------------------------
-Implementing an Infrastructure Service
---------------------------------------
-
-To define an infrastructure service, create a class that encapsulates the required functionality.  
-
-Example: A logging service used for diagnostics.  
+Example infrastructure service interface:
 
 .. code-block:: csharp
 
-    public class FileLoggerService : IInfrastructureService
+    using OpenDDD.Infrastructure.Service;
+
+    namespace Bookstore.Infrastructure.Service.FileStorage
     {
-        private readonly string _logFilePath;
-
-        public FileLoggerService(string logFilePath)
+        public interface IFileStorageService : IInfrastructureService
         {
-            _logFilePath = logFilePath;
-        }
-
-        public void Log(string message)
-        {
-            File.AppendAllText(_logFilePath, $"{DateTime.UtcNow}: {message}\n");
+            Task UploadFileAsync(string path, byte[] content, CancellationToken ct);
+            Task<byte[]> DownloadFileAsync(string path, CancellationToken ct);
         }
     }
 
-.. _bb-ports-and-adapters:
+Implementation:
+
+.. code-block:: csharp
+
+    using Microsoft.Extensions.Logging;
+
+    namespace Bookstore.Infrastructure.Service.FileStorage.Local
+    {
+        public class LocalFileStorageService : IFileStorageService
+        {
+            private readonly ILogger<LocalFileStorageService> _logger;
+
+            public LocalFileStorageService(ILogger<LocalFileStorageService> logger)
+            {
+                _logger = logger;
+            }
+
+            public async Task UploadFileAsync(string path, byte[] content, CancellationToken ct)
+            {
+                await File.WriteAllBytesAsync(path, content, ct);
+                _logger.LogInformation($"File uploaded: {path}");
+            }
+
+            public async Task<byte[]> DownloadFileAsync(string path, CancellationToken ct)
+            {
+                if (!File.Exists(path))
+                    throw new FileNotFoundException("File not found", path);
+
+                _logger.LogInformation($"File downloaded: {path}");
+                return await File.ReadAllBytesAsync(path, ct);
+            }
+        }
+    }
+
+**Key Characteristics of Infrastructure Services:**
+
+- They interact with **external systems** (e.g., file storage, system clocks, OS-level services).
+- They are **stateless** and provide reusable technical functionality.
+- They should **not contain business logic** (that belongs in domain services or aggregates).
+
+Infrastructure services **should not** be used for:
+
+- Business logic that belongs in **domain services**.
+- Application coordination (handled by **actions**).
+- External integrations that fit the **Ports & Adapters** pattern (e.g., email, payment gateways).
+
+.. _building-blocks-ports-and-adapters:
 
 ################
 Ports & Adapters
 ################
 
-The **Ports & Adapters** (Hexagonal Architecture) pattern separates the **core domain logic**  
-from **external dependencies** by defining **ports** (interfaces) and **adapters** (implementations).  
-This ensures that the domain remains **decoupled** from infrastructure concerns.
+In OpenDDD.NET, **ports** are domain-defined interfaces for **external interactions**, while **adapters** implement those ports. This ensures **external dependencies** (e.g., email, payments, cloud storage) do not leak into the domain model.
 
----------------
-Defining a Port
----------------
+Unlike **Infrastructure Services**, which handle **purely technical concerns**, **Ports & Adapters** are used when an **external interaction is part of the business domain**.
 
-A **Port** is an interface that represents an external dependency, such as messaging, databases,  
-or third-party services.
+**When to Use Ports & Adapters**
 
-In OpenDDD.NET, ports implement the ``IPort`` marker interface.
+- When integrating **external systems** that are relevant to the domain.
+- When the implementation **should be swappable** (e.g., SMTP vs. SendGrid for email).
+- When you want to **decouple the domain layer** from specific infrastructure details.
 
-Example: A port for sending emails.
+Ports
+-----
+
+A **Port** is an interface that defines how the domain interacts with an external dependency. The **domain layer depends on the port**, while the implementation is provided by an adapter.
+
+Example **Email Port**:
 
 .. code-block:: csharp
 
-    public interface IEmailPort : IPort
+    using OpenDDD.Domain.Model.Ports;
+
+    namespace Bookstore.Domain.Model.Ports
     {
-        Task SendEmailAsync(string to, string subject, string body, CancellationToken ct);
+        public interface IEmailPort : IPort
+        {
+            Task SendEmailAsync(string to, string subject, string body, CancellationToken ct);
+        }
     }
 
------------------------
-Implementing an Adapter
------------------------
+Adapters
+--------
 
-An **Adapter** is an implementation of a port that interacts with a specific technology or service.
+An **Adapter** is a concrete implementation of a **Port** that integrates with an external system.
 
-The adapter implements the relevant port interface.
-
-Example: A console-based email adapter.
+Example **SMTP Email Adapter**:
 
 .. code-block:: csharp
 
+    using Microsoft.Extensions.Options;
+    using MimeKit;
+    using MailKit.Net.Smtp;
     using Bookstore.Domain.Model.Ports;
+    using Bookstore.Infrastructure.Adapters.Smtp.Options;
 
-    public class ConsoleEmailAdapter : IEmailPort
+    namespace Bookstore.Infrastructure.Adapters.Smtp
     {
-        private readonly ILogger<ConsoleEmailAdapter> _logger;
-
-        public ConsoleEmailAdapter(ILogger<ConsoleEmailAdapter> logger)
+        public class SmtpEmailAdapter : IEmailPort
         {
-            _logger = logger;
-        }
+            private readonly ILogger<SmtpEmailAdapter> _logger;
 
-        public Task SendEmailAsync(string to, string subject, string body, CancellationToken ct)
-        {
-            _logger.LogInformation($"Sending email to {to}: {subject}\n{body}");
-            return Task.CompletedTask;
+            public SmtpEmailAdapter(ILogger<SmtpEmailAdapter> logger)
+            {
+                _logger = logger;
+            }
+
+            public Task SendEmailAsync(string to, string subject, string body, CancellationToken ct)
+            {
+                _logger.LogInformation($"Sending email via SMTP to {to}: {subject}");
+                return Task.CompletedTask; // Replace with actual SMTP implementation
+            }
         }
     }
 
-----------------------
-Registering an Adapter
-----------------------
+This allows adapters to be swapped without modifying domain logic. For example, `SendGridEmailAdapter` could replace `SmtpEmailAdapter` transparently.
 
-Adapters are registered in `Program.cs` so they can be injected into application services.
+**Summary**
 
-.. code-block:: csharp
+- **Ports** define business-relevant external interactions.
+- **Adapters** implement ports and provide infrastructure details.
+- **Use Ports & Adapters** for external dependencies that are part of the domain.
+- **Use Infrastructure Services** for purely technical concerns.
 
-    builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
+##########
+Next Steps
+##########
+
+Now that you're familiar with the building blocks of OpenDDD.NET, you can explore the next steps:
+
+- [:ref:`Getting Started Guide <userguide-getting-started>`] – Learn how to set up OpenDDD.NET in your project.
+- [:ref:`Configuration Guide <config>`] – Customize persistence, messaging, and event handling.
+- [`Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_] – See a full example implementation.
+- [`OpenDDD.NET Discussions <https://github.com/runemalm/OpenDDD.NET/discussions>`_] – Get involved to ask questions, share insights, and contribute.

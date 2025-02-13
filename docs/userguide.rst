@@ -2,6 +2,8 @@
 
     OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
 
+.. _userguide-getting-started:
+
 ###############
 Getting Started
 ###############
@@ -32,14 +34,6 @@ The **OpenDDD.NET project template** provides a quick way to set up a new projec
 
     dotnet new openddd-net -n YourProjectName
 
-.. note::
-
-    Replace `YourProjectName` in the command with the actual name of your project.
-
-.. tip::
-
-    The project template is probably the easiest way to create a new project.
-
 This generates a **YourProjectName** project in your current directory, preconfigured with best practices to get you started quickly.
 
 Continue building your domain model by adding aggregates, domain services, listeners, etc. Refer to the :ref:`Building Blocks <building-blocks>` section for more information.
@@ -61,10 +55,6 @@ Create a new ASP.NET Core Web API project using the .NET CLI:
 .. code-block:: bash
 
     $ dotnet new webapi -n YourProjectName
-
-.. note::
-
-    Replace `YourProjectName` with the name of your project.
 
 ----------------------
 2: Install OpenDDD.NET
@@ -96,21 +86,14 @@ Add OpenDDD.NET services and middleware to your application in the `Program.cs` 
     var builder = WebApplication.CreateBuilder(args);
 
     // Add OpenDDD Services
-    builder.Services.AddOpenDDD<YourProjectNameDbContext>(builder.Configuration);
+    builder.Services.AddOpenDDD(builder.Configuration);
 
     var app = builder.Build();
-
-    // Add adapters
-    builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
 
     // Use OpenDDD Middleware
     app.UseOpenDDD();
 
     app.Run();
-
-.. note::
-
-    We will show you in later steps how to create the classes `YourProjectNameDbContext`, `IEmailPort` and `ConsoleEmailAdapter`.
 
 ---------------
 4: Domain Layer
@@ -348,6 +331,26 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Application;
+
+    namespace YourProjectName.Application.Actions.SendWelcomeEmail
+    {
+        public class SendWelcomeEmailCommand : ICommand
+        {
+            public string RecipientEmail { get; set; }
+            public string RecipientName { get; set; }
+
+            public SendWelcomeEmailCommand(string recipientEmail, string recipientName)
+            {
+                RecipientEmail = recipientEmail;
+                RecipientName = recipientName;
+            }
+        }
+    }
+
+
+.. code-block:: csharp
+
+    using OpenDDD.Application;
     using YourProjectName.Domain.Model.Ports;
 
     namespace YourProjectName.Application.Actions.SendWelcomeEmail
@@ -384,38 +387,76 @@ Example definitions:
 6: Infrastructure Layer
 -----------------------
 
-Create your repository, port implementations and the YourProjectNameDbContext class.
+Create your repository implementation classes. Create adapter classes for the ports in your domain layer.
 
 Example definitions:
 
 .. code-block:: csharp
 
-    using Microsoft.EntityFrameworkCore;
-    using OpenDDD.Infrastructure.Persistence.UoW;
-    using OpenDDD.Infrastructure.Repository.EfCore;
+    using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
+    using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
+    using OpenDDD.Infrastructure.Persistence.Serializers;
+    using Npgsql;
     using YourProjectName.Domain.Model;
 
-    namespace YourProjectName.Infrastructure.Repositories.EfCore
+    namespace YourProjectName.Infrastructure.Repositories.OpenDdd.Postgres
     {
-        public class EfCoreCustomerRepository : EfCoreRepository<Customer, Guid>, ICustomerRepository
+        public class PostgresOpenDddCustomerRepository : PostgresOpenDddRepository<Customer, Guid>, ICustomerRepository
         {
-            private readonly ILogger<EfCoreCustomerRepository> _logger;
+            private readonly ILogger<PostgresOpenDddCustomerRepository> _logger;
 
-            public EfCoreCustomerRepository(IUnitOfWork unitOfWork, ILogger<EfCoreCustomerRepository> logger) 
-                : base(unitOfWork)
+            public PostgresOpenDddCustomerRepository(
+                PostgresDatabaseSession session, 
+                IAggregateSerializer serializer, 
+                ILogger<PostgresOpenDddCustomerRepository> logger) 
+                : base(session, serializer)
             {
                 _logger = logger;
             }
-            
-            public async Task<Customer?> FindByEmailAsync(string email, CancellationToken ct)
+
+            public async Task<Customer> GetByEmailAsync(string email, CancellationToken ct = default)
             {
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     throw new ArgumentException("Email cannot be null or whitespace.", nameof(email));
                 }
 
-                return await DbContext.Set<Customer>()
-                    .FirstOrDefaultAsync(c => EF.Functions.Like(c.Email, email), cancellationToken: ct);
+                try
+                {
+                    const string query = "SELECT data FROM customers WHERE data->>'email' = @email LIMIT 1;";
+                    await using var cmd = new NpgsqlCommand(query, Session.Connection, Session.Transaction);
+                    cmd.Parameters.AddWithValue("email", email);
+
+                    var result = await cmd.ExecuteScalarAsync(ct);
+
+                    if (result is string json)
+                    {
+                        return Serializer.Deserialize<Customer, Guid>(json) 
+                            ?? throw new KeyNotFoundException($"No customer found with email '{email}'.");
+                    }
+
+                    throw new KeyNotFoundException($"No customer found with email '{email}'.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error occurred while retrieving customer by email: {Email}", email);
+                    throw;
+                }
+            }
+
+            public async Task<Customer?> FindByEmailAsync(string email, CancellationToken ct = default)
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    throw new ArgumentException("Email cannot be null or whitespace.", nameof(email));
+                }
+
+                const string query = "SELECT data FROM customers WHERE data->>'email' = @email LIMIT 1;";
+                await using var cmd = new NpgsqlCommand(query, Session.Connection, Session.Transaction);
+                cmd.Parameters.AddWithValue("email", email);
+
+                var result = await cmd.ExecuteScalarAsync(ct);
+                return result is string json ? Serializer.Deserialize<Customer, Guid>(json) : null;
             }
         }
     }
@@ -443,75 +484,18 @@ Example definitions:
         }
     }
 
-Register the adapter in `Program.cs` like this:
+Then register the port with the adapter class in `Program.cs` like this:
 
 .. code-block:: csharp
+    
+    // ...
 
+    // Add a custom adapter
     builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
 
-Create an EF Core configuration class for the `Customer` aggregate:
+    var app = builder.Build();
 
-.. code-block:: csharp
-
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.EntityFrameworkCore.Metadata.Builders;
-    using OpenDDD.Infrastructure.Persistence.EfCore.Base;
-    using YourProjectName.Domain.Model;
-
-    namespace YourProjectName.Infrastructure.Persistence.EfCore.Configurations
-    {
-        public class CustomerConfiguration : EfAggregateRootConfigurationBase<Customer, Guid>
-        {
-            public override void Configure(EntityTypeBuilder<Customer> builder)
-            {
-                base.Configure(builder);
-
-                // Always enforce domain invariants in the domain layer.
-                // Optionally, apply database constraints for additional safety.
-                builder.Property(c => c.Name)
-                       .IsRequired()
-                       .HasMaxLength(100);
-
-                builder.Property(c => c.Email)
-                       .IsRequired()
-                       .HasMaxLength(255);
-
-                // Configure relationships (if applicable)
-                // Example: One-to-many relationship
-                // builder.HasMany(c => c.Orders)
-                //        .WithOne(o => o.Customer)
-                //        .HasForeignKey(o => o.CustomerId);
-            }
-        }
-    }
-
-Create the YourProjectNameDbContext class by subclassing OpenDddDbContextBase:
-
-.. code-block:: csharp
-
-    using Microsoft.EntityFrameworkCore;
-    using OpenDDD.Infrastructure.Persistence.EfCore.Base;
-    using OpenDDD.API.Options;
-    using YourProjectName.Domain.Model;
-
-    namespace YourProjectName.Infrastructure.Persistence.EfCore
-    {
-        public class YourProjectNameDbContext : OpenDddDbContextBase
-        {
-            public DbSet<Customer> Customers { get; set; }
-
-            public YourProjectNameDbContext(DbContextOptions<YourProjectNameDbContext> options, OpenDddOptions openDddOptions)
-                : base(options, openDddOptions)
-            {
-                
-            }
-
-            protected override void OnModelCreating(ModelBuilder modelBuilder)
-            {
-                base.OnModelCreating(modelBuilder);
-            }
-        }
-    }
+    // ...
 
 --------------------------
 7: Edit `appsettings.json`
@@ -522,20 +506,38 @@ Add the following configuration to your `appsettings.json` file to customize Ope
 .. code-block:: json
 
     "OpenDDD": {
-      "PersistenceProvider": "EfCore",
-      "EfCore": {
-        "Database": "SQLite",
-        "ConnectionString": "DataSource=Infrastructure/Persistence/EfCore/YourProjectName.db;Cache=Shared"
-      },
+      "PersistenceProvider": "OpenDDD",
+      "DatabaseProvider": "Postgres",
       "MessagingProvider": "InMemory",
       "Events": {
-        "DomainEventTopic": "YourProjectName.Domain.{EventName}",
-        "IntegrationEventTopic": "YourProjectName.Interchange.{EventName}",
+        "DomainEventTopicTemplate": "YourProjectName.Domain.{EventName}",
+        "IntegrationEventTopicTemplate": "YourProjectName.Interchange.{EventName}",
+        "ListenerGroup": "Default"
+      },
+      "SQLite": {
+        "ConnectionString": "DataSource=Infrastructure/Persistence/EfCore/YourProjectName.db;Cache=Shared"
+      },
+      "Postgres": {
+        "ConnectionString": "Host=localhost;Port=5432;Database=yourprojectname;Username=your_username;Password=your_password"
+      },
+      "Events": {
+        "DomainEventTopicTemplate": "YourProjectName.Domain.{EventName}",
+        "IntegrationEventTopicTemplate": "YourProjectName.Interchange.{EventName}",
         "ListenerGroup": "Default"
       },
       "AzureServiceBus": {
         "ConnectionString": "",
         "AutoCreateTopics": true
+      },
+      "RabbitMq": {
+        "HostName": "localhost",
+        "Port": 5672,
+        "Username": "guest",
+        "Password": "guest",
+        "VirtualHost": "/"
+      },
+      "Kafka": {
+        "BootstrapServers": "localhost:9092"
       },
       "AutoRegister": {
         "Actions": true,
@@ -543,28 +545,15 @@ Add the following configuration to your `appsettings.json` file to customize Ope
         "Repositories": true,
         "InfrastructureServices": true,
         "EventListeners": true,
-        "EfCoreConfigurations": true
+        "EfCoreConfigurations": true,
+        "Seeders": true
       }
     }
 
 For all information about configuration, see :ref:`Configuration <config>`.
 
---------------------------------
-8: Create the EF Core migrations
---------------------------------
-
-Before running the application, create the **initial EF Core migrations** for setting up the database schema.
-
-Run the following command:
-
-.. code-block:: bash
-
-    dotnet ef migrations add InitialCreate --output-dir Infrastructure/Persistence/EfCore/Migrations
-
-The migrations will be automatically applied by OpenDDD.NET when you run the application.
-
 ----------------------
-9: Run the Application
+8: Run the Application
 ----------------------
 
 Now you are ready to run the application:
@@ -572,16 +561,6 @@ Now you are ready to run the application:
 .. code-block:: bash
 
     dotnet run
-
-**Access Swagger UI**
-
-Once the application is running, open a web browser and navigate to:
-
-.. code-block:: none
-
-    http://localhost:5000/swagger (or the correct port)
-
-Swagger UI provides an interactive interface to explore and test the API endpoints.
 
 To register a new customer, send a `POST` request to:
 

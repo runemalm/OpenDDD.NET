@@ -8,10 +8,13 @@ Version History
 
 **3.0.0-alpha.4 (2025-02-xx)**
 
-- **Messaging Providers**: Fix some issues with the `Azure Service Bus` provider.
-- **Namespace**: Change the name of the namespace `Main` -> `API`.
+- **Persistence Providers**: Add the `OpenDDD` persistence provider with `PostgresRepository` base class.
+- **Messaging Providers**: Add the `Kafka` and `RabbitMQ` messaging providers.
+- **Seeders**: Add support for seeders to seed aggregates on application start.
 - **Project Template**: Add a project template nuget for quick scaffolding of a new project.
 - **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.
+- **Namespace**: Change the name of the namespace `Main` -> `API`.
+- **Fix issues**: Fix issues with the `Azure Service Bus` provider & the `Ef Core` base repository.
 
 **3.0.0-alpha.3 (2025-01-30)**
 
