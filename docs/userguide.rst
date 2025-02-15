@@ -32,7 +32,7 @@ The **OpenDDD.NET project template** provides a quick way to set up a new projec
 
 .. code-block:: bash
 
-    dotnet new openddd-net -n YourProjectName
+    dotnet new openddd-sln --framework net8.0 -n YourProjectName
 
 This generates a **YourProjectName** project in your current directory, preconfigured with best practices to get you started quickly.
 
@@ -507,7 +507,7 @@ Add the following configuration to your `appsettings.json` file to customize Ope
 
     "OpenDDD": {
       "PersistenceProvider": "OpenDDD",
-      "DatabaseProvider": "Postgres",
+      "DatabaseProvider": "InMemory",
       "MessagingProvider": "InMemory",
       "Events": {
         "DomainEventTopicTemplate": "YourProjectName.Domain.{EventName}",

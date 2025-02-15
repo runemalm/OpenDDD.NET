@@ -28,7 +28,10 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 
 ## Supported Versions
 
+- ASP.NET Core 6
+- ASP.NET Core 7
 - ASP.NET Core 8
+- ASP.NET Core 9
 
 ## Getting Started
 
@@ -56,8 +59,7 @@ To get started with OpenDDD.NET, follow these simple steps:
    // Add OpenDDD services
    builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>  
    {  
-       options.UseEfCore()
-              .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+       options.UseInMemoryDatabase()    
               .UseInMemoryMessaging()
               .SetEventListenerGroup("Default")  
               .SetEventTopicTemplates(  
@@ -82,7 +84,7 @@ For detailed guides and examples, refer to the documentation.
 
 ## Documentation
 
-The official [OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/) provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
+The official [OpenDDD.NET Documentation](https://docs.openddd.net/) provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
 
 ## Sample Project
 
@@ -92,13 +94,16 @@ Explore the project in the repository: [Bookstore Sample Project](https://github
 
 ## Release History
 
-**3.0.0-alpha.4 (2025-02-xx)**
+**3.0.0-alpha.4 (2025-02-15)**
 
-- **Messaging Providers**: Fix some issues with the `Azure Service Bus` provider.
+- **Persistence Providers**: Add the `OpenDDD` persistence provider.
+- **Database Providers**: Add the `InMemory` and `Postgres` database providers for the new `OpenDdd` persistence provider.
+- **Messaging Providers**: Add the `Kafka` and `RabbitMQ` messaging providers.
 - **Seeders**: Add support for seeders to seed aggregates on application start.
-- **Namespace**: Change the name of the namespace `Main` -> `API`.
 - **Project Template**: Add a project template nuget for quick scaffolding of a new project.
 - **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.
+- **Namespace**: Change the name of the namespace `Main` -> `API`.
+- **Fix issues**: Fix issues with the `Azure Service Bus` provider & the `Ef Core` base repository.
 
 **3.0.0-alpha.3 (2025-01-30)**
 

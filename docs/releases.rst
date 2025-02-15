@@ -6,9 +6,10 @@
 Version History
 ###############
 
-**3.0.0-alpha.4 (2025-02-xx)**
+**3.0.0-alpha.4 (2025-02-15)**
 
-- **Persistence Providers**: Add the `OpenDDD` persistence provider with `PostgresRepository` base class.
+- **Persistence Providers**: Add the `OpenDDD` persistence provider.
+- **Database Providers**: Add the `InMemory` and `Postgres` database providers for the new `OpenDdd` persistence provider.
 - **Messaging Providers**: Add the `Kafka` and `RabbitMQ` messaging providers.
 - **Seeders**: Add support for seeders to seed aggregates on application start.
 - **Project Template**: Add a project template nuget for quick scaffolding of a new project.

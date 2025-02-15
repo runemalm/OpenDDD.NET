@@ -14,8 +14,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddOpenDDD(builder.Configuration,
     options =>  
     {  
-        options.UseInMemoryDatabase()    
+        options
+                .UseInMemoryDatabase()    
+                // .UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password")
+                // .UseEfCore()
+                // .UseSqlite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
                .UseInMemoryMessaging()
+               // .UseKafka()
                .SetEventListenerGroup("Bookstore")
                .SetEventTopics(
                    "Bookstore.Domain.{EventName}",
