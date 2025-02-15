@@ -6,6 +6,8 @@ namespace Bookstore.Domain.Model
     {
         public Guid BookId { get; private set; }
         public float Price { get; private set; }
+        
+        private LineItem() { }
 
         private LineItem(Guid id, Guid bookId, float price) : base(id)
         {

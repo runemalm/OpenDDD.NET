@@ -6,6 +6,8 @@ namespace Bookstore.Domain.Model
     {
         public Guid CustomerId { get; private set; }
         public ICollection<LineItem> LineItems { get; private set; }
+        
+        private Order() { }
 
         private Order(Guid id, Guid customerId) : base(id)
         {

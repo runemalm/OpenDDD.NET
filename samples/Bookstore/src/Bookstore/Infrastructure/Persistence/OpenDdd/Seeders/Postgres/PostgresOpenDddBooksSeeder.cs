@@ -1,17 +1,17 @@
 ﻿using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
-using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders;
 using OpenDDD.Infrastructure.Persistence.Serializers;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.Postgres;
 using Npgsql;
 using NpgsqlTypes;
 using Bookstore.Domain.Model;
 
-namespace Bookstore.Infrastructure.Persistence.OpenDdd.Postgres.Seeders
+namespace Bookstore.Infrastructure.Persistence.OpenDdd.Seeders.Postgres
 {
-    public class PostgresBooksOpenDddSeeder : IPostgresOpenDddSeeder
+    public class PostgresOpenDddBooksSeeder : IPostgresOpenDddSeeder
     {
         private readonly IAggregateSerializer _serializer;
 
-        public PostgresBooksOpenDddSeeder(IAggregateSerializer serializer)
+        public PostgresOpenDddBooksSeeder(IAggregateSerializer serializer)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         }
