@@ -70,7 +70,7 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
 
 .. code-block:: csharp
 
-    builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
+    builder.Services.AddOpenDDD(builder.Configuration, 
         options =>  
         {  
             options.UseInMemoryDatabase()

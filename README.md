@@ -55,7 +55,7 @@ To get started with OpenDDD.NET, follow these simple steps:
    var builder = WebApplication.CreateBuilder(args);
 
    // Add OpenDDD services
-   builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>  
+   builder.Services.AddOpenDDD(builder.Configuration, options =>  
    {  
        options.UseInMemoryDatabase()    
               .UseInMemoryMessaging()
