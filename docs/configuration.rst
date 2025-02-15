@@ -22,8 +22,8 @@ An example configuration in `appsettings.json`:
 
    {
      "OpenDDD": {
-       "PersistenceProvider": "EfCore",
-       "DatabaseProvider": "SQLite",
+       "PersistenceProvider": "OpenDdd",
+       "DatabaseProvider": "InMemory",
        "MessagingProvider": "InMemory",
        "Events": {
          "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}",
@@ -73,8 +73,7 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
     builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
         options =>  
         {  
-            options.UseEfCore()
-                   .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
+            options.UseInMemoryDatabase()
                    .UseInMemoryMessaging()
                    .SetEventTopicTemplates(
                        "Bookstore.Domain.{EventName}",
