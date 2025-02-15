@@ -12,9 +12,9 @@ Configuration is typically done via `appsettings.json` or by using fluent method
    :local:
    :depth: 2
 
-------------------------
+------------------
 JSON Configuration
-------------------------
+------------------
 
 An example configuration in `appsettings.json`:
 
@@ -62,9 +62,9 @@ An example configuration in `appsettings.json`:
      }
    }
 
-------------------------
+--------------------
 Fluent Configuration
-------------------------
+--------------------
 
 Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically** in `Program.cs`:
 
@@ -85,9 +85,9 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
         }
     );
 
-------------------------
+-------------------------
 Persistence Configuration
-------------------------
+-------------------------
 
 OpenDDD.NET supports multiple persistence providers:
 
@@ -109,9 +109,9 @@ OpenDDD.NET supports multiple persistence providers:
 
    options.UseOpenDddPersistence().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
 
-------------------------
+-----------------------
 Messaging Configuration
-------------------------
+-----------------------
 
 OpenDDD.NET supports multiple messaging providers:
 
@@ -150,9 +150,9 @@ OpenDDD.NET supports multiple messaging providers:
 
 .. _config-events:
 
-------------------------
+-------------------
 Event Configuration
-------------------------
+-------------------
 
 Event settings define how domain and integration events are published:
 
@@ -166,9 +166,9 @@ Event settings define how domain and integration events are published:
 
 .. _config-auto-registration:
 
-------------------------
+-----------------
 Auto-Registration
-------------------------
+-----------------
 
 OpenDDD.NET can automatically register key components:
 
