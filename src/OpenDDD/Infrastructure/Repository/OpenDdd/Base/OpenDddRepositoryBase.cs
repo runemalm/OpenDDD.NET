@@ -18,8 +18,8 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.Base
             Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         }
 
-        public abstract Task<TAggregateRoot?> FindAsync(TId id, CancellationToken ct);
         public abstract Task<TAggregateRoot> GetAsync(TId id, CancellationToken ct);
+        public abstract Task<TAggregateRoot?> FindAsync(TId id, CancellationToken ct);
         public abstract Task<IEnumerable<TAggregateRoot>> FindWithAsync(Expression<Func<TAggregateRoot, bool>> filterExpression, CancellationToken ct);
         public abstract Task<IEnumerable<TAggregateRoot>> FindAllAsync(CancellationToken ct);
         public abstract Task SaveAsync(TAggregateRoot aggregateRoot, CancellationToken ct);

@@ -6,6 +6,11 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers
 {
     public class OpenDddPrivateSetterContractResolver : DefaultContractResolver
     {
+        public OpenDddPrivateSetterContractResolver()
+        {
+            NamingStrategy = new CamelCaseNamingStrategy();
+        }
+
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
             var property = base.CreateProperty(member, memberSerialization);
