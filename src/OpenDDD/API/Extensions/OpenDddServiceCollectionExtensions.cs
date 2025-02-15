@@ -24,17 +24,25 @@ using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.EfCore.Seeders;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.InMemory;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.InMemory;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.Postgres;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.UoW.InMemory;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.UoW.Postgres;
 using OpenDDD.Infrastructure.Persistence.Serializers;
+using OpenDDD.Infrastructure.Persistence.Storage;
+using OpenDDD.Infrastructure.Persistence.Storage.InMemory;
 using OpenDDD.Infrastructure.Persistence.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
+using OpenDDD.Infrastructure.Repository.OpenDdd.InMemory;
 using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
 using OpenDDD.Infrastructure.Service;
 using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
+using OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.InMemory;
 using OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.Postgres;
 
 namespace OpenDDD.API.Extensions
@@ -202,10 +210,14 @@ namespace OpenDDD.API.Extensions
                 case "postgres":
                     services.AddPostgresOpenDddPersistence(options);
                     break;
+                case "inmemory":
+                    services.AddInMemoryOpenDddPersistence(options);
+                    break;
                 default:
                     throw new Exception($"Unsupported Database Provider: {options.DatabaseProvider}");
             }
             
+            services.AddScoped<ISerializer, OpenDddSerializer>();
             services.AddScoped<IAggregateSerializer, OpenDddAggregateSerializer>();
         }
         
@@ -225,6 +237,21 @@ namespace OpenDDD.API.Extensions
 
             if (options.AutoRegister.Repositories) RegisterOpenDddPostgresRepositories(services);
             if (options.AutoRegister.Seeders) RegisterPostgresOpenDddSeeders(services);
+        }
+        
+        private static void AddInMemoryOpenDddPersistence(this IServiceCollection services, OpenDddOptions options)
+        {
+            services.AddSingleton<InMemoryStorage>();
+            services.AddScoped<IStorage>(provider => provider.GetRequiredService<InMemoryStorage>());
+            
+            services.AddScoped<InMemoryDatabaseSession>();
+            services.AddScoped<IDatabaseSession>(provider => provider.GetRequiredService<InMemoryDatabaseSession>());
+            
+            services.AddScoped<IUnitOfWork, InMemoryOpenDddUnitOfWork>();
+            services.AddScoped<IOutboxRepository, InMemoryOpenDddOutboxRepository>();
+            
+            if (options.AutoRegister.Repositories) RegisterOpenDddInMemoryRepositories(services);
+            if (options.AutoRegister.Seeders) RegisterInMemoryOpenDddSeeders(services);
         }
 
         private static void AddAzureServiceBus(this IServiceCollection services)
@@ -386,7 +413,54 @@ namespace OpenDDD.API.Extensions
                 }
             }
         }
-        
+
+        private static void RegisterOpenDddInMemoryRepositories(IServiceCollection services)
+        {
+            var aggregateRootType = typeof(AggregateRootBase<>);
+
+            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(t => t.IsClass && !t.IsAbstract &&
+                            t.BaseType != null &&
+                            t.BaseType.IsGenericType &&
+                            t.BaseType.GetGenericTypeDefinition() == aggregateRootType)
+                .ToList();
+
+            foreach (var aggregateType in aggregateTypes)
+            {
+                var idType = aggregateType.BaseType!.GetGenericArguments()[0];
+                var repositoryInterfaceType = typeof(IRepository<,>).MakeGenericType(aggregateType, idType);
+
+                // Find custom repository interfaces extending IRepository<,>
+                var customRepositoryInterface = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(assembly => assembly.GetTypes())
+                    .FirstOrDefault(t => t.IsInterface && repositoryInterfaceType.IsAssignableFrom(t));
+
+                var customRepositoryImplementation = customRepositoryInterface != null
+                    ? AppDomain.CurrentDomain.GetAssemblies()
+                        .SelectMany(assembly => assembly.GetTypes())
+                        .FirstOrDefault(t => !t.IsInterface &&
+                                             !t.IsAbstract &&
+                                             customRepositoryInterface.IsAssignableFrom(t) &&
+                                             t.BaseType?.Name.Contains("InMemoryOpenDdd") == true)
+                    : null;
+
+                if (customRepositoryInterface != null && customRepositoryImplementation != null)
+                {
+                    // Register custom InMemory OpenDDD repository
+                    services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
+                    Console.WriteLine($"Registered custom InMemory OpenDDD repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
+                }
+                else
+                {
+                    // Fallback to default InMemory OpenDDD repository
+                    var defaultRepositoryImplementationType = typeof(InMemoryOpenDddRepository<,>).MakeGenericType(aggregateType, idType);
+                    services.AddTransient(repositoryInterfaceType, defaultRepositoryImplementationType);
+                    Console.WriteLine($"Registered default InMemory OpenDDD repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
+                }
+            }
+        }
+
         private static void RegisterActions(IServiceCollection services)
         {
             var actionTypes = AppDomain.CurrentDomain.GetAssemblies()
@@ -457,6 +531,20 @@ namespace OpenDDD.API.Extensions
             {
                 services.AddTransient(typeof(IPostgresOpenDddSeeder), seederType);
                 Console.WriteLine($"Registered Postgres OpenDdd seeder: {seederType.Name} with lifetime: Transient");
+            }
+        }
+        
+        private static void RegisterInMemoryOpenDddSeeders(IServiceCollection services)
+        {
+            var seederTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsClass && !type.IsAbstract && typeof(IInMemoryOpenDddSeeder).IsAssignableFrom(type))
+                .ToList();
+
+            foreach (var seederType in seederTypes)
+            {
+                services.AddTransient(typeof(IInMemoryOpenDddSeeder), seederType);
+                Console.WriteLine($"Registered InMemory OpenDDD seeder: {seederType.Name} with lifetime: Transient");
             }
         }
 

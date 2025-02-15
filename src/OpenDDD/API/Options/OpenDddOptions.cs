@@ -20,9 +20,16 @@ namespace OpenDDD.API.Options
         public OpenDddAutoRegisterOptions AutoRegister { get; set; } = new();
 
         // Use Methods for Persistence
+        
         public OpenDddOptions UseEfCore()
         {
             PersistenceProvider = "EfCore";
+            return this;
+        }
+        
+        public OpenDddOptions UseInMemoryDatabase()
+        {
+            DatabaseProvider = "InMemory";
             return this;
         }
 
@@ -48,6 +55,7 @@ namespace OpenDDD.API.Options
         }
 
         // Use Methods for Messaging
+        
         public OpenDddOptions UseInMemoryMessaging()
         {
             MessagingProvider = "InMemory";

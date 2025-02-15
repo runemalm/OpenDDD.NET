@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -9,8 +8,8 @@ using OpenDDD.API.Options;
 using OpenDDD.API.Extensions;
 using OpenDDD.Domain.Model.Base;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.Postgres;
 using Npgsql;
-using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders;
 
 namespace OpenDDD.API.HostedServices
 {
@@ -41,7 +40,14 @@ namespace OpenDDD.API.HostedServices
             }
             else if (options.PersistenceProvider.Equals("openddd", StringComparison.OrdinalIgnoreCase))
             {
-                await InitializePostgres(scope, ct);
+                if (options.DatabaseProvider.Equals("postgres", StringComparison.OrdinalIgnoreCase))
+                {
+                    await InitializePostgres(scope, ct);
+                } 
+                else if (options.DatabaseProvider.Equals("inmemory", StringComparison.OrdinalIgnoreCase))
+                {
+                    await InitializeInMemory(scope, ct);
+                }
             }
 
             _logger.LogInformation("Database initialization completed.");
@@ -113,6 +119,11 @@ namespace OpenDDD.API.HostedServices
             {
                 _logger.LogInformation("No PostgreSQL OpenDDD seeders found.");
             }
+        }
+        
+        private async Task InitializeInMemory(IServiceScope scope, CancellationToken ct)
+        {
+            
         }
 
         public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
