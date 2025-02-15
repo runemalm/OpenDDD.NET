@@ -37,24 +37,24 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.InMemory
                 ProcessedAt = null
             };
 
-            await _session.SaveAsync(OutboxTable, outboxEntry.Id, outboxEntry, ct);
+            await _session.UpsertAsync(OutboxTable, outboxEntry.Id, outboxEntry, ct);
 
             _logger.LogDebug("Added event to in-memory outbox: {EventName}", outboxEntry.EventName);
         }
 
         public async Task<List<OutboxEntry>> GetPendingEventsAsync(CancellationToken ct)
         {
-            var entries = await _session.LoadAllAsync<OutboxEntry>(OutboxTable, ct);
+            var entries = await _session.SelectAllAsync<OutboxEntry>(OutboxTable, ct);
             return entries.Where(entry => entry.ProcessedAt == null).ToList();
         }
 
         public async Task MarkEventAsProcessedAsync(Guid eventId, CancellationToken ct)
         {
-            var entry = await _session.LoadAsync<OutboxEntry>(OutboxTable, eventId, ct);
+            var entry = await _session.SelectAsync<OutboxEntry>(OutboxTable, eventId, ct);
             if (entry != null)
             {
                 entry.ProcessedAt = DateTime.UtcNow;
-                await _session.SaveAsync(OutboxTable, eventId, entry, ct);
+                await _session.UpsertAsync(OutboxTable, eventId, entry, ct);
                 _logger.LogDebug("Marked event as processed: {EventId}", eventId);
             }
         }

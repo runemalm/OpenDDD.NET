@@ -7,22 +7,20 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.InMemory
 {
     public class InMemoryDatabaseSession : IDatabaseSession
     {
-        private readonly IStorage _storage;
+        private readonly IKeyValueStorage _storage;
         private readonly ILogger<InMemoryDatabaseSession> _logger;
-        private readonly ConcurrentDictionary<string, List<(object Id, object Entity)>> _transactionChanges = new();
-
+        private readonly ConcurrentDictionary<string, object> _transactionChanges = new();
         private bool _transactionActive = false;
 
-        public InMemoryDatabaseSession(IStorage storage, ILogger<InMemoryDatabaseSession> logger)
+        public InMemoryDatabaseSession(IKeyValueStorage storage, ILogger<InMemoryDatabaseSession> logger)
         {
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public Task OpenConnectionAsync(CancellationToken ct = default)
-        {
-            return Task.CompletedTask; // No-op for in-memory
-        }
+        private static string GetKey(string collectionName, object id) => $"{collectionName}:{id}";
+
+        public Task OpenConnectionAsync(CancellationToken ct = default) => Task.CompletedTask;
 
         public Task BeginTransactionAsync(CancellationToken ct = default)
         {
@@ -37,12 +35,9 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.InMemory
             if (!_transactionActive)
                 throw new InvalidOperationException("No active transaction to commit.");
 
-            foreach (var (table, changes) in _transactionChanges)
+            foreach (var (key, value) in _transactionChanges)
             {
-                foreach (var (id, entity) in changes)
-                {
-                    await _storage.SaveAsync(table, id, entity, ct);
-                }
+                await _storage.PutAsync(key, value, ct);
             }
 
             _transactionChanges.Clear();
@@ -61,37 +56,41 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.InMemory
             return Task.CompletedTask;
         }
 
-        public Task SaveAsync<T>(string tableName, object id, T entity, CancellationToken ct)
+        public Task UpsertAsync<T>(string collectionName, object id, T entity, CancellationToken ct)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
+            var key = GetKey(collectionName, id);
+
             if (_transactionActive)
             {
-                _transactionChanges
-                    .GetOrAdd(tableName, _ => new List<(object, object)>())
-                    .Add((id, entity));
+                _transactionChanges[key] = entity;
             }
             else
             {
-                return _storage.SaveAsync(tableName, id, entity, ct);
+                return _storage.PutAsync(key, entity, ct);
             }
 
+            _logger.LogDebug($"Upserted entity in collection '{collectionName}' with ID '{id}'");
             return Task.CompletedTask;
         }
 
-        public Task<T?> LoadAsync<T>(string tableName, object id, CancellationToken ct)
+        public Task<T?> SelectAsync<T>(string collectionName, object id, CancellationToken ct)
         {
-            return _storage.LoadAsync<T>(tableName, id, ct);
+            var key = GetKey(collectionName, id);
+            return _storage.GetAsync<T>(key, ct);
         }
 
-        public Task<IEnumerable<T>> LoadAllAsync<T>(string tableName, CancellationToken ct)
+        public async Task<IEnumerable<T>> SelectAllAsync<T>(string collectionName, CancellationToken ct)
         {
-            return _storage.LoadAllAsync<T>(tableName, ct);
+            var keyPrefix = $"{collectionName}:";
+            return await _storage.GetByPrefixAsync<T>(keyPrefix, ct);
         }
 
-        public Task DeleteAsync(string tableName, object id, CancellationToken ct)
+        public Task DeleteAsync(string collectionName, object id, CancellationToken ct)
         {
-            return _storage.DeleteAsync(tableName, id, ct);
+            var key = GetKey(collectionName, id);
+            return _storage.RemoveAsync(key, ct);
         }
     }
 }

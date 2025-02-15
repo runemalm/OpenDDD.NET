@@ -13,18 +13,18 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.InMemory
         where TId : notnull
     {
         private readonly InMemoryDatabaseSession _session;
-        private readonly string _tableName;
+        private readonly string _collectionName;
 
         public InMemoryOpenDddRepository(InMemoryDatabaseSession session, IAggregateSerializer serializer)
             : base(session, serializer)
         {
             _session = session ?? throw new ArgumentNullException(nameof(session));
-            _tableName = typeof(TAggregateRoot).Name.ToLower().Pluralize();
+            _collectionName = typeof(TAggregateRoot).Name.ToLower().Pluralize();
         }
 
         public override async Task<TAggregateRoot?> FindAsync(TId id, CancellationToken ct)
         {
-            var serializedData = await _session.LoadAsync<string>(_tableName, id, ct);
+            var serializedData = await _session.SelectAsync<string>(_collectionName, id, ct);
             return serializedData != null ? Serializer.Deserialize<TAggregateRoot, TId>(serializedData) : null;
         }
 
@@ -33,7 +33,7 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.InMemory
             var entity = await FindAsync(id, ct);
             if (entity == null)
             {
-                throw new KeyNotFoundException($"Entity with ID '{id}' was not found in {_tableName}.");
+                throw new KeyNotFoundException($"Entity with ID '{id}' was not found in {_collectionName}.");
             }
             return entity;
         }
@@ -41,32 +41,27 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.InMemory
         public override async Task SaveAsync(TAggregateRoot aggregateRoot, CancellationToken ct)
         {
             var serializedData = Serializer.Serialize<TAggregateRoot, TId>(aggregateRoot);
-            await _session.SaveAsync(_tableName, aggregateRoot.Id!, serializedData, ct);
+            await _session.UpsertAsync(_collectionName, aggregateRoot.Id!, serializedData, ct);
         }
 
         public override async Task DeleteAsync(TAggregateRoot aggregateRoot, CancellationToken ct)
         {
-            await _session.DeleteAsync(_tableName, aggregateRoot.Id!, ct);
+            await _session.DeleteAsync(_collectionName, aggregateRoot.Id!, ct);
         }
 
         public override async Task<IEnumerable<TAggregateRoot>> FindAllAsync(CancellationToken ct)
         {
-            var serializedDataList = await _session.LoadAllAsync<string>(_tableName, ct);
-            var results = new List<TAggregateRoot>();
-            foreach (var serializedData in serializedDataList)
-            {
-                results.Add(Serializer.Deserialize<TAggregateRoot, TId>(serializedData));
-            }
-            return results;
+            var serializedDataList = await _session.SelectAllAsync<string>(_collectionName, ct);
+            return serializedDataList
+                .Select(serializedData => Serializer.Deserialize<TAggregateRoot, TId>(serializedData))
+                .Where(entity => entity != null)
+                .ToList()!;
         }
 
         public override async Task<IEnumerable<TAggregateRoot>> FindWithAsync(
             Expression<Func<TAggregateRoot, bool>> filterExpression, CancellationToken ct)
         {
-            if (filterExpression == null)
-            {
-                throw new ArgumentNullException(nameof(filterExpression));
-            }
+            if (filterExpression == null) throw new ArgumentNullException(nameof(filterExpression));
 
             var allEntities = await FindAllAsync(ct);
             return allEntities.AsQueryable().Where(filterExpression).ToList();

@@ -26,7 +26,6 @@ using OpenDDD.Infrastructure.Persistence.EfCore.Seeders;
 using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.InMemory;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
-using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.InMemory;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.Postgres;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
@@ -241,8 +240,8 @@ namespace OpenDDD.API.Extensions
         
         private static void AddInMemoryOpenDddPersistence(this IServiceCollection services, OpenDddOptions options)
         {
-            services.AddSingleton<InMemoryStorage>();
-            services.AddScoped<IStorage>(provider => provider.GetRequiredService<InMemoryStorage>());
+            services.AddSingleton<InMemoryKeyValueStorage>();
+            services.AddScoped<IKeyValueStorage>(provider => provider.GetRequiredService<InMemoryKeyValueStorage>());
             
             services.AddScoped<InMemoryDatabaseSession>();
             services.AddScoped<IDatabaseSession>(provider => provider.GetRequiredService<InMemoryDatabaseSession>());
