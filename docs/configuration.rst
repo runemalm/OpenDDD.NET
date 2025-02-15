@@ -90,10 +90,21 @@ Persistence Configuration
 
 OpenDDD.NET supports multiple persistence providers:
 
+**OpenDDD Persistence Provider**:
+
+.. code-block:: csharp
+
+   // PostgreSQL
+   options.UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
+
+   // In-Memory
+   options.UseInMemory();
+
 **EF Core Persistence Provider**:
 
 .. code-block:: csharp
 
+   // SQLite
    options.UseEfCore().UseSQLite("DataSource=Bookstore.db;Cache=Shared");
 
    // PostgreSQL
@@ -101,12 +112,6 @@ OpenDDD.NET supports multiple persistence providers:
 
    // SQL Server
    options.UseEfCore().UseSqlServer("Server=localhost;Database=bookstore;User Id=sa;Password=password;");
-
-**OpenDDD Persistence Provider**:
-
-.. code-block:: csharp
-
-   options.UseOpenDddPersistence().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
 
 -----------------------
 Messaging Configuration
