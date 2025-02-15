@@ -18,13 +18,14 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := openddd-net
-BUILD_VERSION := 3.0.0-alpha.3
+BUILD_VERSION := 3.0.0-alpha.4
 
 NUGET_NAME := OpenDDD.NET
 ROOT_NAMESPACE := OpenDDD
 
 SRC_DIR := $(PWD)/src
 DOCS_DIR := $(PWD)/docs
+SAMPLES_DIR := $(PWD)/samples
 NAMESPACE_DIR := $(SRC_DIR)/$(ROOT_NAMESPACE)
 BUILD_DIR := $(NAMESPACE_DIR)/$(ROOT_NAMESPACE)/bin
 FEED_DIR := $(HOME)/Projects/LocalFeed
@@ -34,6 +35,13 @@ SPHINXDOC_IMG := openddd.net/sphinxdoc
 DOCSAUTOBUILD_HOST_NAME := docsautobuild-openddd.net
 DOCSAUTOBUILD_CONTAINER_NAME := docsautobuild-openddd.net
 DOCSAUTOBUILD_PORT := 10001
+
+TEMPLATES_DIR := $(PWD)/templates
+TEMPLATES_CSPROJ := $(TEMPLATES_DIR)/templatepack.csproj
+TEMPLATES_OUT := $(TEMPLATES_DIR)/bin/templates
+TEMPLATES_NAME := OpenDDD.NET-Templates
+TEMPLATES_VERSION := 3.0.0-alpha.1
+TEMPLATES_NUPKG := $(TEMPLATES_OUT)/$(TEMPLATES_NAME).$(TEMPLATES_VERSION).nupkg
 
 BLUE      := $(shell tput -Txterm setaf 4)
 GREEN     := $(shell tput -Txterm setaf 2)
@@ -177,3 +185,26 @@ restore: ##@Build	 restore the solution
 .PHONY: clear-nuget-caches
 clear-nuget-caches: ##@Build	 clean all nuget caches
 	nuget locals all -clear
+
+##########################################################################
+# TEMPLATES
+##########################################################################
+
+.PHONY: templates-install
+templates-install: ##@Template	 Install the OpenDDD.NET project template locally
+	dotnet new install $(TEMPLATES_NUPKG)
+
+.PHONY: templates-uninstall
+templates-uninstall: ##@Template	 Uninstall the OpenDDD.NET project template
+	dotnet new uninstall $(TEMPLATES_NAME)
+
+.PHONY: templates-pack
+templates-pack: ##@Template	 Pack the OpenDDD.NET project template into a NuGet package
+	dotnet pack $(TEMPLATES_CSPROJ) -o $(TEMPLATES_OUT)
+
+.PHONY: templates-publish
+templates-publish: template-pack ##@Template	 Publish the template to NuGet
+	dotnet nuget push $(TEMPLATES_NUPKG) --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
+
+.PHONY: templates-rebuild
+templates-rebuild: templates-uninstall templates-pack templates-install ##@Template	 Rebuild and reinstall the template
