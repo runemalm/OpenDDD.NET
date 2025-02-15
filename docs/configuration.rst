@@ -23,7 +23,7 @@ An example configuration in `appsettings.json`:
    {
      "OpenDDD": {
        "PersistenceProvider": "EfCore",
-       "DatabaseProvider": "Postgres",
+       "DatabaseProvider": "SQLite",
        "MessagingProvider": "InMemory",
        "Events": {
          "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}",
@@ -91,7 +91,7 @@ Persistence Configuration
 
 OpenDDD.NET supports multiple persistence providers:
 
-**Entity Framework Core (EfCore)**:
+**EF Core Persistence Provider**:
 
 .. code-block:: csharp
 

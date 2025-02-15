@@ -184,10 +184,12 @@ Repositories are **auto-registered** with `IRepository<TAggregateRoot, TId>`. If
 **Example: Default Auto-Registered Repository**
 
 - `IRepository<Guid, Customer>` → `PostgresOpenDddRepository<Guid, Customer>`
+- `IRepository<Guid, Customer>` → `EfCoreRepository<Guid, Customer>`
 
 **Example: Custom Auto-Registered Repository**
 
 - `ICustomerRepository` → `PostgresOpenDddCustomerRepository`
+- `ICustomerRepository` → `EfCoreCustomerRepository`
 
 Auto-registration can be **disabled in the configuration**.
 
@@ -232,7 +234,7 @@ Using EF Core
 
 By default, OpenDDD.NET uses its **custom persistence provider**, which follows a **document storage model**. This aligns closely with **DDD aggregate patterns** (including Alistair Cockburn’s **Entity pattern**) by storing aggregates **as serialized JSON documents**.
 
-If you for some reason need **relational storage**, you can configure **EF Core** as the persistence provider. In that case, you must define:
+If you need **relational storage**, you can configure **EF Core** as the persistence provider. In that case, you must define:
 
 - A subclass of `OpenDddDbContextBase`
 - Subclasses of `EfAggregateRootConfigurationBase` for aggregates
@@ -240,7 +242,7 @@ If you for some reason need **relational storage**, you can configure **EF Core*
 - Subclasses of `EfCoreRepository<TAggregateRoot, TId>` for custom repositories
 - Use the `AddOpenDdd<TDbContext>` overload when registering OpenDDD to specify your custom DbContext
 
-See the **Bookstore sample project** for examples.
+See the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore/src/Bookstore/Infrastructure/Persistence/EfCore>`_ for examples.
 
 Summary
 -------
