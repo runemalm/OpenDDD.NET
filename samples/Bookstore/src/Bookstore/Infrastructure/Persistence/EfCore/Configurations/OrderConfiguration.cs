@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using Bookstore.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bookstore.Infrastructure.Persistence.EfCore.Configurations
 {
@@ -10,7 +11,13 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Configurations
         {
             base.Configure(builder);
             
-            // Custom configurations here
+            builder
+                .HasMany(o => o.LineItems)
+                .WithOne()
+                .HasForeignKey("OrderId") // Shadow property for FK
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            builder.Navigation(o => o.LineItems).AutoInclude();
         }
     }
 }

@@ -1,19 +1,24 @@
 ﻿using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using OpenDDD.API.Options;
 using OpenDDD.Domain.Model.Base;
 using OpenDDD.Infrastructure.TransactionalOutbox;
-using OpenDDD.Main.Options;
 
 namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
 {
     public class OpenDddDbContextBase : DbContext
     {
         private readonly OpenDddOptions _openDddOptions;
+        private readonly ILogger<OpenDddDbContextBase> _logger;
+        
         public DbSet<OutboxEntry> OutboxEntries { get; set; } = null!;
 
-        public OpenDddDbContextBase(DbContextOptions options, OpenDddOptions openDddOptions) : base(options)
+        public OpenDddDbContextBase(DbContextOptions options, OpenDddOptions openDddOptions, ILogger<OpenDddDbContextBase> logger) 
+            : base(options)
         {
             _openDddOptions = openDddOptions;
+            _logger = logger;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,7 +34,6 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
                 entity.Property(e => e.Payload).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.Property(e => e.ProcessedAt).IsRequired(false);
-                entity.Property(e => e.Processed).HasDefaultValue(false);
             });
 
             if (_openDddOptions.AutoRegister.EfCoreConfigurations)
@@ -42,22 +46,23 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
 
         public void ApplyConfigurations(ModelBuilder modelBuilder)
         {
-            var configurationTypes = Assembly.GetEntryAssembly()
-                .GetTypes()
+            var configurationTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
                 .Where(t => t.IsClass && !t.IsAbstract &&
-                            t.BaseType != null &&
-                            (t.BaseType.IsGenericType &&
-                             (t.BaseType.GetGenericTypeDefinition() == typeof(EfAggregateRootConfigurationBase<,>) ||
-                              t.BaseType.GetGenericTypeDefinition() == typeof(EfEntityConfigurationBase<,>))));
+                       t.BaseType != null &&
+                       (t.BaseType.IsGenericType &&
+                       (t.BaseType.GetGenericTypeDefinition() == typeof(EfAggregateRootConfigurationBase<,>) ||
+                       t.BaseType.GetGenericTypeDefinition() == typeof(EfEntityConfigurationBase<,>))));
 
             foreach (var configType in configurationTypes)
             {
                 var configurationInstance = Activator.CreateInstance(configType);
                 modelBuilder.ApplyConfiguration((dynamic)configurationInstance!);
+                _logger.LogInformation("Auto-loaded EF Core configuration: {ConfigurationType}", configType.Name);
             }
         }
 
-        public void ValidateModelConfiguration(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
+        public void ValidateModelConfiguration(ModelBuilder modelBuilder)
         {
             var configuredEntities = modelBuilder.Model.GetEntityTypes().Select(e => e.ClrType).ToList();
 

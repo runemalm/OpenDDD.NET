@@ -7,8 +7,6 @@ namespace Bookstore.Application.Actions.RegisterCustomer
         public string Name { get; set; }
         public string Email { get; set; }
 
-        public RegisterCustomerCommand() { }
-
         public RegisterCustomerCommand(string name, string email)
         {
             Name = name;

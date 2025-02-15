@@ -1,4 +1,4 @@
-using OpenDDD.Main.Extensions;
+using OpenDDD.API.Extensions;
 using Bookstore.Domain.Model.Ports;
 using Bookstore.Infrastructure.Adapters.Console;
 using Bookstore.Infrastructure.Persistence.EfCore;
@@ -10,14 +10,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
+// builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
+builder.Services.AddOpenDDD(builder.Configuration,
     options =>  
     {  
-        options.UseEfCore()
-               .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+        options.UseInMemoryDatabase()
                .UseInMemoryMessaging()
                .SetEventListenerGroup("Bookstore")
-               .SetEventTopicTemplates(
+               .SetEventTopics(
                    "Bookstore.Domain.{EventName}",
                    "Bookstore.Interchange.{EventName}"
                 )
@@ -25,7 +25,6 @@ builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration,
     },
     services =>
     {
-        // Add port adapters
         services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
     }
 );

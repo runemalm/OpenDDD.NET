@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using OpenDDD.Main.Options;
+using OpenDDD.API.Options;
 
 namespace OpenDDD.Domain.Model.Helpers
 {

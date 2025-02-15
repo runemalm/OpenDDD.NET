@@ -6,6 +6,6 @@ namespace OpenDDD.Domain.Model
         where TEvent : IEvent
         where TAction : class
     {
-        Task HandleAsync(TEvent @event, TAction action, CancellationToken cancellationToken);
+        Task HandleAsync(TEvent @event, TAction action, CancellationToken ct);
     }
 }

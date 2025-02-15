@@ -6,16 +6,24 @@ namespace Bookstore.Domain.Model
     {
         public Guid CustomerId { get; private set; }
         public ICollection<LineItem> LineItems { get; private set; }
+        
+        private Order() { }
 
-        private Order() : base(Guid.Empty)
+        private Order(Guid id, Guid customerId) : base(id)
         {
+            CustomerId = customerId;
             LineItems = new List<LineItem>();
         }
 
-        public Order(Guid id, Guid customerId, ICollection<LineItem> lineItems) : base(id)
+        public static Order Create(Guid customerId)
         {
-            CustomerId = customerId;
-            LineItems = lineItems ?? new List<LineItem>();
+            return new Order(Guid.NewGuid(), customerId);
+        }
+
+        public void AddLineItem(Guid bookId, float price)
+        {
+            var lineItem = LineItem.Create(bookId, price);
+            LineItems.Add(lineItem);
         }
     }
 }

@@ -1,59 +1,94 @@
-###############
-Getting Started
-###############
-
 .. note::
 
     OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
 
-############
-Introduction
-############
+.. _userguide-getting-started:
 
-OpenDDD.NET is an open-source framework for building applications using Domain-Driven Design (DDD) principles in .NET. It provides a set of foundational tools and abstractions to help developers create scalable, maintainable, and testable software systems.
+###############
+Getting Started
+###############
 
-This guide will introduce you to the core concepts and show you how to start using OpenDDD.NET. For more detailed usage examples, refer to the :ref:`Building Blocks <building-blocks>` section.
+There are multiple ways to start using OpenDDD.NET:
 
-############
-Installation
-############
+- **Use the Project Template** → Generate a new project using the :ref:`project template <userguide-project-template>` to get started quickly with the correct structure and initial configurations.
+- **Setup From Scratch** → Follow the :ref:`step-by-step guide <userguide-step-by-step>` to create a project from scratch.
+- **Explore the Sample Project** → Browse the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_ on GitHub for a fully implemented example.
 
-Install OpenDDD.NET using the .NET CLI:
+.. _userguide-project-template:
+
+################
+Project Template
+################
+
+The **OpenDDD.NET project template** provides a quick way to set up a new project with the necessary structure, configuration, and boilerplate code.
+
+**Install the template package:**
+
+.. code-block:: bash
+
+    dotnet new install OpenDDD.NET-Templates --prerelease
+
+**Create a new project:**
+
+.. code-block:: bash
+
+    dotnet new openddd-sln --framework net8.0 -n YourProjectName
+
+This generates a **YourProjectName** project in your current directory, preconfigured with best practices to get you started quickly.
+
+Continue building your domain model by adding aggregates, domain services, listeners, etc. Refer to the :ref:`Building Blocks <building-blocks>` section for more information.
+
+.. _userguide-step-by-step:
+
+##################
+Step-by-Step Guide
+##################
+
+Follow these steps to setup a new project using OpenDDD.NET from scratch:
+
+-----------------------
+1: Create a new project
+-----------------------
+
+Create a new ASP.NET Core Web API project using the .NET CLI:
+
+.. code-block:: bash
+
+    $ dotnet new webapi -n YourProjectName
+
+----------------------
+2: Install OpenDDD.NET
+----------------------
+
+Install the OpenDDD.NET framework:
 
 .. code-block:: bash
 
     $ dotnet add package OpenDDD.NET --prerelease
 
-The library requires .NET 8 or higher.
+.. note::
 
-####################
-Quick Start Overview
-####################
-
-To begin using OpenDDD.NET, follow these steps:
+    The library requires ASP.NET Core 8 or higher.
 
 --------------------
-1: Edit `Program.cs`
+3: Edit `Program.cs`
 --------------------
 
 Add OpenDDD.NET services and middleware to your application in the `Program.cs` file:
 
 .. code-block:: csharp
 
-    using OpenDDD.Main.Extensions;
-    using Bookstore.Domain.Model.Ports;
-    using Bookstore.Infrastructure.Adapters.Console;
-    using Bookstore.Infrastructure.Persistence.EfCore;
+    using OpenDDD.API.Extensions;
+    using YourProjectName.Domain.Model.Ports;
+    using YourProjectName.Infrastructure.Adapters.Console;
+    using YourProjectName.Infrastructure.Persistence.EfCore;
 
     var builder = WebApplication.CreateBuilder(args);
 
     // Add OpenDDD Services
-    builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration);
+    builder.Services.AddOpenDDD(builder.Configuration);
 
     var app = builder.Build();
-
-    // Add adapters
-    builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
 
     // Use OpenDDD Middleware
     app.UseOpenDDD();
@@ -61,7 +96,7 @@ Add OpenDDD.NET services and middleware to your application in the `Program.cs` 
     app.Run();
 
 ---------------
-2: Domain Layer
+4: Domain Layer
 ---------------
 
 Create aggregates, entities, value objects, domain events, domain services, ports and repository interfaces to represent your domain model.
@@ -72,7 +107,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model.Base;
 
-    namespace Bookstore.Domain.Model
+    namespace YourProjectName.Domain.Model
     {
         public class Customer : AggregateRootBase<Guid>
         {
@@ -98,7 +133,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model;
 
-    namespace Bookstore.Domain.Model.Events
+    namespace YourProjectName.Domain.Model.Events
     {
         public class CustomerRegistered : IDomainEvent
         {
@@ -128,7 +163,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model;
 
-    namespace Bookstore.Domain.Model
+    namespace YourProjectName.Domain.Model
     {
         public interface ICustomerRepository : IRepository<Customer, Guid>
         {
@@ -139,9 +174,9 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Domain.Service;
-    using Bookstore.Domain.Model;
+    using YourProjectName.Domain.Model;
 
-    namespace Bookstore.Domain.Service
+    namespace YourProjectName.Domain.Service
     {
         public interface ICustomerDomainService : IDomainService
         {
@@ -152,10 +187,10 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Domain.Model;
-    using Bookstore.Domain.Model;
-    using Bookstore.Domain.Model.Events;
+    using YourProjectName.Domain.Model;
+    using YourProjectName.Domain.Model.Events;
 
-    namespace Bookstore.Domain.Service
+    namespace YourProjectName.Domain.Service
     {
         public class CustomerDomainService : ICustomerDomainService
         {
@@ -197,7 +232,7 @@ Example definitions:
 
     using OpenDDD.Domain.Model.Ports;
 
-    namespace Bookstore.Domain.Model.Ports
+    namespace YourProjectName.Domain.Model.Ports
     {
         public interface IEmailPort : IPort
         {
@@ -206,7 +241,7 @@ Example definitions:
     }
 
 --------------------
-3: Application Layer
+5: Application Layer
 --------------------
 
 Create commands, actions and event listeners to handle application logic.
@@ -217,7 +252,7 @@ Example definitions:
 
     using OpenDDD.Application;
 
-    namespace Bookstore.Application.Actions.RegisterCustomer
+    namespace YourProjectName.Application.Actions.RegisterCustomer
     {
         public class RegisterCustomerCommand : ICommand
         {
@@ -236,11 +271,11 @@ Example definitions:
 
 .. code-block:: csharp
 
-    using Bookstore.Domain.Model;
-    using Bookstore.Domain.Service;
     using OpenDDD.Application;
+    using YourProjectName.Domain.Model;
+    using YourProjectName.Domain.Service;
 
-    namespace Bookstore.Application.Actions.RegisterCustomer
+    namespace YourProjectName.Application.Actions.RegisterCustomer
     {
         public class RegisterCustomerAction : IAction<RegisterCustomerCommand, Customer>
         {
@@ -269,12 +304,12 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Infrastructure.Events.Base;
-    using OpenDDD.Main.Options;
+    using OpenDDD.API.Options;
     using OpenDDD.Infrastructure.Events;
-    using Bookstore.Application.Actions.SendWelcomeEmail;
-    using Bookstore.Domain.Model.Events;
+    using YourProjectName.Application.Actions.SendWelcomeEmail;
+    using YourProjectName.Domain.Model.Events;
 
-    namespace Bookstore.Application.Listeners.Domain
+    namespace YourProjectName.Application.Listeners.Domain
     {
         public class CustomerRegisteredListener : EventListenerBase<CustomerRegistered, SendWelcomeEmailAction>
         {
@@ -296,9 +331,29 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Application;
-    using Bookstore.Domain.Model.Ports;
 
-    namespace Bookstore.Application.Actions.SendWelcomeEmail
+    namespace YourProjectName.Application.Actions.SendWelcomeEmail
+    {
+        public class SendWelcomeEmailCommand : ICommand
+        {
+            public string RecipientEmail { get; set; }
+            public string RecipientName { get; set; }
+
+            public SendWelcomeEmailCommand(string recipientEmail, string recipientName)
+            {
+                RecipientEmail = recipientEmail;
+                RecipientName = recipientName;
+            }
+        }
+    }
+
+
+.. code-block:: csharp
+
+    using OpenDDD.Application;
+    using YourProjectName.Domain.Model.Ports;
+
+    namespace YourProjectName.Application.Actions.SendWelcomeEmail
     {
         public class SendWelcomeEmailAction : IAction<SendWelcomeEmailCommand, object>
         {
@@ -317,8 +372,8 @@ Example definitions:
                 if (string.IsNullOrWhiteSpace(command.RecipientName))
                     throw new ArgumentException("Recipient name cannot be empty.", nameof(command.RecipientName));
 
-                var subject = "Welcome to Bookstore!";
-                var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- Bookstore Team";
+                var subject = "Welcome to YourProjectName!";
+                var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- YourProjectName Team";
 
                 // Send email
                 await _emailPort.SendEmailAsync(command.RecipientEmail, subject, body, ct);
@@ -329,50 +384,88 @@ Example definitions:
     }
 
 -----------------------
-4: Infrastructure Layer
+6: Infrastructure Layer
 -----------------------
 
-Create your repository and port implementations.
+Create your repository implementation classes. Create adapter classes for the ports in your domain layer.
 
 Example definitions:
 
 .. code-block:: csharp
 
-    using Microsoft.EntityFrameworkCore;
-    using OpenDDD.Infrastructure.Persistence.UoW;
-    using OpenDDD.Infrastructure.Repository.EfCore;
-    using Bookstore.Domain.Model;
+    using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
+    using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
+    using OpenDDD.Infrastructure.Persistence.Serializers;
+    using Npgsql;
+    using YourProjectName.Domain.Model;
 
-    namespace Bookstore.Infrastructure.Repositories.EfCore
+    namespace YourProjectName.Infrastructure.Repositories.OpenDdd.Postgres
     {
-        public class EfCoreCustomerRepository : EfCoreRepository<Customer, Guid>, ICustomerRepository
+        public class PostgresOpenDddCustomerRepository : PostgresOpenDddRepository<Customer, Guid>, ICustomerRepository
         {
-            private readonly ILogger<EfCoreCustomerRepository> _logger;
+            private readonly ILogger<PostgresOpenDddCustomerRepository> _logger;
 
-            public EfCoreCustomerRepository(IUnitOfWork unitOfWork, ILogger<EfCoreCustomerRepository> logger) 
-                : base(unitOfWork)
+            public PostgresOpenDddCustomerRepository(
+                PostgresDatabaseSession session, 
+                IAggregateSerializer serializer, 
+                ILogger<PostgresOpenDddCustomerRepository> logger) 
+                : base(session, serializer)
             {
                 _logger = logger;
             }
-            
-            public async Task<Customer?> FindByEmailAsync(string email, CancellationToken ct)
+
+            public async Task<Customer> GetByEmailAsync(string email, CancellationToken ct = default)
             {
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     throw new ArgumentException("Email cannot be null or whitespace.", nameof(email));
                 }
 
-                return await DbContext.Set<Customer>()
-                    .FirstOrDefaultAsync(c => EF.Functions.Like(c.Email, email), cancellationToken: ct);
+                try
+                {
+                    const string query = "SELECT data FROM customers WHERE data->>'email' = @email LIMIT 1;";
+                    await using var cmd = new NpgsqlCommand(query, Session.Connection, Session.Transaction);
+                    cmd.Parameters.AddWithValue("email", email);
+
+                    var result = await cmd.ExecuteScalarAsync(ct);
+
+                    if (result is string json)
+                    {
+                        return Serializer.Deserialize<Customer, Guid>(json) 
+                            ?? throw new KeyNotFoundException($"No customer found with email '{email}'.");
+                    }
+
+                    throw new KeyNotFoundException($"No customer found with email '{email}'.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error occurred while retrieving customer by email: {Email}", email);
+                    throw;
+                }
+            }
+
+            public async Task<Customer?> FindByEmailAsync(string email, CancellationToken ct = default)
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    throw new ArgumentException("Email cannot be null or whitespace.", nameof(email));
+                }
+
+                const string query = "SELECT data FROM customers WHERE data->>'email' = @email LIMIT 1;";
+                await using var cmd = new NpgsqlCommand(query, Session.Connection, Session.Transaction);
+                cmd.Parameters.AddWithValue("email", email);
+
+                var result = await cmd.ExecuteScalarAsync(ct);
+                return result is string json ? Serializer.Deserialize<Customer, Guid>(json) : null;
             }
         }
     }
 
 .. code-block:: csharp
 
-    using Bookstore.Domain.Model.Ports;
+    using YourProjectName.Domain.Model.Ports;
 
-    namespace Bookstore.Infrastructure.Adapters.Console
+    namespace YourProjectName.Infrastructure.Adapters.Console
     {
         public class ConsoleEmailAdapter : IEmailPort
         {
@@ -391,14 +484,21 @@ Example definitions:
         }
     }
 
-Register the adapter in `Program.cs` like this:
+Then register the port with the adapter class in `Program.cs` like this:
 
 .. code-block:: csharp
+    
+    // ...
 
+    // Add a custom adapter
     builder.Services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
 
+    var app = builder.Build();
+
+    // ...
+
 --------------------------
-5: Edit `appsettings.json`
+7: Edit `appsettings.json`
 --------------------------
 
 Add the following configuration to your `appsettings.json` file to customize OpenDDD.NET behavior:
@@ -406,20 +506,38 @@ Add the following configuration to your `appsettings.json` file to customize Ope
 .. code-block:: json
 
     "OpenDDD": {
-      "PersistenceProvider": "EfCore",
-      "EfCore": {
-        "Database": "SQLite",
-        "ConnectionString": "DataSource=Main/EfCore/Bookstore.db;Cache=Shared"
-      },
+      "PersistenceProvider": "OpenDDD",
+      "DatabaseProvider": "InMemory",
       "MessagingProvider": "InMemory",
       "Events": {
-        "DomainEventTopic": "Bookstore.Domain.{EventName}",
-        "IntegrationEventTopic": "Bookstore.Interchange.{EventName}",
+        "DomainEventTopicTemplate": "YourProjectName.Domain.{EventName}",
+        "IntegrationEventTopicTemplate": "YourProjectName.Interchange.{EventName}",
+        "ListenerGroup": "Default"
+      },
+      "SQLite": {
+        "ConnectionString": "DataSource=Infrastructure/Persistence/EfCore/YourProjectName.db;Cache=Shared"
+      },
+      "Postgres": {
+        "ConnectionString": "Host=localhost;Port=5432;Database=yourprojectname;Username=your_username;Password=your_password"
+      },
+      "Events": {
+        "DomainEventTopicTemplate": "YourProjectName.Domain.{EventName}",
+        "IntegrationEventTopicTemplate": "YourProjectName.Interchange.{EventName}",
         "ListenerGroup": "Default"
       },
       "AzureServiceBus": {
-        "ConnectionString": "Endpoint=sb://your-servicebus.servicebus.windows.net/;SharedAccessKeyName=your-key;SharedAccessKey=your-key",
+        "ConnectionString": "",
         "AutoCreateTopics": true
+      },
+      "RabbitMq": {
+        "HostName": "localhost",
+        "Port": 5672,
+        "Username": "guest",
+        "Password": "guest",
+        "VirtualHost": "/"
+      },
+      "Kafka": {
+        "BootstrapServers": "localhost:9092"
       },
       "AutoRegister": {
         "Actions": true,
@@ -427,19 +545,49 @@ Add the following configuration to your `appsettings.json` file to customize Ope
         "Repositories": true,
         "InfrastructureServices": true,
         "EventListeners": true,
-        "EfCoreConfigurations": true
+        "EfCoreConfigurations": true,
+        "Seeders": true
       }
     }
 
-For a full list of configuration options, see :ref:`Configuration <config>`.
+For all information about configuration, see :ref:`Configuration <config>`.
 
-##############
-Sample Project
-##############
+----------------------
+8: Run the Application
+----------------------
+
+Now you are ready to run the application:
+
+.. code-block:: bash
+
+    dotnet run
+
+To register a new customer, send a `POST` request to:
+
+.. code-block:: none
+
+    POST /api/customers/register-customer
+
+Fill in the request body with:
+
+.. code-block:: json
+
+    {
+      "name": "Alice",
+      "email": "alice@example.com"
+    }
+
+Click **Execute** to run the request.
+
+.. _userguide-sample-project:
+
+##################
+Run Sample Project
+##################
 
 The `Bookstore` sample project demonstrates how to build a **DDD-based** application using OpenDDD.NET.  
 It includes **domain models, repositories, actions, and event-driven processing**.
-All the example code from the guide above were taken from the sample project.
+Most of the example code in the documentation is taken from the sample project.
 
 Find the source code here: `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_.
 
@@ -448,18 +596,18 @@ Find the source code here: `Bookstore Sample Project <https://github.com/runemal
 .. code-block:: bash
 
    git clone https://github.com/runemalm/OpenDDD.NET.git
-   cd OpenDDD.NET/samples/Bookstore
+   cd OpenDDD.NET/samples/Bookstore/src/Bookstore
    dotnet run
 
 **Test the API:**
 
 - **Register a customer** → `POST /api/customers/register-customer`
-- Open **Swagger UI** at `http://localhost:5000/swagger` (or the correct port) to explore and test endpoints.
+- Open **Swagger UI** at `http://localhost:5268/swagger` to explore and test endpoints.
 
-#################
-Where to Go Next?
-#################
+##########
+Next Steps
+##########
 
-- **Explore Building Blocks**: Learn more about the foundational components of OpenDDD.NET in the :ref:`Building Blocks <building-blocks>` section.
-- **Sample Project**: Check out the sample project mentioned above.
-- **Contribute**: Join the OpenDDD.NET community on GitHub to report issues, ask questions, or contribute to the project.
+- **Learn the Core Concepts** → The :ref:`Building Blocks <building-blocks>` section provides full documentation on each DDD building block in OpenDDD.NET.  
+- **See a Full Implementation** → Explore the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_ on GitHub.  
+- **Get Involved** → Join the `OpenDDD.NET Discussions <https://github.com/runemalm/OpenDDD.NET/discussions>`_ to ask questions, share insights, and contribute.  

@@ -7,6 +7,8 @@ OpenDDD.NET is an open-source framework for domain-driven design (DDD) developme
 
 > **Note:** OpenDDD.NET is currently in an alpha state as part of new major version 3. Use with caution in production environments.
 
+⭐ Consider **starring** and/or **following** the project to stay updated with the latest developments.
+
 ## Key Features
 
 - **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
@@ -26,9 +28,12 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 
 ## Supported Versions
 
-- .NET 8
+- ASP.NET Core 6
+- ASP.NET Core 7
+- ASP.NET Core 8
+- ASP.NET Core 9
 
-## Example Usage
+## Getting Started
 
 To get started with OpenDDD.NET, follow these simple steps:
 
@@ -47,15 +52,14 @@ To get started with OpenDDD.NET, follow these simple steps:
 3. **Set up OpenDDD.NET**: Register OpenDDD services and middleware in your `Program.cs` file.
 
    ```csharp
-   using OpenDDD.Main.Extensions;
+   using OpenDDD.API.Extensions;
 
    var builder = WebApplication.CreateBuilder(args);
 
    // Add OpenDDD services
    builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, options =>  
    {  
-       options.UseEfCore()
-              .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+       options.UseInMemoryDatabase()    
               .UseInMemoryMessaging()
               .SetEventListenerGroup("Default")  
               .SetEventTopicTemplates(  
@@ -80,20 +84,7 @@ For detailed guides and examples, refer to the documentation.
 
 ## Documentation
 
-The official OpenDDD.NET documentation provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
-
-### 📖 Read the Docs  
-Visit the documentation: **[OpenDDD.NET Documentation](https://opendddnet.readthedocs.io/)**  
-
-### 🛠 Topics Covered  
-- **Getting Started**: Installation, setup, and basic usage  
-- **Domain Modeling**: Aggregates, entities, and value objects  
-- **Repositories & Persistence**: Using EF Core and selecting database provider  
-- **Event-Driven Architecture**: Domain events, integration events, and event listeners  
-- **Infrastructure & Services**: Auto-registration, messaging providers, and more  
-
-### ⭐ Stay Updated
-If you find OpenDDD.NET useful, consider **starring** the repository and **following** the project on GitHub to stay updated with the latest developments.
+The official [OpenDDD.NET Documentation](https://docs.openddd.net/) provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
 
 ## Sample Project
 
@@ -102,6 +93,17 @@ The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-wor
 Explore the project in the repository: [Bookstore Sample Project](https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore).
 
 ## Release History
+
+**3.0.0-alpha.4 (2025-02-15)**
+
+- **Persistence Providers**: Add the `OpenDDD` persistence provider.
+- **Database Providers**: Add the `InMemory` and `Postgres` database providers for the new `OpenDdd` persistence provider.
+- **Messaging Providers**: Add the `Kafka` and `RabbitMQ` messaging providers.
+- **Seeders**: Add support for seeders to seed aggregates on application start.
+- **Project Template**: Add a project template nuget for quick scaffolding of a new project.
+- **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.
+- **Namespace**: Change the name of the namespace `Main` -> `API`.
+- **Fix issues**: Fix issues with the `Azure Service Bus` provider & the `Ef Core` base repository.
 
 **3.0.0-alpha.3 (2025-01-30)**
 

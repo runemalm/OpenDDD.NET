@@ -1,6 +1,7 @@
 ﻿using OpenDDD.Infrastructure.Events.Base;
-using OpenDDD.Main.Options;
 using OpenDDD.Infrastructure.Events;
+using OpenDDD.API.Options;
+using OpenDDD.API.HostedServices;
 using Bookstore.Application.Actions.UpdateCustomerName;
 using Bookstore.Interchange.Model.Events;
 
@@ -12,8 +13,9 @@ namespace Bookstore.Application.Listeners.Integration
             IMessagingProvider messagingProvider,
             OpenDddOptions options,
             IServiceScopeFactory serviceScopeFactory,
+            StartupHostedService startupService,
             ILogger<PersonUpdatedIntegrationEventListener> logger)
-            : base(messagingProvider, options, serviceScopeFactory, logger) { }
+            : base(messagingProvider, options, serviceScopeFactory, startupService, logger) { }
 
         public override async Task HandleAsync(PersonUpdatedIntegrationEvent integrationEvent, 
             UpdateCustomerNameAction action, CancellationToken ct)

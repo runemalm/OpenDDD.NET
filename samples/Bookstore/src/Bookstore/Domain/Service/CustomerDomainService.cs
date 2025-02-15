@@ -28,7 +28,7 @@ namespace Bookstore.Domain.Service
             if (existingCustomer != null)
                 throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
 
-            var newCustomer = new Customer(Guid.NewGuid(), name, email);
+            var newCustomer = Customer.Create(name, email);
 
             await _customerRepository.SaveAsync(newCustomer, ct);
 

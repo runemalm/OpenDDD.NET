@@ -1,166 +1,72 @@
 .. _config:
 
-#############
-Configuration
-#############
+===================
+Configuration Guide
+===================
 
-OpenDDD.NET provides a flexible configuration system that allows you to customize its behavior in two ways:
+OpenDDD.NET provides a flexible configuration system to set up persistence, messaging, event handling, and auto-registration. 
 
-1. **appsettings.json** – The settings can be defined in this configuration file.
-2. **Fluent Methods** – Configuration can also be done programmatically using fluent methods in the `Program.cs` file.
+Configuration is typically done via `appsettings.json` or by using fluent methods in `OpenDddOptions`.
 
-Both approaches offer full control over the framework's settings, so you can choose the method that best suits your project's needs.
-
-This guide covers the key configuration options available in OpenDDD.NET, including examples for both approaches.
-
-.. _config-general:
-
-################
-General Settings
-################
-
-The main configuration section for OpenDDD.NET is `"OpenDDD"` in `appsettings.json`.
-
-Example:
-
-.. code-block:: json
-
-    "OpenDDD": {
-      "PersistenceProvider": "EfCore",
-      "MessagingProvider": "InMemory",
-      "AutoRegister": {
-        "Actions": true,
-        "DomainServices": true,
-        "Repositories": true,
-        "InfrastructureServices": true,
-        "EventListeners": true,
-        "EfCoreConfigurations": true
-      }
-    }
-
-.. _config-general-auto-registration:
-
------------------
-Auto-Registration
------------------
-
-OpenDDD.NET automatically registers several components by default.  
-You can enable or disable this behavior in the `"AutoRegister"` section.
-
-- **Actions** → Registers all `IAction<TCommand, TResponse>` implementations.
-- **Domain Services** → Registers all `IDomainService` implementations.
-- **Repositories** → Registers all `IRepository<TAggregate, TId>` implementations.
-- **Infrastructure Services** → Registers all `IInfrastructureService` implementations.
-- **Event Listeners** → Registers all `EventListenerBase<TEvent, TAction>` implementations.
-- **EfCore Configurations** → Registers Entity Framework Core configurations.
-
-To disable auto-registration for a component type, set it to `false`.  
-
-Example:
-
-.. code-block:: json
-
-    "AutoRegister": {
-      "Actions": false,
-      "DomainServices": true
-    }
-
-.. _config-persistence:
-
-#######################
-Persistence Settings
-#######################
-
-OpenDDD.NET supports **Entity Framework Core (EF Core)** as its persistence provider.
-
-Example configuration:
-
-.. code-block:: json
-
-    "OpenDDD": {
-      "PersistenceProvider": "EfCore",
-      "EfCore": {
-        "Database": "SQLite",
-        "ConnectionString": "DataSource=Main/EfCore/Bookstore.db;Cache=Shared"
-      }
-    }
-
-The **PersistenceProvider** setting determines which persistence provider is used.  
-Currently, the only supported provider is `"EfCore"`.
-
-To change database to e.g. **SQL Server**, update the database and connection string:
-
-.. code-block:: json
-
-    "EfCore": {
-      "Database": "SqlServer",
-      "ConnectionString": "Server=myServer;Database=myDb;User Id=myUser;Password=myPass;"
-    }
-
-.. _config-messaging:
-
-##################
-Messaging Settings
-##################
-
-OpenDDD.NET supports event-driven messaging using **domain events** and **integration events**.  
-Each event type has its own **dedicated topic**.
-
-Example configuration:
-
-.. code-block:: json
-
-    "OpenDDD": {
-      "MessagingProvider": "AzureServiceBus",
-      "Events": {
-        "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}",
-        "IntegrationEventTopicTemplate": "Bookstore.Interchange.{EventName}",
-        "ListenerGroup": "Default"
-      },
-      "AzureServiceBus": {
-        "ConnectionString": "Endpoint=sb://your-servicebus.servicebus.windows.net/;SharedAccessKeyName=your-key;SharedAccessKey=your-key",
-        "AutoCreateTopics": true
-      }
-    }
+.. contents:: Table of Contents
+   :local:
+   :depth: 2
 
 ------------------
-Messaging Provider
+JSON Configuration
 ------------------
 
-**MessagingProvider** specifies the message bus to be used for event processing:
+An example configuration in `appsettings.json`:
 
-- `"InMemory"` → Local message bus for event processing within the same application instance.
-- `"AzureServiceBus"` → Distributed message bus for event processing across services.
+.. code-block:: json
 
-------------------------
-Topic Naming Conventions
-------------------------
+   {
+     "OpenDDD": {
+       "PersistenceProvider": "EfCore",
+       "DatabaseProvider": "SQLite",
+       "MessagingProvider": "InMemory",
+       "Events": {
+         "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}",
+         "IntegrationEventTopicTemplate": "Bookstore.Interchange.{EventName}",
+         "ListenerGroup": "Default"
+       },
+       "SQLite": {
+         "ConnectionString": "DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared"
+       },
+       "Postgres": {
+         "ConnectionString": "Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password"
+       },
+       "AzureServiceBus": {
+         "ConnectionString": "Endpoint=sb://your-namespace.servicebus.windows.net/;SharedAccessKeyName=your-key-name;SharedAccessKey=your-key",
+         "AutoCreateTopics": true
+       },
+       "RabbitMq": {
+         "HostName": "localhost",
+         "Port": 5672,
+         "Username": "guest",
+         "Password": "guest",
+         "VirtualHost": "/"
+       },
+       "Kafka": {
+         "BootstrapServers": "localhost:9092"
+       },
+       "AutoRegister": {
+         "Actions": true,
+         "DomainServices": true,
+         "Repositories": true,
+         "InfrastructureServices": true,
+         "EventListeners": true,
+         "EfCoreConfigurations": true,
+         "Seeders": true
+       }
+     }
+   }
 
-- **Domain Events:** `"Bookstore.Domain.{EventName}"`  
-  (or `"Bookstore.{BoundedContext}.{EventName}"` for multi-context applications)
-- **Integration Events:** `"Bookstore.Interchange.{EventName}"`  
-  (Always includes `"Interchange"` as the middle part)
+--------------------
+Fluent Configuration
+--------------------
 
-----------------------
-Competing Consumer Pattern
-----------------------
-
-OpenDDD.NET supports the **competing consumer pattern**, allowing multiple instances of a service  
-to process messages from the same event topic. 
-
-**ListenerGroup** specifies which **consumer group** the application instance belongs to.  
-Services in the same listener group compete for messages, ensuring **load balancing**  
-while preventing duplicate processing within the group.
-
-.. _config-fluent:
-
-############################
-Fluent Configuration Example
-############################
-
-OpenDDD.NET can also be configured using fluent methods in `Program.cs` when adding the services.
-
-Here’s an example configuration using the fluent API:
+Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically** in `Program.cs`:
 
 .. code-block:: csharp
 
@@ -168,15 +74,137 @@ Here’s an example configuration using the fluent API:
         options =>  
         {  
             options.UseEfCore()
-                   .UseSQLite("DataSource=Main/EfCore/Bookstore.db;Cache=Shared")
+                   .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
                    .UseInMemoryMessaging()
-                   .SetEventListenerGroup("Default")
                    .SetEventTopicTemplates(
                        "Bookstore.Domain.{EventName}",
                        "Bookstore.Interchange.{EventName}"
                     )
+                   .SetEventListenerGroup("Default")
                    .EnableAutoRegistration();
         }
     );
 
-This method allows you to customize the framework’s settings programmatically without needing to rely on the `appsettings.json` file.
+-------------------------
+Persistence Configuration
+-------------------------
+
+OpenDDD.NET supports multiple persistence providers:
+
+**EF Core Persistence Provider**:
+
+.. code-block:: csharp
+
+   options.UseEfCore().UseSQLite("DataSource=Bookstore.db;Cache=Shared");
+
+   // PostgreSQL
+   options.UseEfCore().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
+
+   // SQL Server
+   options.UseEfCore().UseSqlServer("Server=localhost;Database=bookstore;User Id=sa;Password=password;");
+
+**OpenDDD Persistence Provider**:
+
+.. code-block:: csharp
+
+   options.UseOpenDddPersistence().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
+
+-----------------------
+Messaging Configuration
+-----------------------
+
+OpenDDD.NET supports multiple messaging providers:
+
+**In-Memory Messaging**:
+
+.. code-block:: csharp
+
+   options.UseInMemoryMessaging();
+
+**RabbitMQ**:
+
+.. code-block:: csharp
+
+   options.UseRabbitMq(
+       hostName: "localhost",
+       port: 5672,
+       username: "guest",
+       password: "guest",
+       virtualHost: "/"
+   );
+
+**Kafka**:
+
+.. code-block:: csharp
+
+   options.UseKafka("localhost:9092");
+
+**Azure Service Bus**:
+
+.. code-block:: csharp
+
+   options.UseAzureServiceBus(
+       "Endpoint=sb://your-namespace.servicebus.windows.net/;SharedAccessKeyName=your-key-name;SharedAccessKey=your-key",
+       autoCreateTopics: true
+   );
+
+.. _config-events:
+
+-------------------
+Event Configuration
+-------------------
+
+Event settings define how domain and integration events are published:
+
+.. code-block:: csharp
+
+   options.SetEventTopicTemplates(
+             "Bookstore.Domain.{EventName}", 
+             "Bookstore.Interchange.{EventName}"
+          )
+          .SetEventListenerGroup("Default");
+
+.. _config-auto-registration:
+
+-----------------
+Auto-Registration
+-----------------
+
+OpenDDD.NET can automatically register key components:
+
+.. code-block:: csharp
+
+   options.EnableAutoRegistration();
+
+To disable auto-registration:
+
+.. code-block:: csharp
+
+   options.DisableAutoRegistration();
+
+You can also configure individual registrations:
+
+.. code-block:: json
+
+   {
+     "OpenDDD": {
+       "AutoRegister": {
+         "Actions": true,
+         "DomainServices": true,
+         "Repositories": true,
+         "InfrastructureServices": true,
+         "EventListeners": true,
+         "EfCoreConfigurations": true,
+         "Seeders": true
+       }
+     }
+   }
+
+----------
+Next Steps
+----------
+
+- See :ref:`Getting Started <userguide-getting-started>` for setting up a new project.
+- See a full implementation in the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore>`_ on GitHub.  
+- Go to the :ref:`Building Blocks <building-blocks>` section, for full documentation on each DDD building block.
+- Get involved in the `OpenDDD.NET Discussions <https://github.com/runemalm/OpenDDD.NET/discussions>`_ to ask questions, share insights, and contribute.  
