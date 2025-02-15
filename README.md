@@ -28,8 +28,6 @@ We're adhering to the key principles and building blocks of Domain-Driven Design
 
 ## Supported Versions
 
-- ASP.NET Core 6
-- ASP.NET Core 7
 - ASP.NET Core 8
 - ASP.NET Core 9
 
