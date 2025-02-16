@@ -57,7 +57,7 @@ An **Aggregate Root** is the entry point to an aggregate. It enforces invariants
 Entity
 ------
 
-An **Entity** has a unique identity within an aggregate and a lifecycle managed by its Aggregate Root.
+An **Entity** has a unique identity and a lifecycle managed by its Aggregate Root.
 
 .. code-block:: csharp
 
@@ -349,7 +349,7 @@ A **Domain Event** represents a significant change within the domain.
 Integration Events
 ------------------
 
-An **Integration Event** notifies external bounded contexts of domain changes. It is part of your **interchange context** project.
+An **Integration Event** is used to communicate between bounded contexts. It is part of an **interchange context**.
 
 **Defining an Integration Event:**
 
@@ -518,8 +518,8 @@ A **listener group** defines a set of **competing consumers** for a topic. Each 
 Summary
 -------
 
-- **Domain Events** capture internal changes within aggregates.
-- **Integration Events** notify external systems of changes.
+- **Domain Events** capture changes within a domain.
+- **Integration Events** is used to communicate between bounded contexts.
 - **Publishers** (`IDomainPublisher`, `IIntegrationPublisher`) send events.
 - **Listeners** react to events asynchronously.
 - **Topics** are configurable in `OpenDddOptions`.
@@ -534,9 +534,8 @@ A **Domain Service** provides domain-specific logic that **does not fit within a
 
 Domain services are typically used when:  
 
-- The logic **does not belong to an aggregate (entities or value objects)**.  
-- The operation involves **external dependencies** (e.g., repositories, external services) but is still **domain logic**.  
-- Business rules need to be **shared across multiple use cases**.  
+- The logic **does not belong naturally to an aggregate (entities or value objects)**.
+- Business rules need to be **shared across multiple use cases**.
 
 **Example domain service interface:**
 
@@ -597,12 +596,11 @@ Domain services are typically used when:
 
 - They contain **domain logic** but **are not part of an aggregate**.
 - They do **not manage state**; they operate on domain objects.
-- They can depend on **repositories, domain events, or external services** via ports.
 
 Domain services **should not** be used for:
 
 - Simple operations that belong to an **aggregate root**.
-- Coordinating application workflows (use **actions** instead).
+- Coordinating application workflows (use **actions** and **domain events** instead).
 - Infrastructure concerns like logging or email (use **infrastructure services**).
 
 .. _building-blocks-infrastructure-services:

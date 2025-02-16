@@ -88,29 +88,31 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
 Persistence Configuration
 -------------------------
 
-OpenDDD.NET supports multiple persistence providers:
+OpenDDD.NET supports multiple persistence providers. Each persistence provider supports a set of database providers.
+
+Example Configurations:
 
 **OpenDDD Persistence Provider**:
 
 .. code-block:: csharp
 
-   // PostgreSQL
+   // With PostgreSQL
    options.UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
 
-   // In-Memory
+   // With In-Memory
    options.UseInMemory();
 
 **EF Core Persistence Provider**:
 
 .. code-block:: csharp
 
-   // SQLite
+   // With SQLite
    options.UseEfCore().UseSQLite("DataSource=Bookstore.db;Cache=Shared");
 
-   // PostgreSQL
+   // With PostgreSQL
    options.UseEfCore().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
 
-   // SQL Server
+   // With SQL Server
    options.UseEfCore().UseSqlServer("Server=localhost;Database=bookstore;User Id=sa;Password=password;");
 
 -----------------------
