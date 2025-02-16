@@ -7,20 +7,27 @@ namespace Bookstore.Domain.Model
         public string Name { get; private set; }
         public string Author { get; private set; }
         public int Year { get; private set; }
-        
+        public Money Price { get; private set; }
+
         private Book() { }
 
-        private Book(Guid id, string name, string author, int year) : base(id)
+        private Book(Guid id, string name, string author, int year, Money price) : base(id)
         {
             Name = name;
             Author = author;
             Year = year;
+            Price = price;
             Validate();
         }
 
-        public static Book Create(string name, string author, int year)
+        public static Book Create(string name, string author, int year, Money price)
         {
-            return new Book(Guid.NewGuid(), name, author, year);
+            return new Book(Guid.NewGuid(), name, author, year, price);
+        }
+
+        public void UpdatePrice(Money newPrice)
+        {
+            Price = newPrice ?? throw new ArgumentNullException(nameof(newPrice));
         }
 
         private void Validate()
@@ -36,6 +43,9 @@ namespace Bookstore.Domain.Model
 
             if (Year < 0)
                 throw new ArgumentException("Year must be a positive value.", nameof(Year));
+
+            if (Price is null)
+                throw new ArgumentException("Price must be specified.", nameof(Price));
         }
     }
 }

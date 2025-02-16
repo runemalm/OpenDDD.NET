@@ -21,11 +21,11 @@ namespace Bookstore.Infrastructure.Persistence.OpenDdd.Seeders.InMemory
             var existingBooks = await session.SelectAllAsync<string>(tableName, ct);
             if (existingBooks.Any()) return;
 
-            var book1 = Book.Create("Domain-Driven Design: Tackling Complexity in the Heart of Software", "Eric Evans", 2003);
-            var book2 = Book.Create("Implementing Domain-Driven Design", "Vaughn Vernon", 2013);
+            var blueBook = Book.Create("Domain-Driven Design: Tackling Complexity in the Heart of Software", "Eric Evans", 2003, Money.USD(48.71m));
+            var redBook = Book.Create("Implementing Domain-Driven Design", "Vaughn Vernon", 2013, Money.USD(45.84m));
 
-            await session.UpsertAsync(tableName, book1.Id, _serializer.Serialize<Book, Guid>(book1), ct);
-            await session.UpsertAsync(tableName, book2.Id, _serializer.Serialize<Book, Guid>(book2), ct);
+            await session.UpsertAsync(tableName, blueBook.Id, _serializer.Serialize<Book, Guid>(blueBook), ct);
+            await session.UpsertAsync(tableName, redBook.Id, _serializer.Serialize<Book, Guid>(redBook), ct);
         }
     }
 }

@@ -7,8 +7,13 @@ using OpenDDD.API.Options;
 using OpenDDD.Domain.Model;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Repository.EfCore;
+using OpenDDD.Infrastructure.Persistence.DatabaseSession;
+using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
 using Bookstore.Domain.Model;
 using Bookstore.Infrastructure.Persistence.EfCore;
+using OpenDDD.Infrastructure.Events;
+using OpenDDD.Infrastructure.TransactionalOutbox;
+using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
 
 namespace Bookstore.Tests.Infrastructure.Persistence.EfCore
 {
@@ -33,9 +38,20 @@ namespace Bookstore.Tests.Infrastructure.Persistence.EfCore
                 opts.UseInMemoryDatabase("TestDatabase"));
             services.AddScoped<OpenDddDbContextBase>(sp => sp.GetRequiredService<BookstoreDbContext>());
 
+            // Register EfCoreDatabaseSession as the IDatabaseSession
+            services.AddScoped<EfCoreDatabaseSession>();
+            services.AddScoped<IDatabaseSession>(sp => sp.GetRequiredService<EfCoreDatabaseSession>());
+            
             // Register dependencies
             services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
             services.AddScoped(typeof(IRepository<Order, Guid>), typeof(EfCoreRepository<Order, Guid>));
+            
+            // Register publishers
+            services.AddScoped<IDomainPublisher, DomainPublisher>();
+            services.AddScoped<IIntegrationPublisher, IntegrationPublisher>();
+            
+            // Register IOutboxRepository (EF Core implementation)
+            services.AddScoped<IOutboxRepository, EfCoreOutboxRepository>();
 
             _serviceProvider = services.BuildServiceProvider();
         }
@@ -50,8 +66,8 @@ namespace Bookstore.Tests.Infrastructure.Persistence.EfCore
 
             // Arrange - Create and save an order with line items
             var order = Order.Create(Guid.NewGuid());
-            order.AddLineItem(Guid.NewGuid(), 19.99f);
-            order.AddLineItem(Guid.NewGuid(), 29.99f);
+            order.AddLineItem(Guid.NewGuid(), Money.USD(19.99m));
+            order.AddLineItem(Guid.NewGuid(), Money.USD(29.99m));
 
             await repository.SaveAsync(order, ct);
 

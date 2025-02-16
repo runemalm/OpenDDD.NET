@@ -29,14 +29,14 @@ namespace Bookstore.Infrastructure.Persistence.OpenDdd.Seeders.Postgres
                     (@id1, @data1::jsonb),
                     (@id2, @data2::jsonb);";
 
-                var book1 = Book.Create("Domain-Driven Design: Tackling Complexity in the Heart of Software", "Eric Evans", 2003);
-                var book2 = Book.Create("Implementing Domain-Driven Design", "Vaughn Vernon", 2013);
+                var blueBook = Book.Create("Domain-Driven Design: Tackling Complexity in the Heart of Software", "Eric Evans", 2003, Money.USD(48.71m));
+                var redBook = Book.Create("Implementing Domain-Driven Design", "Vaughn Vernon", 2013, Money.USD(45.84m));
 
                 await using var insertCmd = new NpgsqlCommand(insertQuery, session.Connection, session.Transaction);
-                insertCmd.Parameters.AddWithValue("id1", book1.Id);
-                insertCmd.Parameters.Add("data1", NpgsqlDbType.Jsonb).Value = _serializer.Serialize<Book, Guid>(book1);
-                insertCmd.Parameters.AddWithValue("id2", book2.Id);
-                insertCmd.Parameters.Add("data2", NpgsqlDbType.Jsonb).Value = _serializer.Serialize<Book, Guid>(book2);
+                insertCmd.Parameters.AddWithValue("id1", blueBook.Id);
+                insertCmd.Parameters.Add("data1", NpgsqlDbType.Jsonb).Value = _serializer.Serialize<Book, Guid>(blueBook);
+                insertCmd.Parameters.AddWithValue("id2", redBook.Id);
+                insertCmd.Parameters.Add("data2", NpgsqlDbType.Jsonb).Value = _serializer.Serialize<Book, Guid>(redBook);
 
                 await insertCmd.ExecuteNonQueryAsync(ct);
             }

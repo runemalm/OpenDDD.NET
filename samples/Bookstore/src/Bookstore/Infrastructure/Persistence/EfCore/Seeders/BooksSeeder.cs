@@ -13,8 +13,8 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Seeders
             if (!await dbContext.Set<Book>().AnyAsync())
             {
                 // Create banks
-                var blueBook = Book.Create("Domain-Driven Design: Tackling Complexity in the Heart of Software", "Eric Evans", 2003);
-                var redBook = Book.Create("Implementing Domain-Driven Design", "Vaughn Vernon", 2013);
+                var blueBook = Book.Create("Domain-Driven Design: Tackling Complexity in the Heart of Software", "Eric Evans", 2003, Money.USD(48.71m));
+                var redBook = Book.Create("Implementing Domain-Driven Design", "Vaughn Vernon", 2013, Money.USD(45.84m));
 
                 // Add banks (and their integrations through EF Core cascading)
                 dbContext.Set<Book>().AddRange(blueBook, redBook);

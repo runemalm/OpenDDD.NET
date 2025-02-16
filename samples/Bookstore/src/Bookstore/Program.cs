@@ -10,11 +10,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-// builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
-builder.Services.AddOpenDDD(builder.Configuration,
+builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
     options =>  
     {  
-        options.UseInMemoryDatabase()
+        options.UseEfCore()
+               .UseSqlite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
                .UseInMemoryMessaging()
                .SetEventListenerGroup("Bookstore")
                .SetEventTopics(

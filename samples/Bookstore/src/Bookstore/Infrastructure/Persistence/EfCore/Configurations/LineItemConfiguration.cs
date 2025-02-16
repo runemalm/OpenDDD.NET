@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using Bookstore.Domain.Model;
 
@@ -10,9 +11,15 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Configurations
         {
             base.Configure(builder);
             
-            // Define the OrderId foreign key (shadow property)
+            // Custom configurations here
             builder.Property<Guid>("OrderId")
                 .IsRequired();
+            
+            builder.OwnsOne(li => li.Price, money =>
+            {
+                money.Property(m => m.Amount).HasColumnName("Price_Amount");
+                money.Property(m => m.Currency).HasColumnName("Price_Currency").HasMaxLength(3);
+            });
         }
     }
 }

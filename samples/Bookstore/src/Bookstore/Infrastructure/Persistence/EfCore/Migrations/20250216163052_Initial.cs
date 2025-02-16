@@ -19,6 +19,8 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Author = table.Column<string>(type: "TEXT", nullable: false),
                     Year = table.Column<int>(type: "INTEGER", nullable: false),
+                    Price_Amount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Price_Currency = table.Column<string>(type: "TEXT", maxLength: 3, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -78,7 +80,8 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     BookId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Price = table.Column<float>(type: "REAL", nullable: false),
+                    Price_Amount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Price_Currency = table.Column<string>(type: "TEXT", maxLength: 3, nullable: false),
                     OrderId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)

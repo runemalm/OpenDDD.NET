@@ -20,7 +20,7 @@ namespace Bookstore.Domain.Model
             return new Order(Guid.NewGuid(), customerId);
         }
 
-        public void AddLineItem(Guid bookId, float price)
+        public void AddLineItem(Guid bookId, Money price)
         {
             var lineItem = LineItem.Create(bookId, price);
             LineItems.Add(lineItem);
