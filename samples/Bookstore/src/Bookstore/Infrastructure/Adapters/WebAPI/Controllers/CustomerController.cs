@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Bookstore.Application.Actions.GetCustomer;
+using Bookstore.Application.Actions.GetCustomers;
 using Bookstore.Application.Actions.RegisterCustomer;
 using Bookstore.Domain.Model;
 
@@ -11,13 +12,16 @@ namespace Bookstore.Infrastructure.Adapters.WebAPI.Controllers
     {
         private readonly RegisterCustomerAction _registerCustomerAction;
         private readonly GetCustomerAction _getCustomerAction;
+        private readonly GetCustomersAction _getCustomersAction;
 
         public CustomerController(
             RegisterCustomerAction registerCustomerAction,
-            GetCustomerAction getCustomerAction)
+            GetCustomerAction getCustomerAction,
+            GetCustomersAction getCustomersAction)
         {
             _registerCustomerAction = registerCustomerAction;
             _getCustomerAction = getCustomerAction;
+            _getCustomersAction = getCustomersAction;
         }
 
         [HttpPost("register-customer")]
@@ -46,6 +50,21 @@ namespace Bookstore.Infrastructure.Adapters.WebAPI.Controllers
             catch (KeyNotFoundException)
             {
                 return NotFound(new { Message = $"Customer with ID {id} not found." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+        
+        [HttpGet("get-customers")]
+        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers(CancellationToken ct)
+        {
+            try
+            {
+                var command = new GetCustomersCommand();
+                var customers = await _getCustomersAction.ExecuteAsync(command, ct);
+                return Ok(customers);
             }
             catch (Exception ex)
             {
