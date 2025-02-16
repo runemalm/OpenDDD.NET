@@ -9,6 +9,8 @@ using OpenDDD.API.Extensions;
 using OpenDDD.Domain.Model.Base;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.Postgres;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.InMemory;
+using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.InMemory;
 using Npgsql;
 
 namespace OpenDDD.API.HostedServices
@@ -123,7 +125,25 @@ namespace OpenDDD.API.HostedServices
         
         private async Task InitializeInMemory(IServiceScope scope, CancellationToken ct)
         {
-            
+            // Get database session
+            var databaseSession = scope.ServiceProvider.GetRequiredService<InMemoryDatabaseSession>();
+
+            // Seed
+            var seeders = scope.ServiceProvider.GetServices<IInMemoryOpenDddSeeder>().ToList();
+            if (seeders.Any())
+            {
+                _logger.LogInformation($"Executing {seeders.Count} InMemory OpenDDD seeders...");
+                foreach (var seeder in seeders)
+                {
+                    _logger.LogInformation($"Running {seeder.GetType().Name}...");
+                    await seeder.ExecuteAsync(databaseSession, ct);
+                    _logger.LogInformation($"{seeder.GetType().Name} completed successfully.");
+                }
+            }
+            else
+            {
+                _logger.LogInformation("No InMemory OpenDDD seeders found.");
+            }
         }
 
         public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
