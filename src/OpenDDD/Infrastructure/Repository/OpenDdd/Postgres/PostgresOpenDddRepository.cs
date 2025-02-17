@@ -88,6 +88,7 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.Postgres
                 ON CONFLICT (id) 
                 DO UPDATE SET data = EXCLUDED.data;";
 
+            aggregateRoot.UpdatedAt = DateTime.UtcNow;
             var serializedData = Serializer.Serialize<TAggregateRoot, TId>(aggregateRoot);
             await using var cmd = new NpgsqlCommand(query, Session.Connection, Session.Transaction);
             cmd.Parameters.AddWithValue("id", aggregateRoot.Id!);
