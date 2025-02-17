@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 {
     [DbContext(typeof(BookstoreDbContext))]
-    [Migration("20250216163052_Initial")]
+    [Migration("20250217122209_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -82,13 +82,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     b.Property<Guid>("BookId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("OrderId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

@@ -82,9 +82,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     BookId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Price_Amount = table.Column<decimal>(type: "TEXT", nullable: false),
                     Price_Currency = table.Column<string>(type: "TEXT", maxLength: 3, nullable: false),
-                    OrderId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    OrderId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
