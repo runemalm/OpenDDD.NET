@@ -1,6 +1,7 @@
 ﻿using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
 using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
 using OpenDDD.Infrastructure.Persistence.Serializers;
+using OpenDDD.Domain.Model.Exception;
 using Bookstore.Domain.Model;
 
 namespace Bookstore.Infrastructure.Repositories.OpenDdd.Postgres
@@ -18,13 +19,13 @@ namespace Bookstore.Infrastructure.Repositories.OpenDdd.Postgres
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<Customer> GetByEmailAsync(string email, CancellationToken ct = default)
+        public async Task<Customer> GetByEmailAsync(string email, CancellationToken ct)
         {
             var customer = await FindByEmailAsync(email, ct);
-            return customer ?? throw new KeyNotFoundException($"No customer found with email '{email}'.");
+            return customer ?? throw new DomainException($"No customer found with email '{email}'.");
         }
 
-        public async Task<Customer?> FindByEmailAsync(string email, CancellationToken ct = default)
+        public async Task<Customer?> FindByEmailAsync(string email, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(email))
             {

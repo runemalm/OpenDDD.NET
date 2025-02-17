@@ -1,4 +1,5 @@
 ﻿using OpenDDD.Domain.Model;
+using OpenDDD.Domain.Model.Exception;
 using Bookstore.Domain.Model;
 using Bookstore.Domain.Model.Events;
 
@@ -11,22 +12,16 @@ namespace Bookstore.Domain.Service
 
         public CustomerDomainService(ICustomerRepository customerRepository, IDomainPublisher domainPublisher)
         {
-            _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
-            _domainPublisher = domainPublisher ?? throw new ArgumentNullException(nameof(domainPublisher));
+            _customerRepository = customerRepository;
+            _domainPublisher = domainPublisher;
         }
 
         public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Customer name cannot be empty.", nameof(name));
-
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Customer email cannot be empty.", nameof(email));
-            
             var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
             if (existingCustomer != null)
-                throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+                throw new EntityExistsException("Customer", $"email '{email}'");
 
             var newCustomer = Customer.Create(name, email);
 

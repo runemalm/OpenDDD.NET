@@ -1,7 +1,6 @@
 using OpenDDD.API.Extensions;
 using Bookstore.Domain.Model.Ports;
 using Bookstore.Infrastructure.Adapters.Console;
-using Bookstore.Infrastructure.Persistence.EfCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,13 +9,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add OpenDDD services
-// builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration,
 builder.Services.AddOpenDDD(builder.Configuration,
     options =>  
     {  
-        options
-               // .UseEfCore()
-               // .UseSqlite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
+        options.UseInMemoryDatabase()
                .UseInMemoryMessaging()
                .SetEventListenerGroup("Bookstore")
                .SetEventTopics(
