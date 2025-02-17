@@ -79,9 +79,6 @@ Add OpenDDD.NET services and middleware to your application in the `Program.cs` 
 .. code-block:: csharp
 
     using OpenDDD.API.Extensions;
-    using YourProjectName.Domain.Model.Ports;
-    using YourProjectName.Infrastructure.Adapters.Console;
-    using YourProjectName.Infrastructure.Persistence.EfCore;
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -466,8 +463,8 @@ Add the following configuration to your `appsettings.json` file to customize Ope
       "DatabaseProvider": "InMemory",
       "MessagingProvider": "InMemory",
       "Events": {
-        "DomainEventTopicTemplate": "YourProjectName.Domain.{EventName}",
-        "IntegrationEventTopicTemplate": "YourProjectName.Interchange.{EventName}",
+        "DomainEventTopic": "YourProjectName.Domain.{EventName}",
+        "IntegrationEventTopic": "YourProjectName.Interchange.{EventName}",
         "ListenerGroup": "Default"
       },
       "SQLite": {
@@ -475,11 +472,6 @@ Add the following configuration to your `appsettings.json` file to customize Ope
       },
       "Postgres": {
         "ConnectionString": "Host=localhost;Port=5432;Database=yourprojectname;Username=your_username;Password=your_password"
-      },
-      "Events": {
-        "DomainEventTopicTemplate": "YourProjectName.Domain.{EventName}",
-        "IntegrationEventTopicTemplate": "YourProjectName.Interchange.{EventName}",
-        "ListenerGroup": "Default"
       },
       "AzureServiceBus": {
         "ConnectionString": "",
