@@ -203,7 +203,7 @@ templates-pack: ##@Template	 Pack the OpenDDD.NET project template into a NuGet 
 	dotnet pack $(TEMPLATES_CSPROJ) -o $(TEMPLATES_OUT)
 
 .PHONY: templates-publish
-templates-publish: template-pack ##@Template	 Publish the template to NuGet
+templates-publish: ##@Template	 Publish the template to NuGet
 	dotnet nuget push $(TEMPLATES_NUPKG) --api-key $(NUGET_API_KEY) --source https://api.nuget.org/v3/index.json
 
 .PHONY: templates-rebuild
