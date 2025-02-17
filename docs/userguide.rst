@@ -26,13 +26,13 @@ The **OpenDDD.NET project template** provides a quick way to set up a new projec
 
 .. code-block:: bash
 
-    dotnet new install OpenDDD.NET-Templates --prerelease
+    dotnet new install OpenDDD.NET-Templates
 
 **Create a new project:**
 
 .. code-block:: bash
 
-    dotnet new openddd-sln --framework net8.0 -n YourProjectName
+    dotnet new opendddnet-sln --framework net8.0 -n YourProjectName
 
 This generates a **YourProjectName** project in your current directory, preconfigured with best practices to get you started quickly.
 
