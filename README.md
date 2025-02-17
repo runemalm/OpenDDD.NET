@@ -5,7 +5,7 @@
 
 OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
-> **Note:** OpenDDD.NET is currently in an alpha state as part of new major version 3. Use with caution in production environments.
+> **Note:** OpenDDD.NET is currently in a beta state as part of new major version 3. Use with caution in production environments.
 
 ⭐ Consider **starring** and/or **following** the project to stay updated with the latest developments.
 
@@ -91,6 +91,12 @@ The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-wor
 Explore the project in the repository: [Bookstore Sample Project](https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore).
 
 ## Release History
+
+**3.0.0-beta.1 (2025-02-17)**
+
+- **Beta Release**: OpenDDD.NET has moved from alpha to `beta`, indicating improved stability.
+- **Performance Improvements**: Optimized framework components for better efficiency.
+- **Fix Issues**: Fixed various issues.
 
 **3.0.0-alpha.4 (2025-02-15)**
 
