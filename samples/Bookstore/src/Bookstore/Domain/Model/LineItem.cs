@@ -7,7 +7,7 @@ namespace Bookstore.Domain.Model
         public Guid BookId { get; private set; }
         public Money Price { get; private set; }
         
-        private LineItem() { }
+        private LineItem() { }  // Needed if using EF Core..
 
         private LineItem(Guid id, Guid bookId, Money price) : base(id)
         {

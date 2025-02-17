@@ -7,7 +7,7 @@ namespace Bookstore.Domain.Model
         public string Name { get; private set; }
         public string Email { get; private set; }
 
-        private Customer() { }
+        private Customer() { }  // Needed if using EF Core..
 
         private Customer(Guid id, string name, string email) : base(id)
         {

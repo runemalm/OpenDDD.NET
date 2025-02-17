@@ -5,10 +5,10 @@ namespace Bookstore.Domain.Model
 {
     public class Money : IValueObject
     {
-        public decimal Amount { get; }
-        public string Currency { get; }
+        public decimal Amount { get; private set; }
+        public string Currency { get; private set; }
         
-        private Money() { }
+        private Money() { }  // Needed if using EF Core..
 
         private Money(decimal amount, string currency)
         {
