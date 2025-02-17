@@ -287,8 +287,7 @@ namespace OpenDDD.API.Extensions
         private static void RegisterServicesByInterface<TServiceMarker>(IServiceCollection services, string serviceTypeName)
         {
             // Get all interfaces that implement the marker interface (excluding the marker itself)
-            var serviceInterfaces = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var serviceInterfaces = TypeScanner.GetRelevantTypes()
                 .Where(type =>
                     type.IsInterface &&
                     type != typeof(TServiceMarker) &&

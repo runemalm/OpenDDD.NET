@@ -17,6 +17,9 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions
                 case BinaryExpression binary:
                     return ParseBinaryExpression(binary);
 
+                case MemberExpression member when IsCapturedVariable(member):
+                    return ParseConstantExpression(EvaluateExpression(member));
+
                 case MemberExpression member:
                     return ParseMemberExpression(member);
 
@@ -27,11 +30,11 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions
                     return ParseMethodCallExpression(methodCall);
 
                 case UnaryExpression unary when unary.NodeType == ExpressionType.Convert:
-                    return ParseExpression(unary.Operand); // Strip unnecessary type conversions
+                    return ParseExpression(unary.Operand);
 
                 default:
                     if (IsCapturedVariable(expression))
-                        return ParseConstantExpression(EvaluateExpression(expression)); // Extract value from closure variable
+                        return ParseConstantExpression(EvaluateExpression(expression));
 
                     throw new NotSupportedException($"Unsupported expression type: {expression.NodeType}");
             }
@@ -119,14 +122,38 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions
         
         private static bool IsCapturedVariable(Expression expression)
         {
-            return expression is MemberExpression { Expression: ConstantExpression };
+            return expression is MemberExpression { Expression: ConstantExpression }
+                || expression is MemberExpression { Expression: MemberExpression member } && member.Expression is ConstantExpression;
         }
 
         private static ConstantExpression EvaluateExpression(Expression expression)
         {
-            if (expression is MemberExpression member && member.Expression is ConstantExpression constant)
+            if (expression is MemberExpression member)
             {
-                var value = ((FieldInfo)member.Member).GetValue(constant.Value);
+                object? container;
+        
+                if (member.Expression is ConstantExpression constant)
+                {
+                    container = constant.Value; // Direct captured variable
+                }
+                else if (member.Expression is MemberExpression innerMember && innerMember.Expression is ConstantExpression innerConstant)
+                {
+                    container = ((FieldInfo)innerMember.Member).GetValue(innerConstant.Value); // Captured inside another object
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unexpected captured variable structure: {expression}");
+                }
+
+                if (container == null) throw new InvalidOperationException("Captured variable container is null.");
+
+                object value = member.Member switch
+                {
+                    FieldInfo field => field.GetValue(container)!,
+                    PropertyInfo property => property.GetValue(container)!,
+                    _ => throw new InvalidOperationException("Unsupported captured variable member.")
+                };
+
                 return Expression.Constant(value);
             }
 

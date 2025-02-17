@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
+using Xunit;
 using FluentAssertions;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions;
-using Xunit;
 
 namespace OpenDDD.Tests.Infrastructure.Persistence.OpenDdd.Expressions
 {
@@ -55,6 +55,17 @@ namespace OpenDDD.Tests.Infrastructure.Persistence.OpenDdd.Expressions
             Expression<Func<Customer, bool>> expression = c => c.Name.Contains("John");
             var result = JsonbExpressionParser.Parse(expression);
             
+            result.Should().Be("data->>'name' ILIKE '%' || 'John' || '%'");
+        }
+        
+        [Fact]
+        public void Parse_ShouldGenerateSql_ForStringContains_WithCapturedVariableMemberExpression()
+        {
+            var command = new { Name = "John" };
+            Expression<Func<Customer, bool>> expression = c => c.Name.Contains(command.Name);
+
+            var result = JsonbExpressionParser.Parse(expression);
+    
             result.Should().Be("data->>'name' ILIKE '%' || 'John' || '%'");
         }
 

@@ -12,6 +12,7 @@ using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.Postgres;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.InMemory;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Seeders.InMemory;
 using Npgsql;
+using OpenDDD.Infrastructure.Utils;
 
 namespace OpenDDD.API.HostedServices
 {
@@ -187,9 +188,8 @@ namespace OpenDDD.API.HostedServices
 
         private async Task EnsurePostgresAggregateTablesAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken ct)
         {
-            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
-                .Where(t => t.IsClass && !t.IsAbstract && InheritsFromAggregateRoot(t))
+            var aggregateTypes = TypeScanner.GetRelevantTypes(onlyConcreteClasses: true)
+                .Where(t => InheritsFromAggregateRoot(t))
                 .ToList();
 
             foreach (var aggregateType in aggregateTypes)
