@@ -379,10 +379,8 @@ namespace OpenDDD.API.Extensions
 
         private static void RegisterActions(IServiceCollection services)
         {
-            var actionTypes = TypeScanner.GetRelevantTypes()
+            var actionTypes = TypeScanner.GetRelevantTypes(onlyConcreteClasses: true)
                 .Where(type =>
-                    type.IsClass &&
-                    !type.IsAbstract &&
                     type.GetInterfaces().Any(i =>
                         i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAction<,>)))
                 .ToList();
@@ -398,10 +396,8 @@ namespace OpenDDD.API.Extensions
         private static void RegisterEventListeners(IServiceCollection services)
         {
             // Find all classes deriving from EventListenerBase<,>
-            var listenerTypes = TypeScanner.GetRelevantTypes()
+            var listenerTypes = TypeScanner.GetRelevantTypes(onlyConcreteClasses: true)
                 .Where(type =>
-                    type.IsClass &&
-                    !type.IsAbstract &&
                     TypeScanner.IsDerivedFromGenericType(type, typeof(EventListenerBase<,>)))
                 .ToList();
 
@@ -422,8 +418,8 @@ namespace OpenDDD.API.Extensions
 
         private static void RegisterEfCoreSeeders(IServiceCollection services)
         {
-            var seederTypes = TypeScanner.GetRelevantTypes()
-                .Where(type => type.IsClass && !type.IsAbstract && typeof(IEfCoreSeeder).IsAssignableFrom(type))
+            var seederTypes = TypeScanner.GetRelevantTypes(onlyConcreteClasses: true)
+                .Where(type => typeof(IEfCoreSeeder).IsAssignableFrom(type))
                 .ToList();
 
             foreach (var seederType in seederTypes)
@@ -435,8 +431,8 @@ namespace OpenDDD.API.Extensions
         
         private static void RegisterPostgresOpenDddSeeders(IServiceCollection services)
         {
-            var seederTypes = TypeScanner.GetRelevantTypes()
-                .Where(type => type.IsClass && !type.IsAbstract && typeof(IPostgresOpenDddSeeder).IsAssignableFrom(type))
+            var seederTypes = TypeScanner.GetRelevantTypes(onlyConcreteClasses: true)
+                .Where(type => typeof(IPostgresOpenDddSeeder).IsAssignableFrom(type))
                 .ToList();
 
             foreach (var seederType in seederTypes)
@@ -448,8 +444,8 @@ namespace OpenDDD.API.Extensions
         
         private static void RegisterInMemoryOpenDddSeeders(IServiceCollection services)
         {
-            var seederTypes = TypeScanner.GetRelevantTypes()
-                .Where(type => type.IsClass && !type.IsAbstract && typeof(IInMemoryOpenDddSeeder).IsAssignableFrom(type))
+            var seederTypes = TypeScanner.GetRelevantTypes(onlyConcreteClasses: true)
+                .Where(type => typeof(IInMemoryOpenDddSeeder).IsAssignableFrom(type))
                 .ToList();
 
             foreach (var seederType in seederTypes)

@@ -29,12 +29,25 @@ namespace OpenDDD.Infrastructure.Utils
             return includeDynamic ? _cachedAssemblies : _cachedAssemblies.Where(a => !a.IsDynamic);
         }
 
-        public static IEnumerable<Type> GetRelevantTypes(bool includeDynamic = false)
+        public static IEnumerable<Type> GetRelevantTypes(
+            bool includeDynamic = false, 
+            bool onlyConcreteClasses = false,
+            bool excludeTestNamespaces = true)
         {
-            return GetRelevantAssemblies(includeDynamic)
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => !type.Namespace?.Contains("Tests", StringComparison.OrdinalIgnoreCase) ?? true) // Exclude test namespaces
-                .ToList();
+            var types = GetRelevantAssemblies(includeDynamic)
+                .SelectMany(assembly => assembly.GetTypes());
+
+            if (excludeTestNamespaces)
+            {
+                types = types.Where(type => !type.Namespace?.Contains("Tests", StringComparison.OrdinalIgnoreCase) ?? true);
+            }
+
+            if (onlyConcreteClasses)
+            {
+                types = types.Where(type => type.IsClass && !type.IsAbstract);
+            }
+            
+            return types.ToList();
         }
 
         public static IEnumerable<Type> FindTypesImplementingInterface<TInterface>(bool includeDynamic = false)
