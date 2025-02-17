@@ -1,6 +1,6 @@
 .. note::
 
-    OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
+    OpenDDD.NET is currently in beta. Features and documentation are under active development and subject to change.
 
 .. _building-blocks:
 
@@ -214,11 +214,9 @@ If an aggregate requires additional query methods, create a **custom repository*
     {
         public class PostgresOpenDddCustomerRepository : PostgresOpenDddRepository<Customer, Guid>, ICustomerRepository
         {
-            private readonly ILogger<PostgresOpenDddCustomerRepository> _logger;
-
             public PostgresOpenDddCustomerRepository(
                 PostgresDatabaseSession session, 
-                IAggregateSerializer serializer) 
+                IAggregateSerializer serializer)
                 : base(session, serializer)
             {
                 
@@ -400,6 +398,7 @@ Events are published using `IDomainPublisher` (for domain events) or `IIntegrati
 .. code-block:: csharp
 
     using OpenDDD.Domain.Model;
+    using OpenDDD.Domain.Model.Exception;
     using Bookstore.Domain.Model;
     using Bookstore.Domain.Model.Events;
 
@@ -418,16 +417,10 @@ Events are published using `IDomainPublisher` (for domain events) or `IIntegrati
 
             public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
             {
-                if (string.IsNullOrWhiteSpace(name))
-                    throw new ArgumentException("Customer name cannot be empty.", nameof(name));
-
-                if (string.IsNullOrWhiteSpace(email))
-                    throw new ArgumentException("Customer email cannot be empty.", nameof(email));
-                
                 var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
                 if (existingCustomer != null)
-                    throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+                    throw new EntityExistsException("Customer", $"email '{email}'");
 
                 var newCustomer = Customer.Create(name, email);
 
@@ -575,6 +568,7 @@ Domain services are typically used when:
 .. code-block:: csharp
 
     using OpenDDD.Domain.Model;
+    using OpenDDD.Domain.Model.Exception;
     using Bookstore.Domain.Model;
     using Bookstore.Domain.Model.Events;
 
@@ -596,7 +590,7 @@ Domain services are typically used when:
                 var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
                 if (existingCustomer != null)
-                    throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+                    throw new EntityExistsException("Customer", $"email '{email}'");
 
                 var newCustomer = Customer.Create(name, email);
 

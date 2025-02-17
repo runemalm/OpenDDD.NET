@@ -1,6 +1,6 @@
 .. note::
 
-    OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
+    OpenDDD.NET is currently in beta. Features and documentation are under active development and subject to change.
 
 .. _userguide-getting-started:
 
@@ -114,12 +114,15 @@ Example definitions:
             public string Name { get; private set; }
             public string Email { get; private set; }
             
-            private Customer() : base(Guid.Empty) { }
-
             public Customer(Guid id, string name, string email) : base(id)
             {
                 Name = name;
                 Email = email;
+            }
+
+            public static Customer Create(string name, string email)
+            {
+                return new Customer(Guid.NewGuid(), name, email);
             }
 
             public void ChangeName(string name)
@@ -167,7 +170,7 @@ Example definitions:
     {
         public interface ICustomerRepository : IRepository<Customer, Guid>
         {
-            public Task<Customer?> FindByEmailAsync(string email, CancellationToken ct = default);
+            public Task<Customer?> FindByEmailAsync(string email, CancellationToken ct);
         }
     }
 
@@ -187,10 +190,11 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Domain.Model;
-    using YourProjectName.Domain.Model;
-    using YourProjectName.Domain.Model.Events;
+    using OpenDDD.Domain.Model.Exception;
+    using Bookstore.Domain.Model;
+    using Bookstore.Domain.Model.Events;
 
-    namespace YourProjectName.Domain.Service
+    namespace Bookstore.Domain.Service
     {
         public class CustomerDomainService : ICustomerDomainService
         {
@@ -199,24 +203,18 @@ Example definitions:
 
             public CustomerDomainService(ICustomerRepository customerRepository, IDomainPublisher domainPublisher)
             {
-                _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
-                _domainPublisher = domainPublisher ?? throw new ArgumentNullException(nameof(domainPublisher));
+                _customerRepository = customerRepository;
+                _domainPublisher = domainPublisher;
             }
 
             public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
             {
-                if (string.IsNullOrWhiteSpace(name))
-                    throw new ArgumentException("Customer name cannot be empty.", nameof(name));
-
-                if (string.IsNullOrWhiteSpace(email))
-                    throw new ArgumentException("Customer email cannot be empty.", nameof(email));
-                
                 var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
                 if (existingCustomer != null)
-                    throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+                    throw new EntityExistsException("Customer", $"email '{email}'");
 
-                var newCustomer = new Customer(Guid.NewGuid(), name, email);
+                var newCustomer = Customer.Create(name, email);
 
                 await _customerRepository.SaveAsync(newCustomer, ct);
 
@@ -259,8 +257,6 @@ Example definitions:
             public string Name { get; set; }
             public string Email { get; set; }
 
-            public RegisterCustomerCommand() { }
-
             public RegisterCustomerCommand(string name, string email)
             {
                 Name = name;
@@ -288,13 +284,6 @@ Example definitions:
 
             public async Task<Customer> ExecuteAsync(RegisterCustomerCommand command, CancellationToken ct)
             {
-                if (string.IsNullOrWhiteSpace(command.Name))
-                    throw new ArgumentException("Customer name cannot be empty.", nameof(command.Name));
-
-                if (string.IsNullOrWhiteSpace(command.Email))
-                    throw new ArgumentException("Customer email cannot be empty.", nameof(command.Email));
-
-                // Delegate the registration logic to the domain service
                 var customer = await _customerDomainService.RegisterAsync(command.Name, command.Email, ct);
                 return customer;
             }
@@ -304,8 +293,9 @@ Example definitions:
 .. code-block:: csharp
 
     using OpenDDD.Infrastructure.Events.Base;
-    using OpenDDD.API.Options;
     using OpenDDD.Infrastructure.Events;
+    using OpenDDD.API.Options;
+    using OpenDDD.API.HostedServices;
     using YourProjectName.Application.Actions.SendWelcomeEmail;
     using YourProjectName.Domain.Model.Events;
 
@@ -317,8 +307,9 @@ Example definitions:
                 IMessagingProvider messagingProvider,
                 OpenDddOptions options,
                 IServiceScopeFactory serviceScopeFactory,
+                StartupHostedService startupService,
                 ILogger<CustomerRegisteredListener> logger)
-                : base(messagingProvider, options, serviceScopeFactory, logger) { }
+                : base(messagingProvider, options, serviceScopeFactory, startupService, logger) { }
 
             public override async Task HandleAsync(CustomerRegistered domainEvent, SendWelcomeEmailAction action, CancellationToken ct)
             {
@@ -361,17 +352,11 @@ Example definitions:
 
             public SendWelcomeEmailAction(IEmailPort emailPort)
             {
-                _emailPort = emailPort ?? throw new ArgumentNullException(nameof(emailPort));
+                _emailPort = emailPort;
             }
 
             public async Task<object> ExecuteAsync(SendWelcomeEmailCommand command, CancellationToken ct)
             {
-                if (string.IsNullOrWhiteSpace(command.RecipientEmail))
-                    throw new ArgumentException("Recipient email cannot be empty.", nameof(command.RecipientEmail));
-
-                if (string.IsNullOrWhiteSpace(command.RecipientName))
-                    throw new ArgumentException("Recipient name cannot be empty.", nameof(command.RecipientName));
-
                 var subject = "Welcome to YourProjectName!";
                 var body = $"Dear {command.RecipientName},\n\nThank you for registering with us. We're excited to have you on board!\n\n- YourProjectName Team";
 
@@ -396,9 +381,10 @@ Example definitions:
     using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
     using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
     using OpenDDD.Infrastructure.Persistence.Serializers;
-    using Bookstore.Domain.Model;
+    using OpenDDD.Domain.Model.Exception;
+    using YourProjectName.Domain.Model;
 
-    namespace Bookstore.Infrastructure.Repositories.OpenDdd.Postgres
+    namespace YourProjectName.Infrastructure.Repositories.OpenDdd.Postgres
     {
         public class PostgresOpenDddCustomerRepository : PostgresOpenDddRepository<Customer, Guid>, ICustomerRepository
         {
@@ -416,7 +402,7 @@ Example definitions:
             public async Task<Customer> GetByEmailAsync(string email, CancellationToken ct = default)
             {
                 var customer = await FindByEmailAsync(email, ct);
-                return customer ?? throw new KeyNotFoundException($"No customer found with email '{email}'.");
+                return customer ?? throw new DomainException($"No customer found with email '{email}'.");
             }
 
             public async Task<Customer?> FindByEmailAsync(string email, CancellationToken ct = default)

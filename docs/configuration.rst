@@ -1,3 +1,7 @@
+.. note::
+
+    OpenDDD.NET is currently in beta. Features and documentation are under active development and subject to change.
+
 .. _config:
 
 ===================

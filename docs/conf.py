@@ -14,7 +14,7 @@ author = 'David Runemalm'
 version = "3.0"
 
 # The full version, including alpha/beta/rc tags
-release = '3.0.0-alpha.4'
+release = '3.0.0-beta.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
