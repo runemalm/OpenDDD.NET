@@ -6,7 +6,7 @@ namespace OpenDDD.Tests.Domain.Model
     {
         public string Description { get; private set; }
 
-        private TestEntity() { }
+        private TestEntity() { }  // Needed if using EF Core..
 
         private TestEntity(Guid id, string description) : base(id)
         {

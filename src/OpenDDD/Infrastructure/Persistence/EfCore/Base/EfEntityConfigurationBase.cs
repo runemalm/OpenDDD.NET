@@ -14,10 +14,6 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
 
             // ID Property
             builder.Property(typeof(TId), "Id").IsRequired();
-
-            // Timestamp Properties
-            builder.Property<DateTime>("CreatedAt").IsRequired();
-            builder.Property<DateTime>("UpdatedAt").IsRequired();
             
             // Table Name
             builder.ToTable(GetTableName());

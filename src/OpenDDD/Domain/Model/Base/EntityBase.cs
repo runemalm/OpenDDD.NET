@@ -3,17 +3,12 @@
     public abstract class EntityBase<TId> : IEntity<TId>
     {
         public TId Id { get; protected set; } = default!;
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
 
-        // EF Core requires a parameterless constructor
-        protected EntityBase() { }
+        protected EntityBase() { }  // Needed if using EF Core..
 
         protected EntityBase(TId id)
         {
             Id = id;
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = CreatedAt;
         }
 
         public override bool Equals(object? obj)

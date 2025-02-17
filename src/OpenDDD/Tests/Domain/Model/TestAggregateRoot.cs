@@ -8,7 +8,7 @@ namespace OpenDDD.Tests.Domain.Model
         public List<TestEntity> Entities { get; private set; }
         public TestValueObject Value { get; private set; }
 
-        private TestAggregateRoot() { }
+        private TestAggregateRoot() { }  // Needed if using EF Core..
 
         private TestAggregateRoot(Guid id, string name, List<TestEntity> entities, TestValueObject value) : base(id)
         {

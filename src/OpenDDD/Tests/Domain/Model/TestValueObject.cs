@@ -7,7 +7,7 @@ namespace OpenDDD.Tests.Domain.Model
         public int Number { get; private set; }
         public string Text { get; private set; }
 
-        private TestValueObject() { }
+        private TestValueObject() { }  // Needed if using EF Core..
 
         public TestValueObject(int number, string text)
         {

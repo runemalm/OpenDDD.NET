@@ -2,8 +2,15 @@
 {
     public abstract class AggregateRootBase<TId> : EntityBase<TId>, IAggregateRoot<TId>
     {
-        protected AggregateRootBase() : base() { }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
-        protected AggregateRootBase(TId id) : base(id) { }
+        protected AggregateRootBase() : base() { }  // Needed if using EF Core..
+
+        protected AggregateRootBase(TId id) : base(id)
+        {
+            CreatedAt = DateTime.UtcNow;
+            UpdatedAt = CreatedAt;
+        }
     }
 }
