@@ -1,3 +1,7 @@
+.. note::
+
+    OpenDDD.NET is currently in beta. Features and documentation are under active development and subject to change.
+
 .. _config:
 
 ===================
@@ -22,8 +26,8 @@ An example configuration in `appsettings.json`:
 
    {
      "OpenDDD": {
-       "PersistenceProvider": "EfCore",
-       "DatabaseProvider": "SQLite",
+       "PersistenceProvider": "OpenDdd",
+       "DatabaseProvider": "InMemory",
        "MessagingProvider": "InMemory",
        "Events": {
          "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}",
@@ -70,11 +74,10 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
 
 .. code-block:: csharp
 
-    builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration, 
+    builder.Services.AddOpenDDD(builder.Configuration, 
         options =>  
         {  
-            options.UseEfCore()
-                   .UseSQLite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
+            options.UseInMemoryDatabase()
                    .UseInMemoryMessaging()
                    .SetEventTopicTemplates(
                        "Bookstore.Domain.{EventName}",
@@ -89,25 +92,32 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
 Persistence Configuration
 -------------------------
 
-OpenDDD.NET supports multiple persistence providers:
+OpenDDD.NET supports multiple persistence providers. Each persistence provider supports a set of database providers.
 
-**EF Core Persistence Provider**:
-
-.. code-block:: csharp
-
-   options.UseEfCore().UseSQLite("DataSource=Bookstore.db;Cache=Shared");
-
-   // PostgreSQL
-   options.UseEfCore().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
-
-   // SQL Server
-   options.UseEfCore().UseSqlServer("Server=localhost;Database=bookstore;User Id=sa;Password=password;");
+Example Configurations:
 
 **OpenDDD Persistence Provider**:
 
 .. code-block:: csharp
 
-   options.UseOpenDddPersistence().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
+   // With PostgreSQL
+   options.UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
+
+   // With In-Memory
+   options.UseInMemory();
+
+**EF Core Persistence Provider**:
+
+.. code-block:: csharp
+
+   // With SQLite
+   options.UseEfCore().UseSQLite("DataSource=Bookstore.db;Cache=Shared");
+
+   // With PostgreSQL
+   options.UseEfCore().UsePostgres("Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password");
+
+   // With SQL Server
+   options.UseEfCore().UseSqlServer("Server=localhost;Database=bookstore;User Id=sa;Password=password;");
 
 -----------------------
 Messaging Configuration

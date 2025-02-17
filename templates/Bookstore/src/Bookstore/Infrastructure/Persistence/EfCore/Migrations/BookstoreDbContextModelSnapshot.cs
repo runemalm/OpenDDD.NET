@@ -3,7 +3,6 @@ using System;
 using Bookstore.Infrastructure.Persistence.EfCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,11 +10,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
 {
     [DbContext(typeof(BookstoreDbContext))]
-    [Migration("20250210171119_Initial")]
-    partial class Initial
+    partial class BookstoreDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
@@ -82,16 +79,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     b.Property<Guid>("BookId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("OrderId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<float>("Price")
-                        .HasColumnType("REAL");
-
-                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -150,12 +138,67 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     b.ToTable("OutboxEntries");
                 });
 
+            modelBuilder.Entity("Bookstore.Domain.Model.Book", b =>
+                {
+                    b.OwnsOne("Bookstore.Domain.Model.Money", "Price", b1 =>
+                        {
+                            b1.Property<Guid>("BookId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Currency");
+
+                            b1.HasKey("BookId");
+
+                            b1.ToTable("Books");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BookId");
+                        });
+
+                    b.Navigation("Price")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Bookstore.Domain.Model.LineItem", b =>
                 {
                     b.HasOne("Bookstore.Domain.Model.Order", null)
                         .WithMany("LineItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("Bookstore.Domain.Model.Money", "Price", b1 =>
+                        {
+                            b1.Property<Guid>("LineItemId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Currency");
+
+                            b1.HasKey("LineItemId");
+
+                            b1.ToTable("LineItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LineItemId");
+                        });
+
+                    b.Navigation("Price")
                         .IsRequired();
                 });
 

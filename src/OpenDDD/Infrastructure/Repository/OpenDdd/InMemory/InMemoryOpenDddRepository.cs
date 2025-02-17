@@ -40,6 +40,7 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.InMemory
 
         public override async Task SaveAsync(TAggregateRoot aggregateRoot, CancellationToken ct)
         {
+            aggregateRoot.UpdatedAt = DateTime.UtcNow;
             var serializedData = Serializer.Serialize<TAggregateRoot, TId>(aggregateRoot);
             await _session.UpsertAsync(_collectionName, aggregateRoot.Id!, serializedData, ct);
         }

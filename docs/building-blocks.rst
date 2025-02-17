@@ -1,6 +1,6 @@
 .. note::
 
-    OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
+    OpenDDD.NET is currently in beta. Features and documentation are under active development and subject to change.
 
 .. _building-blocks:
 
@@ -57,7 +57,7 @@ An **Aggregate Root** is the entry point to an aggregate. It enforces invariants
 Entity
 ------
 
-An **Entity** has a unique identity within an aggregate and a lifecycle managed by its Aggregate Root.
+An **Entity** has a unique identity and a lifecycle managed by its Aggregate Root.
 
 .. code-block:: csharp
 
@@ -181,15 +181,17 @@ Auto-Registration
 
 Repositories are **auto-registered** with `IRepository<TAggregateRoot, TId>`. If a custom repository interface exists (e.g., `ICustomerRepository`), it is registered with its corresponding implementation instead.
 
-**Example: Default Auto-Registered Repository**
+**Example: Default Auto-Registered Repositories**
 
 - `IRepository<Guid, Customer>` → `PostgresOpenDddRepository<Guid, Customer>`
 - `IRepository<Guid, Customer>` → `EfCoreRepository<Guid, Customer>`
 
-**Example: Custom Auto-Registered Repository**
+**Example: Custom Auto-Registered Repositories**
 
 - `ICustomerRepository` → `PostgresOpenDddCustomerRepository`
 - `ICustomerRepository` → `EfCoreCustomerRepository`
+
+**NOTE:** If you have more than one implementation of a repository the framework won't know which of them to auto-register. In this case you need to delete one of the implementations or disable auto-registration and register the implementation you want manually.
 
 Auto-registration can be **disabled in the configuration**.
 
@@ -212,11 +214,9 @@ If an aggregate requires additional query methods, create a **custom repository*
     {
         public class PostgresOpenDddCustomerRepository : PostgresOpenDddRepository<Customer, Guid>, ICustomerRepository
         {
-            private readonly ILogger<PostgresOpenDddCustomerRepository> _logger;
-
             public PostgresOpenDddCustomerRepository(
                 PostgresDatabaseSession session, 
-                IAggregateSerializer serializer) 
+                IAggregateSerializer serializer)
                 : base(session, serializer)
             {
                 
@@ -232,26 +232,42 @@ If an aggregate requires additional query methods, create a **custom repository*
 Using EF Core
 -------------
 
-By default, OpenDDD.NET uses its **custom persistence provider**, which follows a **document storage model**. This aligns closely with **DDD aggregate patterns** (including Alistair Cockburn’s **Entity pattern**) by storing aggregates **as serialized JSON documents**.
+By default, OpenDDD.NET employs a **custom persistence provider** that stores aggregates as **serialized JSON documents**. This approach aligns with **DDD aggregate patterns** and Pat Helland's **Entity pattern** (see `Life Beyond Distributed Transactions <https://queue.acm.org/detail.cfm?id=3025012>`_), ensuring transactional consistency within each aggregate.
 
-If you need **relational storage**, you can configure **EF Core** as the persistence provider. In that case, you must define:
+For relational storage, OpenDDD.NET supports EF Core as an alternative persistence provider. To use EF Core, you need to:
 
-- A subclass of `OpenDddDbContextBase`
-- Subclasses of `EfAggregateRootConfigurationBase` for aggregates
-- Subclasses of `EfEntityConfigurationBase` for entities
-- Subclasses of `EfCoreRepository<TAggregateRoot, TId>` for custom repositories
-- Use the `AddOpenDdd<TDbContext>` overload when registering OpenDDD to specify your custom DbContext
+- Set the persistence provider to `EFCore` in the configuration.
+- Create a subclass of `OpenDddDbContextBase`.
+- Define entity mappings using `EfAggregateRootConfigurationBase` for aggregates.
+- Define entity mappings using `EfEntityConfigurationBase` for entities.
+- Implement custom repositories by subclassing `EfCoreRepository<TAggregateRoot, TId>`.
+- Register your custom `DbContext` using the `AddOpenDdd<TDbContext>` overload.
+- Ensure aggregates and entities have a **parameterless private constructor** so EF Core can instantiate them.
+
+Example JSON configuration:
+
+.. code-block:: json
+
+    {
+        "OpenDDD": {
+            "PersistenceProvider": "EFCore",
+            "DatabaseProvider": "Postgres",
+            "Postgres": {
+                "ConnectionString": "Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password"
+            }
+        }
+    }
 
 See the `Bookstore Sample Project <https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore/src/Bookstore/Infrastructure/Persistence/EfCore>`_ for examples.
 
 Summary
 -------
 
+- **OpenDDD.NET includes a built-in persistence provider**, which is used by default and stores aggregates as **serialized JSON documents**.
 - Repositories implement `IRepository<TAggregateRoot, TId>`, ensuring a **consistent API**.
-- Aggregates are stored as **JSON documents** in the configured database.
 - **Auto-registration** registers repositories unless overridden by a custom interface.
 - **Custom repositories** can be created by subclassing a base repository class.
-- **EF Core** can be used instead by configuring it properly.
+- **EF Core** can be used for relational storage by configuring it properly.
 
 .. _building-blocks-actions-and-commands:
 
@@ -349,7 +365,7 @@ A **Domain Event** represents a significant change within the domain.
 Integration Events
 ------------------
 
-An **Integration Event** notifies external bounded contexts of domain changes. It is part of your **interchange context** project.
+An **Integration Event** is used to communicate between bounded contexts. It is part of an **interchange context**.
 
 **Defining an Integration Event:**
 
@@ -382,6 +398,7 @@ Events are published using `IDomainPublisher` (for domain events) or `IIntegrati
 .. code-block:: csharp
 
     using OpenDDD.Domain.Model;
+    using OpenDDD.Domain.Model.Exception;
     using Bookstore.Domain.Model;
     using Bookstore.Domain.Model.Events;
 
@@ -400,16 +417,10 @@ Events are published using `IDomainPublisher` (for domain events) or `IIntegrati
 
             public async Task<Customer> RegisterAsync(string name, string email, CancellationToken ct)
             {
-                if (string.IsNullOrWhiteSpace(name))
-                    throw new ArgumentException("Customer name cannot be empty.", nameof(name));
-
-                if (string.IsNullOrWhiteSpace(email))
-                    throw new ArgumentException("Customer email cannot be empty.", nameof(email));
-                
                 var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
                 if (existingCustomer != null)
-                    throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+                    throw new EntityExistsException("Customer", $"email '{email}'");
 
                 var newCustomer = Customer.Create(name, email);
 
@@ -518,8 +529,8 @@ A **listener group** defines a set of **competing consumers** for a topic. Each 
 Summary
 -------
 
-- **Domain Events** capture internal changes within aggregates.
-- **Integration Events** notify external systems of changes.
+- **Domain Events** capture changes within a domain.
+- **Integration Events** is used to communicate between bounded contexts.
 - **Publishers** (`IDomainPublisher`, `IIntegrationPublisher`) send events.
 - **Listeners** react to events asynchronously.
 - **Topics** are configurable in `OpenDddOptions`.
@@ -534,9 +545,8 @@ A **Domain Service** provides domain-specific logic that **does not fit within a
 
 Domain services are typically used when:  
 
-- The logic **does not belong to an aggregate (entities or value objects)**.  
-- The operation involves **external dependencies** (e.g., repositories, external services) but is still **domain logic**.  
-- Business rules need to be **shared across multiple use cases**.  
+- The logic **does not belong naturally to an aggregate (entities or value objects)**.
+- Business rules need to be **shared across multiple use cases**.
 
 **Example domain service interface:**
 
@@ -558,6 +568,7 @@ Domain services are typically used when:
 .. code-block:: csharp
 
     using OpenDDD.Domain.Model;
+    using OpenDDD.Domain.Model.Exception;
     using Bookstore.Domain.Model;
     using Bookstore.Domain.Model.Events;
 
@@ -579,7 +590,7 @@ Domain services are typically used when:
                 var existingCustomer = await _customerRepository.FindByEmailAsync(email, ct);
 
                 if (existingCustomer != null)
-                    throw new InvalidOperationException($"A customer with the email '{email}' already exists.");
+                    throw new EntityExistsException("Customer", $"email '{email}'");
 
                 var newCustomer = Customer.Create(name, email);
 
@@ -597,12 +608,11 @@ Domain services are typically used when:
 
 - They contain **domain logic** but **are not part of an aggregate**.
 - They do **not manage state**; they operate on domain objects.
-- They can depend on **repositories, domain events, or external services** via ports.
 
 Domain services **should not** be used for:
 
 - Simple operations that belong to an **aggregate root**.
-- Coordinating application workflows (use **actions** instead).
+- Coordinating application workflows (use **actions** and **domain events** instead).
 - Infrastructure concerns like logging or email (use **infrastructure services**).
 
 .. _building-blocks-infrastructure-services:

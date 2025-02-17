@@ -1,10 +1,16 @@
 .. note::
 
-    OpenDDD.NET is currently in alpha. Features and documentation are under active development and subject to change.
+    OpenDDD.NET is currently in beta. Features and documentation are under active development and subject to change.
 
 ###############
 Version History
 ###############
+
+**3.0.0-beta.1 (2025-02-17)**
+
+- **Beta Release**: OpenDDD.NET has moved from alpha to **beta**, indicating improved stability.
+- **Performance Improvements**: Optimized framework components for better efficiency.
+- **Fix Issues**: Fixed various issues.
 
 **3.0.0-alpha.4 (2025-02-15)**
 
@@ -15,7 +21,7 @@ Version History
 - **Project Template**: Add a project template nuget for quick scaffolding of a new project.
 - **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.
 - **Namespace**: Change the name of the namespace `Main` -> `API`.
-- **Fix issues**: Fix issues with the `Azure Service Bus` provider & the `Ef Core` base repository.
+- **Fix Issues**: Fix issues with the `Azure Service Bus` provider & the `Ef Core` base repository.
 
 **3.0.0-alpha.3 (2025-01-30)**
 

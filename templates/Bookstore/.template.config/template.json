@@ -1,0 +1,57 @@
+{
+    "author": "David Runemalm",
+    "name": "OpenDDD.NET Solution",
+    "description": "A template for creating OpenDDD.NET solutions.",
+    "identity": "OpenDDD.NET.SolutionTemplate",
+    "shortName": "opendddnet-sln",
+    "tags":
+    {
+        "language": "C#",
+        "type": "project"
+    },
+    "sourceName": "Bookstore",
+    "symbols":
+    {
+        "framework":
+        {
+            "type": "parameter",
+            "description": "Select target framework.",
+            "datatype": "choice",
+            "enableQuotelessLiterals": true,
+            "isRequired": false,
+            "choices":
+            [
+                {
+                    "choice": "net8.0",
+                    "description": "Target .NET 8"
+                },
+                {
+                    "choice": "net9.0",
+                    "description": "Target .NET 9"
+                }
+            ],
+            "replaces": "$targetFramework$",
+            "defaultValue": "net8.0"
+        }
+    },
+    "preferNameDirectory": true,
+    "sources":
+    [
+        {
+            "modifiers":
+            [
+                {
+                    "exclude":
+                    [
+                        "**/bin/**",
+                        "**/obj/**",
+                        "**/.vs/**",
+                        "**/.git/**",
+                        "**/*.db",
+                        "**/*.db-*"
+                    ]
+                }
+            ]
+        }
+    ]
+}

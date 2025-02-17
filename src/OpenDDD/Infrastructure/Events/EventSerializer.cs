@@ -7,7 +7,7 @@ namespace OpenDDD.Infrastructure.Events
     {
         private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General)
         {
-            PropertyNamingPolicy = null,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
             WriteIndented = false,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never

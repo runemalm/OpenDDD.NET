@@ -1,9 +1,9 @@
-﻿using System.Reflection;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OpenDDD.API.Options;
 using OpenDDD.Domain.Model.Base;
 using OpenDDD.Infrastructure.TransactionalOutbox;
+using OpenDDD.Infrastructure.Utils;
 
 namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
 {
@@ -46,8 +46,7 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
 
         public void ApplyConfigurations(ModelBuilder modelBuilder)
         {
-            var configurationTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var configurationTypes = TypeScanner.GetRelevantTypes()
                 .Where(t => t.IsClass && !t.IsAbstract &&
                        t.BaseType != null &&
                        (t.BaseType.IsGenericType &&
@@ -66,8 +65,7 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
         {
             var configuredEntities = modelBuilder.Model.GetEntityTypes().Select(e => e.ClrType).ToList();
 
-            var allEntities = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var allEntities = TypeScanner.GetRelevantTypes()
                 .Where(t => !t.IsAbstract &&
                                  (t.BaseType != null &&
                                  (t.BaseType.IsGenericType &&

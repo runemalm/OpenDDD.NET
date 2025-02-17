@@ -79,16 +79,7 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     b.Property<Guid>("BookId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("OrderId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<float>("Price")
-                        .HasColumnType("REAL");
-
-                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -147,12 +138,67 @@ namespace Bookstore.Infrastructure.Persistence.EfCore.Migrations
                     b.ToTable("OutboxEntries");
                 });
 
+            modelBuilder.Entity("Bookstore.Domain.Model.Book", b =>
+                {
+                    b.OwnsOne("Bookstore.Domain.Model.Money", "Price", b1 =>
+                        {
+                            b1.Property<Guid>("BookId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Currency");
+
+                            b1.HasKey("BookId");
+
+                            b1.ToTable("Books");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BookId");
+                        });
+
+                    b.Navigation("Price")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Bookstore.Domain.Model.LineItem", b =>
                 {
                     b.HasOne("Bookstore.Domain.Model.Order", null)
                         .WithMany("LineItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("Bookstore.Domain.Model.Money", "Price", b1 =>
+                        {
+                            b1.Property<Guid>("LineItemId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("Price_Currency");
+
+                            b1.HasKey("LineItemId");
+
+                            b1.ToTable("LineItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LineItemId");
+                        });
+
+                    b.Navigation("Price")
                         .IsRequired();
                 });
 

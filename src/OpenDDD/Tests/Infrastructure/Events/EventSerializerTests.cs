@@ -20,9 +20,9 @@ namespace OpenDDD.Tests.Infrastructure.Events
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(json));
-            Assert.Contains("EventId", json);
-            Assert.Contains("EventName", json);
-            Assert.Contains("OccurredAt", json);
+            Assert.Contains("eventId", json);
+            Assert.Contains("eventName", json);
+            Assert.Contains("occurredAt", json);
         }
 
         [Fact]
