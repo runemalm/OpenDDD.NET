@@ -30,8 +30,8 @@ An example configuration in `appsettings.json`:
        "DatabaseProvider": "InMemory",
        "MessagingProvider": "InMemory",
        "Events": {
-         "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}",
-         "IntegrationEventTopicTemplate": "Bookstore.Interchange.{EventName}",
+         "DomainEventTopic": "Bookstore.Domain.{EventName}",
+         "IntegrationEventTopic": "Bookstore.Interchange.{EventName}",
          "ListenerGroup": "Default"
        },
        "SQLite": {
