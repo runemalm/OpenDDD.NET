@@ -59,11 +59,11 @@ To get started with OpenDDD.NET, follow these simple steps:
    {  
        options.UseInMemoryDatabase()    
               .UseInMemoryMessaging()
-              .SetEventListenerGroup("Default")  
-              .SetEventTopicTemplates(  
+              .SetEventTopics(  
                  "Bookstore.Domain.{EventName}",  
                  "Bookstore.Interchange.{EventName}"  
               )
+              .SetEventListenerGroup("Default")
               .EnableAutoRegistration();
    });
 
