@@ -168,7 +168,7 @@ Event settings define how domain and integration events are published:
 
 .. code-block:: csharp
 
-   options.SetEventTopicTemplates(
+   options.SetEventTopics(
              "Bookstore.Domain.{EventName}", 
              "Bookstore.Interchange.{EventName}"
           )
