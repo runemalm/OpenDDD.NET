@@ -13,8 +13,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddOpenDDD<BookstoreDbContext>(builder.Configuration,
     options =>  
     {  
-        // options.UseInMemoryDatabase()
         options.UseEfCore()
+               .UseSqlite("DataSource=Infrastructure/Persistence/EfCore/Bookstore.db;Cache=Shared")
                .UseInMemoryMessaging()
                .SetEventListenerGroup("Bookstore")
                .SetEventTopics(

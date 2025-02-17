@@ -43,6 +43,7 @@ using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
 using OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.InMemory;
 using OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.Postgres;
+using OpenDDD.Infrastructure.Utils;
 
 namespace OpenDDD.API.Extensions
 {
@@ -318,152 +319,67 @@ namespace OpenDDD.API.Extensions
                 }
             }
         }
-
+        
         private static void RegisterEfCoreRepositories(IServiceCollection services)
         {
-            var aggregateRootType = typeof(AggregateRootBase<>);
-
-            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(t => t.IsClass && !t.IsAbstract &&
-                            t.BaseType != null &&
-                            t.BaseType.IsGenericType &&
-                            t.BaseType.GetGenericTypeDefinition() == aggregateRootType)
-                .ToList();
-
-            foreach (var aggregateType in aggregateTypes)
-            {
-                var idType = aggregateType.BaseType!.GetGenericArguments()[0];
-                var repositoryInterfaceType = typeof(IRepository<,>).MakeGenericType(aggregateType, idType);
-
-                // Find custom repository interfaces extending IRepository<,>
-                var customRepositoryInterface = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(assembly => assembly.GetTypes())
-                    .FirstOrDefault(t => t.IsInterface && repositoryInterfaceType.IsAssignableFrom(t));
-
-                var customRepositoryImplementation = customRepositoryInterface != null
-                    ? AppDomain.CurrentDomain.GetAssemblies()
-                        .SelectMany(assembly => assembly.GetTypes())
-                        .FirstOrDefault(t => !t.IsInterface &&
-                                             !t.IsAbstract &&
-                                             customRepositoryInterface.IsAssignableFrom(t) &&
-                                             t.BaseType?.Name.Contains("EfCore") == true) // Ensure it's an EF Core repository
-                    : null;
-
-                if (customRepositoryInterface != null && customRepositoryImplementation != null)
-                {
-                    // Register custom EF Core repository
-                    services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
-                    Console.WriteLine($"Registered custom EF Core repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
-                }
-                else
-                {
-                    // Fallback to default EF Core repository
-                    var defaultRepositoryImplementationType = typeof(EfCoreRepository<,>).MakeGenericType(aggregateType, idType);
-                    services.AddTransient(repositoryInterfaceType, defaultRepositoryImplementationType);
-                    Console.WriteLine($"Registered default EF Core repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
-                }
-            }
+            RegisterRepositories(services, typeof(EfCoreRepository<,>));
         }
 
         private static void RegisterOpenDddPostgresRepositories(IServiceCollection services)
         {
-            var aggregateRootType = typeof(AggregateRootBase<>);
-
-            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(t => t.IsClass && !t.IsAbstract &&
-                            t.BaseType != null &&
-                            t.BaseType.IsGenericType &&
-                            t.BaseType.GetGenericTypeDefinition() == aggregateRootType)
-                .ToList();
-
-            foreach (var aggregateType in aggregateTypes)
-            {
-                var idType = aggregateType.BaseType!.GetGenericArguments()[0];
-                var repositoryInterfaceType = typeof(IRepository<,>).MakeGenericType(aggregateType, idType);
-
-                // Find custom repository interfaces extending IRepository<,>
-                var customRepositoryInterface = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(assembly => assembly.GetTypes())
-                    .FirstOrDefault(t => t.IsInterface && repositoryInterfaceType.IsAssignableFrom(t));
-
-                var customRepositoryImplementation = customRepositoryInterface != null
-                    ? AppDomain.CurrentDomain.GetAssemblies()
-                        .SelectMany(assembly => assembly.GetTypes())
-                        .FirstOrDefault(t => !t.IsInterface &&
-                                             !t.IsAbstract &&
-                                             customRepositoryInterface.IsAssignableFrom(t) &&
-                                             t.BaseType?.Name.Contains("PostgresOpenDdd") == true) // Ensure it's a PostgreSQL repository
-                    : null;
-
-                if (customRepositoryInterface != null && customRepositoryImplementation != null)
-                {
-                    // Register custom PostgreSQL OpenDDD repository
-                    services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
-                    Console.WriteLine($"Registered custom PostgreSQL OpenDDD repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
-                }
-                else
-                {
-                    // Fallback to default PostgreSQL OpenDDD repository
-                    var defaultRepositoryImplementationType = typeof(PostgresOpenDddRepository<,>).MakeGenericType(aggregateType, idType);
-                    services.AddTransient(repositoryInterfaceType, defaultRepositoryImplementationType);
-                    Console.WriteLine($"Registered default PostgreSQL OpenDDD repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
-                }
-            }
+            RegisterRepositories(services, typeof(PostgresOpenDddRepository<,>));
         }
 
         private static void RegisterOpenDddInMemoryRepositories(IServiceCollection services)
         {
-            var aggregateRootType = typeof(AggregateRootBase<>);
-
-            var aggregateTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(t => t.IsClass && !t.IsAbstract &&
-                            t.BaseType != null &&
-                            t.BaseType.IsGenericType &&
-                            t.BaseType.GetGenericTypeDefinition() == aggregateRootType)
-                .ToList();
+            RegisterRepositories(services, typeof(InMemoryOpenDddRepository<,>));
+        }
+        
+        private static void RegisterRepositories(IServiceCollection services, Type baseRepositoryType)
+        {
+            var aggregateTypes = TypeScanner.FindTypesDerivedFromGeneric(typeof(AggregateRootBase<>));
+            var relevantTypes = TypeScanner.GetRelevantTypes().ToList();
 
             foreach (var aggregateType in aggregateTypes)
             {
                 var idType = aggregateType.BaseType!.GetGenericArguments()[0];
                 var repositoryInterfaceType = typeof(IRepository<,>).MakeGenericType(aggregateType, idType);
 
-                // Find custom repository interfaces extending IRepository<,>
-                var customRepositoryInterface = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(assembly => assembly.GetTypes())
+                var customRepositoryInterface = relevantTypes
                     .FirstOrDefault(t => t.IsInterface && repositoryInterfaceType.IsAssignableFrom(t));
 
                 var customRepositoryImplementation = customRepositoryInterface != null
-                    ? AppDomain.CurrentDomain.GetAssemblies()
-                        .SelectMany(assembly => assembly.GetTypes())
+                    ? relevantTypes
                         .FirstOrDefault(t => !t.IsInterface &&
-                                             !t.IsAbstract &&
-                                             customRepositoryInterface.IsAssignableFrom(t) &&
-                                             t.BaseType?.Name.Contains("InMemoryOpenDdd") == true)
+                                                  !t.IsAbstract &&
+                                                  customRepositoryInterface.IsAssignableFrom(t) &&
+                                                  t.BaseType?.Name.Contains(baseRepositoryType.Name) == true)
                     : null;
 
                 if (customRepositoryInterface != null && customRepositoryImplementation != null)
                 {
-                    // Register custom InMemory OpenDDD repository
-                    services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
-                    Console.WriteLine($"Registered custom InMemory OpenDDD repository: {GetReadableTypeName(customRepositoryInterface)} with implementation: {GetReadableTypeName(customRepositoryImplementation)}.");
+                    try
+                    {
+                        services.AddTransient(customRepositoryInterface, customRepositoryImplementation);
+                        Console.WriteLine($"Registered custom repository: {TypeScanner.GetReadableTypeName(customRepositoryInterface)} → {TypeScanner.GetReadableTypeName(customRepositoryImplementation)}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to register customer repository: {TypeScanner.GetReadableTypeName(customRepositoryInterface)}: {ex.Message}");
+                    }
                 }
                 else
                 {
-                    // Fallback to default InMemory OpenDDD repository
-                    var defaultRepositoryImplementationType = typeof(InMemoryOpenDddRepository<,>).MakeGenericType(aggregateType, idType);
+                    var defaultRepositoryImplementationType = baseRepositoryType.MakeGenericType(aggregateType, idType);
                     services.AddTransient(repositoryInterfaceType, defaultRepositoryImplementationType);
-                    Console.WriteLine($"Registered default InMemory OpenDDD repository: {GetReadableTypeName(repositoryInterfaceType)} with implementation: {GetReadableTypeName(defaultRepositoryImplementationType)}.");
+                    Console.WriteLine($"Registered default repository: {TypeScanner.GetReadableTypeName(repositoryInterfaceType)} → {TypeScanner.GetReadableTypeName(defaultRepositoryImplementationType)}");
                 }
             }
         }
 
         private static void RegisterActions(IServiceCollection services)
         {
-            var actionTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var actionTypes = TypeScanner.GetRelevantTypes()
                 .Where(type =>
                     type.IsClass &&
                     !type.IsAbstract &&
@@ -482,12 +398,11 @@ namespace OpenDDD.API.Extensions
         private static void RegisterEventListeners(IServiceCollection services)
         {
             // Find all classes deriving from EventListenerBase<,>
-            var listenerTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var listenerTypes = TypeScanner.GetRelevantTypes()
                 .Where(type =>
                     type.IsClass &&
                     !type.IsAbstract &&
-                    IsDerivedFromGenericType(type, typeof(EventListenerBase<,>)))
+                    TypeScanner.IsDerivedFromGenericType(type, typeof(EventListenerBase<,>)))
                 .ToList();
 
             foreach (var listenerType in listenerTypes)
@@ -507,8 +422,7 @@ namespace OpenDDD.API.Extensions
 
         private static void RegisterEfCoreSeeders(IServiceCollection services)
         {
-            var seederTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var seederTypes = TypeScanner.GetRelevantTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IEfCoreSeeder).IsAssignableFrom(type))
                 .ToList();
 
@@ -521,8 +435,7 @@ namespace OpenDDD.API.Extensions
         
         private static void RegisterPostgresOpenDddSeeders(IServiceCollection services)
         {
-            var seederTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var seederTypes = TypeScanner.GetRelevantTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IPostgresOpenDddSeeder).IsAssignableFrom(type))
                 .ToList();
 
@@ -535,8 +448,7 @@ namespace OpenDDD.API.Extensions
         
         private static void RegisterInMemoryOpenDddSeeders(IServiceCollection services)
         {
-            var seederTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            var seederTypes = TypeScanner.GetRelevantTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IInMemoryOpenDddSeeder).IsAssignableFrom(type))
                 .ToList();
 
@@ -545,30 +457,6 @@ namespace OpenDDD.API.Extensions
                 services.AddTransient(typeof(IInMemoryOpenDddSeeder), seederType);
                 Console.WriteLine($"Registered InMemory OpenDDD seeder: {seederType.Name} with lifetime: Transient");
             }
-        }
-
-        private static bool IsDerivedFromGenericType(Type type, Type genericType)
-        {
-            while (type != null && type != typeof(object))
-            {
-                var currentType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
-                if (currentType == genericType)
-                {
-                    return true;
-                }
-                type = type.BaseType!;
-            }
-            return false;
-        }
-        
-        private static string GetReadableTypeName(Type type)
-        {
-            if (!type.IsGenericType)
-                return type.Name;
-
-            var genericTypeName = type.Name.Substring(0, type.Name.IndexOf('`'));
-            var genericArgs = string.Join(", ", type.GetGenericArguments().Select(GetReadableTypeName));
-            return $"{genericTypeName}<{genericArgs}>";
         }
     }
 }
