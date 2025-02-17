@@ -103,8 +103,8 @@ namespace OpenDDD.API.Options
 
         public OpenDddOptions SetEventTopics(string domainEventTemplate, string integrationEventTemplate)
         {
-            Events.DomainEventTopicTemplate = domainEventTemplate;
-            Events.IntegrationEventTopicTemplate = integrationEventTemplate;
+            Events.DomainEventTopic = domainEventTemplate;
+            Events.IntegrationEventTopic = integrationEventTemplate;
             return this;
         }
 

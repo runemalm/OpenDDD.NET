@@ -79,7 +79,7 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
         {  
             options.UseInMemoryDatabase()
                    .UseInMemoryMessaging()
-                   .SetEventTopicTemplates(
+                   .SetEventTopics(
                        "Bookstore.Domain.{EventName}",
                        "Bookstore.Interchange.{EventName}"
                     )
