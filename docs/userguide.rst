@@ -450,8 +450,125 @@ Then register the port with the adapter class in `Program.cs` like this:
 
     // ...
 
+----------------------
+7: Add Web API Adapter
+----------------------
+
+Create an http adapter for your application layer actions. We need to:
+
+- Create a **controller** to open endpoints and invoke actions.
+- Add **Controller-**, **Swagger-** and **API Explorer** services in `Program.cs`.
+- Add **HTTPS Redirection-**, **CORS-** and **Swagger** middleware in `Program.cs`.
+- Map controllers to endpoints in `Program.cs`.
+
+Example definitions:
+
+.. code-block:: csharp
+
+    using Microsoft.AspNetCore.Mvc;
+    using YourProjectName.Application.Actions.GetCustomer;
+    using YourProjectName.Application.Actions.GetCustomers;
+    using YourProjectName.Application.Actions.RegisterCustomer;
+    using YourProjectName.Domain.Model;
+
+    namespace YourProjectName.Infrastructure.Adapters.WebAPI.Controllers
+    {
+        [ApiController]
+        [Route("api/customers")]
+        public class CustomerController : ControllerBase
+        {
+            private readonly RegisterCustomerAction _registerCustomerAction;
+            private readonly GetCustomerAction _getCustomerAction;
+            private readonly GetCustomersAction _getCustomersAction;
+
+            public CustomerController(
+                RegisterCustomerAction registerCustomerAction,
+                GetCustomerAction getCustomerAction,
+                GetCustomersAction getCustomersAction)
+            {
+                _registerCustomerAction = registerCustomerAction;
+                _getCustomerAction = getCustomerAction;
+                _getCustomersAction = getCustomersAction;
+            }
+
+            [HttpPost("register-customer")]
+            public async Task<ActionResult<Customer>> RegisterCustomer([FromBody] RegisterCustomerCommand command, CancellationToken ct)
+            {
+                try
+                {
+                    var customer = await _registerCustomerAction.ExecuteAsync(command, ct);
+                    return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, customer);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(new { Message = ex.Message });
+                }
+            }
+        }
+    }
+
+.. code-block:: csharp
+
+    using OpenDDD.API.Extensions;
+    using YourProjectName.Domain.Model.Ports;
+    using YourProjectName.Infrastructure.Adapters.Console;
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Add Swagger Services
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+
+    // Add OpenDDD services
+    builder.Services.AddOpenDDD(builder.Configuration,
+        options =>  
+        {  
+            options.UseInMemoryDatabase()
+                   .UseInMemoryMessaging()
+                   .SetEventListenerGroup("YourProjectName")
+                   .SetEventTopics(
+                       "YourProjectName.Domain.{EventName}",
+                       "YourProjectName.Interchange.{EventName}"
+                    )
+                   .EnableAutoRegistration();
+        },
+        services =>
+        {
+            services.AddTransient<IEmailPort, ConsoleEmailAdapter>();
+        }
+    );
+
+    // Add Controller Services
+    builder.Services.AddControllers();
+
+    // Build the application
+    var app = builder.Build();
+
+    // Use OpenDDD Middleware
+    app.UseOpenDDD();
+
+    // Use Swagger Middleware
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        app.UseDeveloperExceptionPage();
+    }
+
+    // Use HTTP->HTTPS Redirection Middleware
+    app.UseHttpsRedirection();
+
+    // Use CORS Middleware
+    app.UseCors("AllowAll");
+
+    // Map Controller Actions to Endpoints
+    app.MapControllers();
+
+    // Run the application
+    app.Run();
+
 --------------------------
-7: Edit `appsettings.json`
+8: Edit `appsettings.json`
 --------------------------
 
 Add the following configuration to your `appsettings.json` file to customize OpenDDD.NET behavior:
@@ -501,7 +618,7 @@ Add the following configuration to your `appsettings.json` file to customize Ope
 For all information about configuration, see :ref:`Configuration <config>`.
 
 ----------------------
-8: Run the Application
+9: Run the Application
 ----------------------
 
 Now you are ready to run the application:
