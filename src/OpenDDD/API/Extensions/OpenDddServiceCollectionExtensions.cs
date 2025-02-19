@@ -1,8 +1,11 @@
 ﻿using System.Reflection;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using OpenDDD.API.Attributes;
@@ -256,7 +259,39 @@ namespace OpenDDD.API.Extensions
 
         private static void AddAzureServiceBus(this IServiceCollection services)
         {
-            services.AddSingleton<IMessagingProvider, AzureServiceBusMessagingProvider>();
+            services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var azureOptions = options.AzureServiceBus ?? throw new InvalidOperationException("Azure Service Bus options are missing.");
+
+                if (string.IsNullOrWhiteSpace(azureOptions.ConnectionString))
+                {
+                    throw new InvalidOperationException("Azure Service Bus connection string is missing.");
+                }
+
+                return new ServiceBusClient(azureOptions.ConnectionString);
+            });
+
+            services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var azureOptions = options.AzureServiceBus ?? throw new InvalidOperationException("Azure Service Bus options are missing.");
+
+                return new ServiceBusAdministrationClient(azureOptions.ConnectionString);
+            });
+
+            services.AddSingleton<IMessagingProvider>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var azureOptions = options.AzureServiceBus ?? throw new InvalidOperationException("Azure Service Bus options are missing.");
+
+                return new AzureServiceBusMessagingProvider(
+                    provider.GetRequiredService<ServiceBusClient>(),
+                    provider.GetRequiredService<ServiceBusAdministrationClient>(),
+                    azureOptions.AutoCreateTopics,
+                    provider.GetRequiredService<ILogger<AzureServiceBusMessagingProvider>>()
+                );
+            });
         }
         
         private static void AddRabbitMq(this IServiceCollection services)
