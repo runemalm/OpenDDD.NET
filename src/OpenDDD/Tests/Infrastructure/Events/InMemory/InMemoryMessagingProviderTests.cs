@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Xunit;
-using Moq;
 using FluentAssertions;
+using Moq;
+using Xunit;
 using OpenDDD.Infrastructure.Events.InMemory;
 
-namespace OpenDDD.Tests.Infrastructure.Events
+namespace OpenDDD.Tests.Infrastructure.Events.InMemory
 {
     public class InMemoryMessagingProviderTests
     {
