@@ -155,6 +155,10 @@ apply-migrations: ##@Migrations	 Apply all pending migrations to the database
 # AZURE
 ##########################################################################
 
+.PHONY: azure-create-resource-group
+azure-create-resource-group: ##@Azure  Create the Azure Resource Group
+	az group create --name $(AZURE_RESOURCE_GROUP) --location $(AZURE_REGION)
+
 .PHONY: azure-create-servicebus-namespace
 azure-create-servicebus-namespace: ##@Azure	 Create the Azure Service Bus namespace
 	az servicebus namespace create --name $(AZURE_SERVICEBUS_NAMESPACE) --resource-group $(AZURE_RESOURCE_GROUP) --location $(AZURE_REGION) --sku Standard
