@@ -31,22 +31,22 @@ namespace OpenDDD.Infrastructure.Events.InMemory
 
             foreach (var groupKey in matchingGroups)
             {
-                if (_subscribers.TryGetValue(groupKey, out var handlers))
+                if (_subscribers.TryGetValue(groupKey, out var handlers) && handlers.Any())
                 {
-                    foreach (var handler in handlers)
+                    // Select one handler at random to simulate competing consumers
+                    var handler = handlers.OrderBy(_ => Guid.NewGuid()).First();
+
+                    _ = Task.Run(async () =>
                     {
-                        _ = Task.Run(async () =>
+                        try
                         {
-                            try
-                            {
-                                await handler(message, ct);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, $"Error in handler for topic '{topic}': {ex.Message}");
-                            }
-                        }, ct);
-                    }
+                            await handler(message, ct);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Error in handler for topic '{topic}': {ex.Message}");
+                        }
+                    }, ct);
                 }
             }
 
