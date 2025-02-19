@@ -9,11 +9,11 @@ using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Repository.EfCore;
 using OpenDDD.Infrastructure.Persistence.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
-using Bookstore.Domain.Model;
-using Bookstore.Infrastructure.Persistence.EfCore;
 using OpenDDD.Infrastructure.Events;
 using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
+using Bookstore.Domain.Model;
+using Bookstore.Infrastructure.Persistence.EfCore;
 
 namespace Bookstore.Tests.Infrastructure.Persistence.EfCore
 {
