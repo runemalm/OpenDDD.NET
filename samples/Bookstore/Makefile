@@ -245,7 +245,7 @@ endif
 
 .PHONY: kafka-list-brokers
 kafka-list-brokers: ##@Kafka	 List Kafka broker configurations
-	docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type brokers
+	@docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type brokers
 
 .PHONY: kafka-list-topics
 kafka-list-topics: ##@Kafka	 List all Kafka topics
@@ -253,11 +253,11 @@ kafka-list-topics: ##@Kafka	 List all Kafka topics
 
 .PHONY: kafka-broker-status
 kafka-broker-status: ##@Kafka	 Show Kafka broker status
-	docker exec -it bookstore-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+	@docker exec -it bookstore-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
 
 .PHONY: kafka-list-consumers
 kafka-list-consumers: ##@Kafka	 List active Kafka consumer groups
-	docker exec -it bookstore-kafka /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+	@docker exec -it bookstore-kafka /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
 
 .PHONY: kafka-consume
 kafka-consume: ##@Kafka	 Consume messages from a Kafka topic (uses NAME)
