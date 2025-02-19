@@ -602,7 +602,8 @@ Add the following configuration to your `appsettings.json` file to customize Ope
         "VirtualHost": "/"
       },
       "Kafka": {
-        "BootstrapServers": "localhost:9092"
+        "BootstrapServers": "localhost:9092",
+        "AutoCreateTopics": true
       },
       "AutoRegister": {
         "Actions": true,

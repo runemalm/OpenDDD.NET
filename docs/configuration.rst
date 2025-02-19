@@ -52,7 +52,8 @@ An example configuration in `appsettings.json`:
          "VirtualHost": "/"
        },
        "Kafka": {
-         "BootstrapServers": "localhost:9092"
+         "BootstrapServers": "localhost:9092",
+         "AutoCreateTopics": true
        },
        "AutoRegister": {
          "Actions": true,
