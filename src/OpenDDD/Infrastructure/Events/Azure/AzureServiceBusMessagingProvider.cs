@@ -4,12 +4,14 @@ using Azure.Messaging.ServiceBus.Administration;
 
 namespace OpenDDD.Infrastructure.Events.Azure
 {
-    public class AzureServiceBusMessagingProvider : IMessagingProvider
+    public class AzureServiceBusMessagingProvider : IMessagingProvider, IAsyncDisposable
     {
         private readonly ServiceBusClient _client;
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly bool _autoCreateTopics;
         private readonly ILogger<AzureServiceBusMessagingProvider> _logger;
+        private readonly List<ServiceBusProcessor> _processors = new();
+        private bool _disposed;
 
         public AzureServiceBusMessagingProvider(
             ServiceBusClient client,
@@ -36,6 +38,7 @@ namespace OpenDDD.Infrastructure.Events.Azure
             await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
 
             var processor = _client.CreateProcessor(topic, subscriptionName);
+            _processors.Add(processor); // Track processors for cleanup
 
             processor.ProcessMessageAsync += async args =>
             {
@@ -85,6 +88,24 @@ namespace OpenDDD.Infrastructure.Events.Azure
                 await _adminClient.CreateSubscriptionAsync(topic, subscriptionName, cancellationToken);
                 _logger.LogInformation("Created subscription: {Subscription} for topic: {Topic}", subscriptionName, topic);
             }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_disposed) return;
+            _disposed = true;
+
+            _logger.LogDebug("Disposing AzureServiceBusMessagingProvider...");
+
+            foreach (var processor in _processors)
+            {
+                _logger.LogDebug("Stopping message processor...");
+                await processor.StopProcessingAsync();
+                await processor.DisposeAsync();
+            }
+
+            _logger.LogDebug("Disposing ServiceBusClient...");
+            await _client.DisposeAsync();
         }
     }
 }
