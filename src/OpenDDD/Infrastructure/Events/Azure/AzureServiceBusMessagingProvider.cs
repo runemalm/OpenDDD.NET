@@ -27,7 +27,6 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
         public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
-            topic = topic.ToLower();
             var subscriptionName = consumerGroup;
 
             if (_autoCreateTopics)
@@ -38,7 +37,7 @@ namespace OpenDDD.Infrastructure.Events.Azure
             await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
 
             var processor = _client.CreateProcessor(topic, subscriptionName);
-            _processors.Add(processor); // Track processors for cleanup
+            _processors.Add(processor);
 
             processor.ProcessMessageAsync += async args =>
             {
@@ -58,8 +57,6 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
         {
-            topic = topic.ToLower();
-
             if (_autoCreateTopics)
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
@@ -72,8 +69,6 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
         private async Task CreateTopicIfNotExistsAsync(string topic, CancellationToken cancellationToken)
         {
-            topic = topic.ToLower();
-
             if (!await _adminClient.TopicExistsAsync(topic, cancellationToken))
             {
                 await _adminClient.CreateTopicAsync(topic, cancellationToken);

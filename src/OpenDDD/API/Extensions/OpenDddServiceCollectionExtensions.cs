@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Confluent.Kafka;
 using OpenDDD.API.Attributes;
 using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
@@ -21,6 +22,7 @@ using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Events.Kafka;
+using OpenDDD.Infrastructure.Events.Kafka.Factories;
 using OpenDDD.Infrastructure.Events.RabbitMq;
 using OpenDDD.Infrastructure.Persistence.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
@@ -301,7 +303,24 @@ namespace OpenDDD.API.Extensions
         
         private static void AddKafka(this IServiceCollection services)
         {
-            services.AddSingleton<IMessagingProvider, KafkaMessagingProvider>();
+            services.AddSingleton<IMessagingProvider>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var kafkaOptions = options.Kafka ?? throw new InvalidOperationException("Kafka options are missing.");
+            
+                if (string.IsNullOrWhiteSpace(kafkaOptions.BootstrapServers))
+                    throw new InvalidOperationException("Kafka bootstrap servers must be configured.");
+
+                var logger = provider.GetRequiredService<ILogger<KafkaMessagingProvider>>();
+                return new KafkaMessagingProvider(
+                    kafkaOptions.BootstrapServers,
+                    new AdminClientBuilder(new AdminClientConfig { BootstrapServers = kafkaOptions.BootstrapServers, ClientId = "OpenDDD" }).Build(),
+                    new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = kafkaOptions.BootstrapServers, ClientId = "OpenDDD" }).Build(),
+                    new KafkaConsumerFactory(kafkaOptions.BootstrapServers),
+                    kafkaOptions.AutoCreateTopics,
+                    logger
+                );
+            });
         }
         
         private static void AddInMemoryMessaging(this IServiceCollection services)
