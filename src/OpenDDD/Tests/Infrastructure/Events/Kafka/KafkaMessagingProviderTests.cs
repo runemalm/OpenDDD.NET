@@ -147,6 +147,9 @@ namespace OpenDDD.Tests.Infrastructure.Events.Kafka
 
             // Act
             await _provider.SubscribeAsync(Topic, ConsumerGroup, async (_, _) => await Task.CompletedTask, CancellationToken.None);
+            
+            // Ensure the background task has enough time to consume the message
+            await Task.Delay(100);
 
             // Assert
             _mockLogger.Verify(
