@@ -31,7 +31,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=false
 
       - name: Run Unit Tests
-        working-directory: src/OpenDDD/Tests
+        working-directory: src/OpenDDD
         run: dotnet test --no-build --configuration Release --filter FullyQualifiedName~UnitTests
 
   # integration-tests:
