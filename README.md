@@ -1,7 +1,6 @@
 # OpenDDD.NET
 
-[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![NuGet](https://img.shields.io/nuget/v/OpenDDD.NET.svg)](https://www.nuget.org/packages/OpenDDD.NET/)
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html) [![NuGet](https://img.shields.io/nuget/v/OpenDDD.NET.svg)](https://www.nuget.org/packages/OpenDDD.NET/) [![Run Tests](https://github.com/runemalm/OpenDDD.NET/actions/workflows/tests.yml/badge.svg?branch=develop)](https://github.com/runemalm/OpenDDD.NET/actions/workflows/tests.yml)
 
 OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and ASP.NET Core. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
