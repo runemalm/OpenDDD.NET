@@ -1,0 +1,84 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  unit-tests:
+    name: Unit Tests (.NET ${{ matrix.dotnet-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [8.0.x, 9.0.x]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build Project
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run Unit Tests
+        run: dotnet test --no-build --configuration Release --filter FullyQualifiedName~UnitTests
+
+  # integration-tests:
+  #   name: Integration Tests (.NET ${{ matrix.dotnet-version }})
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       dotnet-version: [8.0.x, 9.0.x]
+
+  #   services:
+  #     kafka:
+  #       image: confluentinc/cp-kafka:latest
+  #       env:
+  #         KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+  #         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #       ports:
+  #         - 9092:9092
+  #       options: --network-alias kafka
+
+  #     rabbitmq:
+  #       image: rabbitmq:3-management
+  #       ports:
+  #         - 5672:5672
+  #         - 15672:15672
+
+  #     azurite:
+  #       image: mcr.microsoft.com/azure-storage/azurite
+  #       ports:
+  #         - 10000:10000
+  #         - 10001:10001
+  #         - 10002:10002
+
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Setup .NET
+  #       uses: actions/setup-dotnet@v3
+  #       with:
+  #         dotnet-version: ${{ matrix.dotnet-version }}
+
+  #     - name: Restore Dependencies
+  #       run: dotnet restore
+
+  #     - name: Build Project
+  #       run: dotnet build --no-restore --configuration Release
+
+  #     - name: Run Integration Tests
+  #       env:
+  #         KAFKA_BROKER: localhost:9092
+  #         RABBITMQ_HOST: localhost
+  #         AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true;"
+  #       run: dotnet test --no-build --configuration Release --filter FullyQualifiedName~IntegrationTests
