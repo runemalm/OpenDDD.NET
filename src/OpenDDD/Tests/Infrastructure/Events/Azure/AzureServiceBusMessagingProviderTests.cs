@@ -53,6 +53,21 @@ namespace OpenDDD.Tests.Infrastructure.Events.Azure
         }
         
         [Theory]
+        [InlineData(null, "adminClient", "logger")]
+        [InlineData("client", null, "logger")]
+        [InlineData("client", "adminClient", null)]
+        public void Constructor_ShouldThrowException_WhenDependenciesAreNull(
+            string? client, string? adminClient, string? logger)
+        {
+            var mockClient = client is null ? null! : _mockClient.Object;
+            var mockAdminClient = adminClient is null ? null! : _mockAdminClient.Object;
+            var mockLogger = logger is null ? null! : _mockLogger.Object;
+        
+            Assert.Throws<ArgumentNullException>(() =>
+                new AzureServiceBusMessagingProvider(mockClient, mockAdminClient, true, mockLogger));
+        }
+        
+        [Theory]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
