@@ -89,12 +89,15 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Restore Dependencies
+        working-directory: src/OpenDDD.Tests
         run: dotnet restore
 
       - name: Build Project
+        working-directory: src/OpenDDD.Tests
         run: dotnet build --no-restore --configuration Release
 
       - name: Run Integration Tests
+        working-directory: src/OpenDDD.Tests
         env:
           KAFKA_BROKER: localhost:9092
           RABBITMQ_HOST: localhost
