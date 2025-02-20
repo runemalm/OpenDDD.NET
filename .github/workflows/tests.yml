@@ -32,21 +32,21 @@ jobs:
 
       - name: Run Unit Tests
         working-directory: src/OpenDDD.Tests
-        run: dotnet test --no-build --configuration Release --filter "Category=Unit" --logger "trx;LogFileName=TestResults.trx"
+        run: dotnet test --no-build --configuration Release --filter "Category=Unit" --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults
 
       - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: UnitTestResults
-          path: src/OpenDDD.Tests/TestResults.trx
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
 
       - name: Publish Unit Test Report
         if: always()
         uses: dorny/test-reporter@v1
         with:
           name: Unit Tests Report
-          path: src/OpenDDD.Tests/TestResults.trx
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
           reporter: dotnet-trx
 
   integration-tests:
@@ -99,19 +99,19 @@ jobs:
           KAFKA_BROKER: localhost:9092
           RABBITMQ_HOST: localhost
           AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true;"
-        run: dotnet test --no-build --configuration Release --filter "Category=Integration" --logger "trx;LogFileName=TestResults.trx"
+        run: dotnet test --no-build --configuration Release --filter "Category=Integration" --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults
 
       - name: Upload Integration Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: IntegrationTestResults
-          path: TestResults.trx
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
 
       - name: Publish Integration Test Report
         if: always()
         uses: dorny/test-reporter@v1
         with:
           name: Integration Tests Report
-          path: TestResults.trx
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
           reporter: dotnet-trx
