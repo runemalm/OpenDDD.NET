@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: [8.0.x]
+        dotnet-version: [8.0.x, 9.0.x]
 
     steps:
       - name: Checkout Repository
@@ -32,56 +32,86 @@ jobs:
 
       - name: Run Unit Tests
         working-directory: src/OpenDDD.Tests
-        run: dotnet test --no-build --configuration Release --filter "Category=Unit"
+        run: dotnet test --no-build --configuration Release --filter "Category=Unit" --logger "trx;LogFileName=TestResults.trx"
 
-  # integration-tests:
-  #   name: Integration Tests (.NET ${{ matrix.dotnet-version }})
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       dotnet-version: [8.0.x, 9.0.x]
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: UnitTestResults
+          path: src/OpenDDD.Tests/TestResults.trx
 
-  #   services:
-  #     kafka:
-  #       image: confluentinc/cp-kafka:latest
-  #       env:
-  #         KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-  #         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-  #       ports:
-  #         - 9092:9092
-  #       options: --network-alias kafka
+      - name: Publish Unit Test Report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Tests Report
+          path: src/OpenDDD.Tests/TestResults.trx
+          reporter: dotnet-trx
 
-  #     rabbitmq:
-  #       image: rabbitmq:3-management
-  #       ports:
-  #         - 5672:5672
-  #         - 15672:15672
+  integration-tests:
+    name: Integration Tests (.NET ${{ matrix.dotnet-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [8.0.x, 9.0.x]
 
-  #     azurite:
-  #       image: mcr.microsoft.com/azure-storage/azurite
-  #       ports:
-  #         - 10000:10000
-  #         - 10001:10001
-  #         - 10002:10002
+    services:
+      kafka:
+        image: confluentinc/cp-kafka:latest
+        env:
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        ports:
+          - 9092:9092
+        options: --network-alias kafka
 
-  #   steps:
-  #     - name: Checkout Repository
-  #       uses: actions/checkout@v4
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
 
-  #     - name: Setup .NET
-  #       uses: actions/setup-dotnet@v3
-  #       with:
-  #         dotnet-version: ${{ matrix.dotnet-version }}
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
+          - 10001:10001
+          - 10002:10002
 
-  #     - name: Restore Dependencies
-  #       run: dotnet restore
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  #     - name: Build Project
-  #       run: dotnet build --no-restore --configuration Release
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
 
-  #     - name: Run Integration Tests
-  #       env:
-  #         KAFKA_BROKER: localhost:9092
-  #         RABBITMQ_HOST: localhost
-  #         AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true;"
-  #       run: dotnet test --no-build --configuration Release --filter "Category=Integration"
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build Project
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run Integration Tests
+        env:
+          KAFKA_BROKER: localhost:9092
+          RABBITMQ_HOST: localhost
+          AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true;"
+        run: dotnet test --no-build --configuration Release --filter "Category=Integration" --logger "trx;LogFileName=TestResults.trx"
+
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IntegrationTestResults
+          path: TestResults.trx
+
+      - name: Publish Integration Test Report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Integration Tests Report
+          path: TestResults.trx
+          reporter: dotnet-trx
