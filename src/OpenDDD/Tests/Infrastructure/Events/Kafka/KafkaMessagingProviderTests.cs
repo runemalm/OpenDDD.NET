@@ -54,17 +54,71 @@ namespace OpenDDD.Tests.Infrastructure.Events.Kafka
                 .Setup(a => a.GetMetadata(Topic, It.IsAny<TimeSpan>()))
                 .Returns(metadata);
         }
+        
+        [Theory]
+        [InlineData(null, "adminClient", "producer", "consumerFactory", "logger")]
+        [InlineData("bootstrapServers", null, "producer", "consumerFactory", "logger")]
+        [InlineData("bootstrapServers", "adminClient", null, "consumerFactory", "logger")]
+        [InlineData("bootstrapServers", "adminClient", "producer", null, "logger")]
+        [InlineData("bootstrapServers", "adminClient", "producer", "consumerFactory", null)]
+        public void Constructor_ShouldThrowException_WhenDependenciesAreNull(
+            string? bootstrapServers, string? adminClient, string? producer, string? consumerFactory, string? logger)
+        {
+            var bs = bootstrapServers is null ? null! : BootstrapServers;
+            var mockAdmin = adminClient is null ? null! : _mockAdminClient.Object;
+            var mockProducer = producer is null ? null! : _mockProducer.Object;
+            var mockConsumerFactory = consumerFactory is null ? null! : _mockConsumerFactory.Object;
+            var mockLogger = logger is null ? null! : _mockLogger.Object;
+
+            Assert.Throws<ArgumentNullException>(() =>
+                new KafkaMessagingProvider(bs, mockAdmin, mockProducer, mockConsumerFactory, true, mockLogger));
+        }
+        
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task SubscribeAsync_ShouldThrowException_WhenTopicIsInvalid(string invalidTopic)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.SubscribeAsync(invalidTopic, ConsumerGroup, (msg, token) => Task.CompletedTask, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task SubscribeAsync_ShouldThrowException_WhenConsumerGroupIsInvalid(string invalidConsumerGroup)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.SubscribeAsync(Topic, invalidConsumerGroup, (msg, token) => Task.CompletedTask, CancellationToken.None));
+        }
 
         [Fact]
-        public void Constructor_ShouldThrowException_WhenBootstrapServersIsNullOrEmpty()
+        public async Task SubscribeAsync_ShouldThrowException_WhenHandlerIsNull()
         {
-            Assert.Throws<ArgumentException>(() => new KafkaMessagingProvider(
-                "",
-                _mockAdminClient.Object,
-                _mockProducer.Object,
-                _mockConsumerFactory.Object,
-                true,
-                _mockLogger.Object));
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _provider.SubscribeAsync(Topic, ConsumerGroup, null!, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task PublishAsync_ShouldThrowException_WhenTopicIsInvalid(string invalidTopic)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.PublishAsync(invalidTopic, Message, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task PublishAsync_ShouldThrowException_WhenMessageIsInvalid(string invalidMessage)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.PublishAsync(Topic, invalidMessage, CancellationToken.None));
         }
 
         [Fact]

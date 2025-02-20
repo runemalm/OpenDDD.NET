@@ -28,7 +28,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             ILogger<KafkaMessagingProvider> logger)
         {
             if (string.IsNullOrWhiteSpace(bootstrapServers))
-                throw new ArgumentException("Kafka bootstrap servers must be configured.", nameof(bootstrapServers));
+                throw new ArgumentNullException(nameof(bootstrapServers));
 
             _bootstrapServers = bootstrapServers;
             _adminClient = adminClient ?? throw new ArgumentNullException(nameof(adminClient));
@@ -44,6 +44,15 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             Func<string, CancellationToken, Task> messageHandler,
             CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
+
+            if (messageHandler is null)
+                throw new ArgumentNullException(nameof(messageHandler));
+
             if (_autoCreateTopics)
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
@@ -97,6 +106,12 @@ namespace OpenDDD.Infrastructure.Events.Kafka
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+
             if (_autoCreateTopics)
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
