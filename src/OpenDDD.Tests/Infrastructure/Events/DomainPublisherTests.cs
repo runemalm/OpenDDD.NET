@@ -2,7 +2,6 @@
 using OpenDDD.Domain.Model;
 using OpenDDD.Infrastructure.Events;
 using OpenDDD.Tests.Base;
-using Xunit;
 
 namespace OpenDDD.Tests.Infrastructure.Events
 {

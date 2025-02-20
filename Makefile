@@ -24,6 +24,7 @@ NUGET_NAME := OpenDDD.NET
 ROOT_NAMESPACE := OpenDDD
 
 SRC_DIR := $(PWD)/src
+TESTS_DIR := $(SRC_DIR)/OpenDDD.Tests
 DOCS_DIR := $(PWD)/docs
 SAMPLES_DIR := $(PWD)/samples
 NAMESPACE_DIR := $(SRC_DIR)/$(ROOT_NAMESPACE)
@@ -92,17 +93,18 @@ help:: ##@Other Show this help.
 ##########################################################################
 # TEST
 ##########################################################################
+
 .PHONY: test
 test: ##@Test	 Run all tests (unit & integration)
-	cd $(SRC_DIR)/OpenDDD && dotnet test --no-build --configuration Release
+	cd $(TESTS_DIR) && dotnet test --configuration Release
 
 .PHONY: test-unit
 test-unit: ##@Test	 Run only unit tests
-	cd $(SRC_DIR)/OpenDDD && dotnet test --no-build --configuration Release --filter FullyQualifiedName~UnitTests
+	cd $(TESTS_DIR) && dotnet test --configuration Release --filter FullyQualifiedName~UnitTests
 
 .PHONY: test-integration
 test-integration: ##@Test	 Run only integration tests
-	cd $(SRC_DIR)/OpenDDD && dotnet test --no-build --configuration Release --filter FullyQualifiedName~IntegrationTests
+	cd $(TESTS_DIR) && dotnet test --configuration Release --filter FullyQualifiedName~IntegrationTests
 
 ##########################################################################
 # BUILD
@@ -219,13 +221,19 @@ templates-rebuild: templates-uninstall templates-pack templates-install ##@Templ
 # ACT
 ##########################################################################
 
-ACT_IMAGE := ghcr.io/catthehacker/ubuntu:full-latest
+# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:full-latest
 # ACT_IMAGE := ghcr.io/catthehacker/ubuntu:runner-latest
-# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:act-latest
+ACT_IMAGE := ghcr.io/catthehacker/ubuntu:act-latest
 
 .PHONY: act-install
 act-install: ##@Act	 Install act CLI
 	brew install act
+
+.PHONY: act-clean
+act-clean: ##@Act Stop and remove all act containers
+	@docker stop $$(docker ps -q --filter ancestor=$(ACT_IMAGE)) 2>/dev/null || true
+	@docker rm $$(docker ps -aq --filter ancestor=$(ACT_IMAGE)) 2>/dev/null || true
+	@echo "✅ All act containers stopped and removed."
 
 .PHONY: act-list
 act-list: ##@Act	 List available workflows
@@ -233,7 +241,7 @@ act-list: ##@Act	 List available workflows
 
 .PHONY: act-test
 act-test: ##@Act	 Run all tests locally using act
-	act -P ubuntu-latest=$(ACT_IMAGE)
+	act -P ubuntu-latest=$(ACT_IMAGE) --reuse
 
 .PHONY: act-test-dotnet
 act-test-dotnet: ##@Act	 Run tests for a specific .NET version (usage: make act-test-dotnet DOTNET_VERSION=8.0.x)
@@ -241,16 +249,16 @@ act-test-dotnet: ##@Act	 Run tests for a specific .NET version (usage: make act-
 		echo "Error: Specify .NET version using DOTNET_VERSION=<version>"; \
 		exit 1; \
 	fi
-	act -P ubuntu-latest=$(ACT_IMAGE) -s matrix.dotnet-version=$(DOTNET_VERSION)
+	act -P ubuntu-latest=$(ACT_IMAGE) -s matrix.dotnet-version=$(DOTNET_VERSION) --reuse
 
 .PHONY: act-unit-tests
 act-unit-tests: ##@Act	 Run only unit tests
-	act -P ubuntu-latest=$(ACT_IMAGE) -j unit-tests
+	act -P ubuntu-latest=$(ACT_IMAGE) -j unit-tests --reuse
 
 .PHONY: act-integration-tests
 act-integration-tests: ##@Act	 Run only integration tests
-	act -P ubuntu-latest=$(ACT_IMAGE) -j integration-tests
+	act -P ubuntu-latest=$(ACT_IMAGE) -j integration-tests --reuse
 
 .PHONY: act-debug
 act-debug: ##@Act	 Run act with verbose logging
-	act -P ubuntu-latest=$(ACT_IMAGE) --verbose
+	act -P ubuntu-latest=$(ACT_IMAGE) --verbose --reuse

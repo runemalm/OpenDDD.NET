@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore", "Bookstore\Book
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDDD", "..\..\..\src\OpenDDD\OpenDDD.csproj", "{05861AFA-45DB-409A-AF0D-E81936198EB0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDDD.Tests", "..\..\..\src\OpenDDD.Tests\OpenDDD.Tests.csproj", "{DB152EF6-1F44-40D6-8701-6FB0434724F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{05861AFA-45DB-409A-AF0D-E81936198EB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05861AFA-45DB-409A-AF0D-E81936198EB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05861AFA-45DB-409A-AF0D-E81936198EB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB152EF6-1F44-40D6-8701-6FB0434724F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB152EF6-1F44-40D6-8701-6FB0434724F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB152EF6-1F44-40D6-8701-6FB0434724F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB152EF6-1F44-40D6-8701-6FB0434724F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
