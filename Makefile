@@ -93,16 +93,33 @@ help:: ##@Other Show this help.
 # TEST
 ##########################################################################
 .PHONY: test
-test: ##@Test	 run all unit tests
-	ENV_FILE=env.test dotnet test $(TESTS_DIR)
+test: ##@Test	 Run all tests (unit & integration)
+	cd $(SRC_DIR)/OpenDDD && dotnet test --no-build --configuration Release
+
+.PHONY: test-unit
+test-unit: ##@Test	 Run only unit tests
+	cd $(SRC_DIR)/OpenDDD && dotnet test --no-build --configuration Release --filter FullyQualifiedName~UnitTests
+
+.PHONY: test-integration
+test-integration: ##@Test	 Run only integration tests
+	cd $(SRC_DIR)/OpenDDD && dotnet test --no-build --configuration Release --filter FullyQualifiedName~IntegrationTests
 
 ##########################################################################
 # BUILD
 ##########################################################################
+
 .PHONY: clean
 clean: ##@Build	 clean the solution
 	find . $(SRC_DIR) -iname "bin" | xargs rm -rf
 	find . $(SRC_DIR) -iname "obj" | xargs rm -rf
+
+.PHONY: clear-nuget-caches
+clear-nuget-caches: ##@Build	 clean all nuget caches
+	nuget locals all -clear
+
+.PHONY: restore
+restore: ##@Build	 restore the solution
+	cd src && dotnet restore
 
 .PHONY: build
 build: ##@Build	 build the solution
@@ -169,17 +186,6 @@ sphinx-opendocs: ##@Docs	 Open the docs in browser
 	open $(DOCS_DIR)/_build/html/index.html
 
 ##########################################################################
-# .NET
-##########################################################################
-.PHONY: restore
-restore: ##@Build	 restore the solution
-	cd src && dotnet restore
-
-.PHONY: clear-nuget-caches
-clear-nuget-caches: ##@Build	 clean all nuget caches
-	nuget locals all -clear
-
-##########################################################################
 # TEMPLATES
 ##########################################################################
 
@@ -210,11 +216,12 @@ templates-publish: ##@Template	 Publish the template to NuGet
 templates-rebuild: templates-uninstall templates-pack templates-install ##@Template	 Rebuild and reinstall the template
 
 ##########################################################################
-# Act
+# ACT
 ##########################################################################
 
-# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:full-latest
-ACT_IMAGE := ghcr.io/catthehacker/ubuntu:runner-latest
+ACT_IMAGE := ghcr.io/catthehacker/ubuntu:full-latest
+# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:runner-latest
+# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:act-latest
 
 .PHONY: act-install
 act-install: ##@Act	 Install act CLI
