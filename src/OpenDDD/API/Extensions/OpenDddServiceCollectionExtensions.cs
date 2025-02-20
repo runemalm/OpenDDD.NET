@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Confluent.Kafka;
+using RabbitMQ.Client;
 using OpenDDD.API.Attributes;
 using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
@@ -24,6 +25,7 @@ using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Events.Kafka;
 using OpenDDD.Infrastructure.Events.Kafka.Factories;
 using OpenDDD.Infrastructure.Events.RabbitMq;
+using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using OpenDDD.Infrastructure.Persistence.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
@@ -298,7 +300,31 @@ namespace OpenDDD.API.Extensions
         
         private static void AddRabbitMq(this IServiceCollection services)
         {
-            services.AddSingleton<IMessagingProvider, RabbitMqMessagingProvider>();
+            services.AddSingleton<IMessagingProvider>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var rabbitMqOptions = options.RabbitMq ?? throw new InvalidOperationException("RabbitMQ options are missing.");
+
+                if (string.IsNullOrWhiteSpace(rabbitMqOptions.HostName))
+                {
+                    throw new InvalidOperationException("RabbitMQ host is missing.");
+                }
+
+                var connectionFactory = new ConnectionFactory
+                {
+                    HostName = rabbitMqOptions.HostName,
+                    Port = rabbitMqOptions.Port,
+                    UserName = rabbitMqOptions.Username,
+                    Password = rabbitMqOptions.Password,
+                    VirtualHost = rabbitMqOptions.VirtualHost
+                };
+
+                var logger = provider.GetRequiredService<ILogger<RabbitMqMessagingProvider>>();
+                
+                var consumerFactory = new RabbitMqConsumerFactory(logger);
+
+                return new RabbitMqMessagingProvider(connectionFactory, consumerFactory, logger);
+            });
         }
         
         private static void AddKafka(this IServiceCollection services)

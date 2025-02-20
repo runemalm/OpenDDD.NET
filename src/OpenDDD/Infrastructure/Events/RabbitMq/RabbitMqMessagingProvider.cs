@@ -1,68 +1,41 @@
-﻿using System.Text;
+﻿using System.Collections.Concurrent;
+using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OpenDDD.API.Options;
-using OpenDDD.Infrastructure.Events.RabbitMq.Options;
+using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using RabbitMQ.Client;
 
 namespace OpenDDD.Infrastructure.Events.RabbitMq
 {
     public class RabbitMqMessagingProvider : IMessagingProvider, IAsyncDisposable
     {
-        private readonly ConnectionFactory _factory;
+        private readonly IConnectionFactory _connectionFactory;
+        private readonly IRabbitMqConsumerFactory _consumerFactory;
+        private readonly ILogger<RabbitMqMessagingProvider> _logger;
         private IConnection? _connection;
         private IChannel? _channel;
-        private readonly OpenDddRabbitMqOptions _options;
-        private readonly ILogger<RabbitMqMessagingProvider> _logger;
-
+        private readonly ConcurrentBag<IAsyncBasicConsumer> _consumers = new();
+        
         public RabbitMqMessagingProvider(
-            IOptions<OpenDddOptions> options,
+            IConnectionFactory factory,
+            IRabbitMqConsumerFactory consumerFactory,
             ILogger<RabbitMqMessagingProvider> logger)
         {
-            var openDddOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
-            _options = openDddOptions.RabbitMq ?? throw new InvalidOperationException("RabbitMQ settings are missing in OpenDddOptions.");
-
-            if (string.IsNullOrWhiteSpace(_options.HostName))
-            {
-                throw new InvalidOperationException("RabbitMQ host is missing.");
-            }
-
-            _factory = new ConnectionFactory
-            {
-                HostName = _options.HostName,
-                Port = _options.Port,
-                UserName = _options.Username,
-                Password = _options.Password,
-                VirtualHost = _options.VirtualHost
-            };
-
+            _connectionFactory = factory ?? throw new ArgumentNullException(nameof(factory));
+            _consumerFactory = consumerFactory ?? throw new ArgumentNullException(nameof(consumerFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
-        private async Task EnsureConnectedAsync(CancellationToken cancellationToken)
-        {
-            if (_connection is { IsOpen: true } && _channel is { IsOpen: true }) return;
-
-            _connection = await _factory.CreateConnectionAsync(cancellationToken);
-            _channel = await _connection.CreateChannelAsync(null, cancellationToken);
-        }
-
-        public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
-        {
-            await EnsureConnectedAsync(cancellationToken);
-
-            if (_channel is null) throw new InvalidOperationException("RabbitMQ channel is not available.");
-
-            await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
-
-            var body = Encoding.UTF8.GetBytes(message);
-            await _channel.BasicPublishAsync(topic, "", body, cancellationToken: cancellationToken);
-
-            _logger.LogInformation("Published message to topic '{Topic}'", topic);
         }
 
         public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
+
+            if (messageHandler == null)
+                throw new ArgumentNullException(nameof(messageHandler), "Message handler cannot be null.");
+
             await EnsureConnectedAsync(cancellationToken);
 
             if (_channel is null) throw new InvalidOperationException("RabbitMQ channel is not available.");
@@ -72,24 +45,57 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
             await _channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: cancellationToken);
             await _channel.QueueBindAsync(queueName, topic, "", cancellationToken: cancellationToken);
 
-            var consumer = new RabbitMqCustomAsyncConsumer(_channel, messageHandler, _logger);
+            var consumer = _consumerFactory.CreateConsumer(_channel, messageHandler);
+            _consumers.Add(consumer);
             await _channel.BasicConsumeAsync(queueName, autoAck: false, consumer, cancellationToken);
 
-            _logger.LogInformation("Subscribed to RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+            _logger.LogDebug("Subscribed to RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+        }
+
+        public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+
+            await EnsureConnectedAsync(cancellationToken);
+
+            if (_channel is null) throw new InvalidOperationException("RabbitMQ channel is not available.");
+
+            await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
+
+            var body = Encoding.UTF8.GetBytes(message);
+            await _channel.BasicPublishAsync(topic, "", body, cancellationToken: cancellationToken);
+
+            _logger.LogDebug("Published message to topic '{Topic}'", topic);
+        }
+        
+        private async Task EnsureConnectedAsync(CancellationToken cancellationToken)
+        {
+            if (_connection is { IsOpen: true } && _channel is { IsOpen: true }) return;
+
+            _connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
+            _channel = await _connection.CreateChannelAsync(null, cancellationToken);
         }
 
         public async ValueTask DisposeAsync()
         {
+            _logger.LogDebug("Disposing RabbitMqMessagingProvider...");
+
             if (_channel is not null)
             {
+                _logger.LogDebug("Disposing RabbitMQ channel...");
                 await _channel.CloseAsync();
-                _channel.Dispose();
+                await _channel.DisposeAsync();
             }
 
             if (_connection is not null)
             {
+                _logger.LogDebug("Disposing RabbitMQ connection...");
                 await _connection.CloseAsync();
-                _connection.Dispose();
+                await _connection.DisposeAsync();
             }
         }
     }

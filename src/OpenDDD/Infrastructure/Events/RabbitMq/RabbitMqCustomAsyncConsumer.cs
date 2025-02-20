@@ -9,8 +9,12 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
     {
         private readonly Func<string, CancellationToken, Task> _messageHandler;
         private readonly ILogger<RabbitMqMessagingProvider> _logger;
+        private bool _disposed;
 
-        public RabbitMqCustomAsyncConsumer(IChannel channel, Func<string, CancellationToken, Task> messageHandler, ILogger<RabbitMqMessagingProvider> logger)
+        public RabbitMqCustomAsyncConsumer(
+            IChannel channel, 
+            Func<string, CancellationToken, Task> messageHandler, 
+            ILogger<RabbitMqMessagingProvider> logger)
         {
             Channel = channel ?? throw new ArgumentNullException(nameof(channel));
             _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
