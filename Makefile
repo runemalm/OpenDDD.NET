@@ -100,11 +100,11 @@ test: ##@Test	 Run all tests (unit & integration)
 
 .PHONY: test-unit
 test-unit: ##@Test	 Run only unit tests
-	cd $(TESTS_DIR) && dotnet test --configuration Release --filter FullyQualifiedName~UnitTests
+	cd $(TESTS_DIR) && dotnet test --configuration Release --filter "Category=Unit"
 
 .PHONY: test-integration
 test-integration: ##@Test	 Run only integration tests
-	cd $(TESTS_DIR) && dotnet test --configuration Release --filter FullyQualifiedName~IntegrationTests
+	cd $(TESTS_DIR) && dotnet test --configuration Release --filter "Category=Integration"
 
 ##########################################################################
 # BUILD

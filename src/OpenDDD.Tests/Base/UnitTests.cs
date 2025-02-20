@@ -1,6 +1,7 @@
 ﻿namespace OpenDDD.Tests.Base
 {
-    public class UnitTests
+    [Trait("Category", "Unit")]
+    public abstract class UnitTests
     {
         
     }

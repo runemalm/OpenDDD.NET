@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using Moq;
 using Azure;
 using Azure.Messaging.ServiceBus;

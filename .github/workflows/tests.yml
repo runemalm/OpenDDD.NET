@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Unit Tests
         working-directory: src/OpenDDD.Tests
-        run: dotnet test --no-build --configuration Release --filter FullyQualifiedName~UnitTests
+        run: dotnet test --no-build --configuration Release --filter "Category=Unit"
 
   # integration-tests:
   #   name: Integration Tests (.NET ${{ matrix.dotnet-version }})
@@ -84,4 +84,4 @@ jobs:
   #         KAFKA_BROKER: localhost:9092
   #         RABBITMQ_HOST: localhost
   #         AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true;"
-  #       run: dotnet test --no-build --configuration Release --filter FullyQualifiedName~IntegrationTests
+  #       run: dotnet test --no-build --configuration Release --filter "Category=Integration"
