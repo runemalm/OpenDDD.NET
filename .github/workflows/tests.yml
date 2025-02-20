@@ -56,13 +56,13 @@ jobs:
           FAILED=$(grep -oP '(?<=Failed=")[0-9]+' src/OpenDDD.Tests/TestResults/TestResults.trx || echo 0)
           echo "{ \"schemaVersion\": 1, \"label\": \"Unit Tests\", \"message\": \"✅ $PASSED | ❌ $FAILED\", \"color\": \"blue\" }" > unit-tests-badge.json
 
-
       - name: Commit and Push Badge to GitHub Pages
         if: always()
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git checkout gh-pages || git checkout -b gh-pages
+          git fetch origin gh-pages || echo "No gh-pages branch found"
+          git checkout gh-pages
           mv unit-tests-badge.json badges/unit-tests-badge.json
           git add badges/unit-tests-badge.json
           git commit -m "Update unit test badge"
