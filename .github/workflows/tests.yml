@@ -23,12 +23,15 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Restore Dependencies
+        working-directory: src/OpenDDD
         run: dotnet restore
 
       - name: Build Project
+        working-directory: src/OpenDDD
         run: dotnet build --no-restore --configuration Release
 
       - name: Run Unit Tests
+        working-directory: src/OpenDDD/Tests
         run: dotnet test --no-build --configuration Release --filter FullyQualifiedName~UnitTests
 
   # integration-tests:

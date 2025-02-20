@@ -32,17 +32,6 @@ FEED_DIR := $(HOME)/Projects/LocalFeed
 USER_NUGET_CONFIG_DIR=$(HOME)/.config/NuGet/NuGet.Config
 SPHINXDOC_IMG := openddd.net/sphinxdoc
 
-DOCSAUTOBUILD_HOST_NAME := docsautobuild-openddd.net
-DOCSAUTOBUILD_CONTAINER_NAME := docsautobuild-openddd.net
-DOCSAUTOBUILD_PORT := 10001
-
-TEMPLATES_DIR := $(PWD)/templates
-TEMPLATES_CSPROJ := $(TEMPLATES_DIR)/templatepack.csproj
-TEMPLATES_OUT := $(TEMPLATES_DIR)/bin/templates
-TEMPLATES_NAME := OpenDDD.NET-Templates
-TEMPLATES_VERSION := 3.0.0-alpha.1
-TEMPLATES_NUPKG := $(TEMPLATES_OUT)/$(TEMPLATES_NAME).$(TEMPLATES_VERSION).nupkg
-
 BLUE      := $(shell tput -Txterm setaf 4)
 GREEN     := $(shell tput -Txterm setaf 2)
 TURQUOISE := $(shell tput -Txterm setaf 6)
@@ -142,6 +131,10 @@ push: ##@Build	 Push the nuget to the global feed
 # DOCS
 ##########################################################################
 
+DOCSAUTOBUILD_HOST_NAME := docsautobuild-openddd.net
+DOCSAUTOBUILD_CONTAINER_NAME := docsautobuild-openddd.net
+DOCSAUTOBUILD_PORT := 10001
+
 .PHONY: sphinx-buildimage
 sphinx-buildimage: ##@Docs	 Build the custom sphinxdoc image
 	docker build -t $(SPHINXDOC_IMG) $(DOCS_DIR)
@@ -190,6 +183,13 @@ clear-nuget-caches: ##@Build	 clean all nuget caches
 # TEMPLATES
 ##########################################################################
 
+TEMPLATES_DIR := $(PWD)/templates
+TEMPLATES_CSPROJ := $(TEMPLATES_DIR)/templatepack.csproj
+TEMPLATES_OUT := $(TEMPLATES_DIR)/bin/templates
+TEMPLATES_NAME := OpenDDD.NET-Templates
+TEMPLATES_VERSION := 3.0.0-alpha.1
+TEMPLATES_NUPKG := $(TEMPLATES_OUT)/$(TEMPLATES_NAME).$(TEMPLATES_VERSION).nupkg
+
 .PHONY: templates-install
 templates-install: ##@Template	 Install the OpenDDD.NET project template locally
 	dotnet new install $(TEMPLATES_NUPKG)
@@ -208,3 +208,42 @@ templates-publish: ##@Template	 Publish the template to NuGet
 
 .PHONY: templates-rebuild
 templates-rebuild: templates-uninstall templates-pack templates-install ##@Template	 Rebuild and reinstall the template
+
+##########################################################################
+# Act
+##########################################################################
+
+# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:full-latest
+ACT_IMAGE := ghcr.io/catthehacker/ubuntu:runner-latest
+
+.PHONY: act-install
+act-install: ##@Act	 Install act CLI
+	brew install act
+
+.PHONY: act-list
+act-list: ##@Act	 List available workflows
+	act -l
+
+.PHONY: act-test
+act-test: ##@Act	 Run all tests locally using act
+	act -P ubuntu-latest=$(ACT_IMAGE)
+
+.PHONY: act-test-dotnet
+act-test-dotnet: ##@Act	 Run tests for a specific .NET version (usage: make act-test-dotnet DOTNET_VERSION=8.0.x)
+	@if [ -z "$(DOTNET_VERSION)" ]; then \
+		echo "Error: Specify .NET version using DOTNET_VERSION=<version>"; \
+		exit 1; \
+	fi
+	act -P ubuntu-latest=$(ACT_IMAGE) -s matrix.dotnet-version=$(DOTNET_VERSION)
+
+.PHONY: act-unit-tests
+act-unit-tests: ##@Act	 Run only unit tests
+	act -P ubuntu-latest=$(ACT_IMAGE) -j unit-tests
+
+.PHONY: act-integration-tests
+act-integration-tests: ##@Act	 Run only integration tests
+	act -P ubuntu-latest=$(ACT_IMAGE) -j integration-tests
+
+.PHONY: act-debug
+act-debug: ##@Act	 Run act with verbose logging
+	act -P ubuntu-latest=$(ACT_IMAGE) --verbose
