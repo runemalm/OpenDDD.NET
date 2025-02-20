@@ -1,9 +1,10 @@
 ﻿using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
+using OpenDDD.Tests.Base;
 using Xunit;
 
 namespace OpenDDD.Tests.Infrastructure.Persistence.OpenDdd.Serializers
 {
-    public class OpenDddSerializerTests
+    public class OpenDddSerializerTests : UnitTests
     {
         private readonly OpenDddSerializer _serializer;
 

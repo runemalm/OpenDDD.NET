@@ -1,9 +1,10 @@
 ﻿using Xunit;
 using OpenDDD.Infrastructure.Events;
+using OpenDDD.Tests.Base;
 
 namespace OpenDDD.Tests.Infrastructure.Events
 {
-    public class EventSerializerTests
+    public class EventSerializerTests : UnitTests
     {
         [Fact]
         public void Serialize_ShouldReturnJsonString_WhenEventIsValid()

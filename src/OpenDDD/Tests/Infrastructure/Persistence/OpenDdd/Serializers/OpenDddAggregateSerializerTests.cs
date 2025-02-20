@@ -1,10 +1,11 @@
 ﻿using Xunit;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
+using OpenDDD.Tests.Base;
 using OpenDDD.Tests.Domain.Model;
 
 namespace OpenDDD.Tests.Infrastructure.Persistence.OpenDdd.Serializers
 {
-    public class OpenDddAggregateSerializerTests
+    public class OpenDddAggregateSerializerTests : UnitTests
     {
         private readonly OpenDddAggregateSerializer _serializer;
 

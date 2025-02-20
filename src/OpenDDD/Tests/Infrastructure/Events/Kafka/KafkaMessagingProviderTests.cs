@@ -5,10 +5,11 @@ using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using OpenDDD.Infrastructure.Events.Kafka;
 using OpenDDD.Infrastructure.Events.Kafka.Factories;
+using OpenDDD.Tests.Base;
 
 namespace OpenDDD.Tests.Infrastructure.Events.Kafka
 {
-    public class KafkaMessagingProviderTests
+    public class KafkaMessagingProviderTests : UnitTests
     {
         private readonly Mock<IProducer<Null, string>> _mockProducer;
         private readonly Mock<IAdminClient> _mockAdminClient;

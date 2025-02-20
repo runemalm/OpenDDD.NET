@@ -3,10 +3,11 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 using OpenDDD.Infrastructure.Events.InMemory;
+using OpenDDD.Tests.Base;
 
 namespace OpenDDD.Tests.Infrastructure.Events.InMemory
 {
-    public class InMemoryMessagingProviderTests
+    public class InMemoryMessagingProviderTests : UnitTests
     {
         private readonly Mock<ILogger<InMemoryMessagingProvider>> _mockLogger;
         private readonly InMemoryMessagingProvider _messagingProvider;

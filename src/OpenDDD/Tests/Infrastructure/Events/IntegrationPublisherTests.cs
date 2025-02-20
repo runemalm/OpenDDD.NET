@@ -1,11 +1,12 @@
 ﻿using FluentAssertions;
 using OpenDDD.Domain.Model;
 using OpenDDD.Infrastructure.Events;
+using OpenDDD.Tests.Base;
 using Xunit;
 
 namespace OpenDDD.Tests.Infrastructure.Events
 {
-    public class IntegrationPublisherTests
+    public class IntegrationPublisherTests : UnitTests
     {
         private class TestIntegrationEvent : IIntegrationEvent { }
 

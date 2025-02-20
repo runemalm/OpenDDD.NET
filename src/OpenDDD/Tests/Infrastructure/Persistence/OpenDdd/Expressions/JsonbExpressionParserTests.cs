@@ -2,10 +2,11 @@
 using Xunit;
 using FluentAssertions;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions;
+using OpenDDD.Tests.Base;
 
 namespace OpenDDD.Tests.Infrastructure.Persistence.OpenDdd.Expressions
 {
-    public class JsonbExpressionParserTests
+    public class JsonbExpressionParserTests : UnitTests
     {
         private class Customer
         {

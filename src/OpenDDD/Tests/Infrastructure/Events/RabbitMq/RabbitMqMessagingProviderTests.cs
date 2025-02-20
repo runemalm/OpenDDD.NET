@@ -3,11 +3,12 @@ using Xunit;
 using Moq;
 using OpenDDD.Infrastructure.Events.RabbitMq;
 using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
+using OpenDDD.Tests.Base;
 using RabbitMQ.Client;
 
 namespace OpenDDD.Tests.Infrastructure.Events.RabbitMq
 {
-    public class RabbitMqMessagingProviderTests
+    public class RabbitMqMessagingProviderTests : UnitTests
     {
         private readonly Mock<IConnectionFactory> _mockConnectionFactory;
         private readonly Mock<IRabbitMqConsumerFactory> _mockConsumerFactory;

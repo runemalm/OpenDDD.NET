@@ -6,10 +6,11 @@ using Azure;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using OpenDDD.Infrastructure.Events.Azure;
+using OpenDDD.Tests.Base;
 
 namespace OpenDDD.Tests.Infrastructure.Events.Azure
 {
-    public class AzureServiceBusMessagingProviderTests
+    public class AzureServiceBusMessagingProviderTests : UnitTests
     {
         private readonly Mock<ServiceBusClient> _mockClient;
         private readonly Mock<ServiceBusAdministrationClient> _mockAdminClient;

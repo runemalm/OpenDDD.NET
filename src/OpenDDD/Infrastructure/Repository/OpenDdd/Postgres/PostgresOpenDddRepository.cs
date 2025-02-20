@@ -4,8 +4,8 @@ using OpenDDD.Infrastructure.Persistence.Serializers;
 using OpenDDD.Infrastructure.Repository.OpenDdd.Base;
 using OpenDDD.API.Extensions;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
-using Npgsql;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions;
+using Npgsql;
 
 namespace OpenDDD.Infrastructure.Repository.OpenDdd.Postgres
 {
