@@ -56,6 +56,7 @@ jobs:
           FAILED=$(grep -oP '(?<=Failed=")[0-9]+' src/OpenDDD.Tests/TestResults/TestResults.trx || echo 0)
           echo "{ \"schemaVersion\": 1, \"label\": \"Unit Tests\", \"message\": \"✅ $PASSED | ❌ $FAILED\", \"color\": \"blue\" }" > unit-tests-badge.json
 
+
       - name: Commit and Push Badge to GitHub Pages
         if: always()
         run: |
