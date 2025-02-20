@@ -49,6 +49,20 @@ jobs:
           path: src/OpenDDD.Tests/TestResults/TestResults.trx
           reporter: dotnet-trx
 
+      - name: Generate Test Summary
+        if: always()
+        run: |
+          PASSED=$(grep -oP '(?<=Passed=")[0-9]+' src/OpenDDD.Tests/TestResults/TestResults.trx || echo 0)
+          FAILED=$(grep -oP '(?<=Failed=")[0-9]+' src/OpenDDD.Tests/TestResults/TestResults.trx || echo 0)
+          echo "{ \"schemaVersion\": 1, \"label\": \"Unit Tests\", \"message\": \"✅ $PASSED | ❌ $FAILED\", \"color\": \"blue\" }" > unit-tests-badge.json
+
+      - name: Upload Unit Test Badge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-tests-badge
+          path: unit-tests-badge.json
+
   integration-tests:
     name: Integration Tests (.NET ${{ matrix.dotnet-version }})
     runs-on: ubuntu-latest
