@@ -52,6 +52,53 @@ namespace OpenDDD.Tests.Infrastructure.Events.Azure
             );
         }
         
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task SubscribeAsync_ShouldThrowException_WhenTopicIsInvalid(string invalidTopic)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.SubscribeAsync(invalidTopic, _testSubscription, (msg, token) => Task.CompletedTask, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task SubscribeAsync_ShouldThrowException_WhenConsumerGroupIsInvalid(string invalidConsumerGroup)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.SubscribeAsync(_testTopic, invalidConsumerGroup, (msg, token) => Task.CompletedTask, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task SubscribeAsync_ShouldThrowException_WhenHandlerIsNull()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _provider.SubscribeAsync(_testTopic, _testSubscription, null!, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task PublishAsync_ShouldThrowException_WhenTopicIsInvalid(string invalidTopic)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.PublishAsync(invalidTopic, "message", CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task PublishAsync_ShouldThrowException_WhenMessageIsInvalid(string invalidMessage)
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _provider.PublishAsync(_testTopic, invalidMessage, CancellationToken.None));
+        }
+        
         [Fact]
         public async Task SubscribeAsync_ShouldCreateTopicIfNotExists_WhenAutoCreateEnabled()
         {

@@ -27,6 +27,21 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
         public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+            }
+
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+            {
+                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
+            }
+
+            if (messageHandler is null)
+            {
+                throw new ArgumentNullException(nameof(messageHandler));
+            }
+
             var subscriptionName = consumerGroup;
 
             if (_autoCreateTopics)
@@ -57,6 +72,16 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+            }
+
             if (_autoCreateTopics)
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
