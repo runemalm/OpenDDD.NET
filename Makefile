@@ -295,5 +295,5 @@ azure-get-servicebus-connection: ##@Azure	 Get the Service Bus connection string
 	    --output tsv
 
 .PHONY: azure-delete-servicebus-namespace
-azure-delete-servicebus: ##@Azure	 Delete the Azure Service Bus namespace
-	az servicebus namespace delete --resource-group $(AZURE_RESOURCE_GROUP) --name $(AZURE_SERVICE_BUS_NAMESPACE)
+azure-delete-servicebus-namespace: ##@Azure	 Delete the Azure Service Bus namespace
+	az servicebus namespace delete --resource-group $(AZURE_RESOURCE_GROUP) --name $(AZURE_SERVICEBUS_NAMESPACE)
