@@ -72,13 +72,6 @@ jobs:
           - 5672:5672
           - 15672:15672
 
-      azurite:
-        image: mcr.microsoft.com/azure-storage/azurite
-        ports:
-          - 10000:10000
-          - 10001:10001
-          - 10002:10002
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -96,13 +89,44 @@ jobs:
         working-directory: src/OpenDDD.Tests
         run: dotnet build --no-restore --configuration Release
 
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Azure Service Bus namespace for Testing
+        run: |
+          NAMESPACE_NAME="test-servicebus-${{ github.run_id }}-${{ github.run_attempt }}"
+          echo "NAMESPACE_NAME=${NAMESPACE_NAME}" >> $GITHUB_ENV
+          az servicebus namespace create \
+            --resource-group opendddnet \
+            --name $NAMESPACE_NAME \
+            --location northeurope
+          CONNECTION_STRING=$(az servicebus namespace authorization-rule keys list \
+            --resource-group opendddnet \
+            --namespace-name $NAMESPACE_NAME \
+            --name RootManageSharedAccessKey \
+            --query primaryConnectionString \
+            -o tsv)
+          echo "AZURE_SERVICE_BUS_CONNECTION_STRING=${CONNECTION_STRING}" >> $GITHUB_ENV
+
       - name: Run Integration Tests
         working-directory: src/OpenDDD.Tests
         env:
           KAFKA_BROKER: localhost:9092
           RABBITMQ_HOST: localhost
-          AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true;"
+          AZURE_SERVICE_BUS_CONNECTION_STRING: ${{ env.AZURE_SERVICE_BUS_CONNECTION_STRING }}
         run: dotnet test --no-build --configuration Release --filter "Category=Integration" --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults
+
+      - name: Delete Azure Service Bus namespace After Tests
+        if: always()
+        run: |
+          if [[ -n "${NAMESPACE_NAME}" ]]; then
+            echo "Deleting namespace: $NAMESPACE_NAME"
+            az servicebus namespace delete --resource-group opendddnet --name $NAMESPACE_NAME
+          else
+            echo "No namespace found, skipping deletion."
+          fi
 
       - name: Upload Integration Test Results
         if: always()

@@ -48,6 +48,13 @@ namespace OpenDDD.Infrastructure.Events.Azure
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
             }
+            
+            if (!await _adminClient.TopicExistsAsync(topic, cancellationToken))
+            {
+                var errorMessage = $"Cannot subscribe to topic '{topic}' because it does not exist and auto-creation is disabled.";
+                _logger.LogError(errorMessage);
+                throw new InvalidOperationException(errorMessage);
+            }
 
             await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
 
