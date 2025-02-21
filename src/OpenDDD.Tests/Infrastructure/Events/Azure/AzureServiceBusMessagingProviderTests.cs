@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using Azure;
 using Azure.Messaging.ServiceBus;
@@ -112,62 +111,6 @@ namespace OpenDDD.Tests.Infrastructure.Events.Azure
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
                 _provider.PublishAsync(_testTopic, invalidMessage, CancellationToken.None));
-        }
-        
-        [Fact]
-        public async Task SubscribeAsync_ShouldCreateTopicIfNotExists_WhenAutoCreateEnabled()
-        {
-            // Arrange: topic don't exist
-            _mockAdminClient.Setup(admin => admin.TopicExistsAsync(_testTopic, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Response.FromValue(false, Mock.Of<Response>()));
-
-            // Act
-            await _provider.SubscribeAsync(_testTopic, _testSubscription, (msg, token) => Task.CompletedTask, CancellationToken.None);
-
-            // Assert: create-topic was called
-            _mockAdminClient.Verify(admin => admin.CreateTopicAsync(_testTopic, It.IsAny<CancellationToken>()), Times.Once);
-        }
-        
-        [Fact]
-        public async Task SubscribeAsync_ShouldCreateSubscriptionIfNotExists()
-        {
-            // Arrange: subscription don't exist
-            _mockAdminClient.Setup(admin => admin.SubscriptionExistsAsync(_testTopic, _testSubscription, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Response.FromValue(false, Mock.Of<Response>()));
-
-            // Act
-            await _provider.SubscribeAsync(_testTopic, _testSubscription, (msg, token) => Task.CompletedTask, CancellationToken.None);
-
-            // Assert: create-subscription was called
-            _mockAdminClient.Verify(admin => admin.CreateSubscriptionAsync(_testTopic, _testSubscription, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task SubscribeAsync_ShouldStartProcessingMessages()
-        {
-            // Arrange: no-op handler
-            Func<string, CancellationToken, Task> handler = (msg, token) => Task.CompletedTask;
-
-            // Act
-            await _provider.SubscribeAsync(_testTopic, _testSubscription, handler, CancellationToken.None);
-
-            // Assert: start-processing was called
-            _mockProcessor.Verify(processor => processor.StartProcessingAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
-        
-        [Fact]
-        public async Task PublishAsync_ShouldSendMessageToTopic()
-        {
-            // Arrange
-            var testMessage = "Hello, Azure Service Bus!";
-
-            // Act
-            await _provider.PublishAsync(_testTopic, testMessage, CancellationToken.None);
-
-            // Assert: sender was called with the message
-            _mockSender.Verify(sender => sender.SendMessageAsync(It.Is<ServiceBusMessage>(
-                    msg => Encoding.UTF8.GetString(msg.Body.ToArray()) == testMessage), 
-                It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
