@@ -68,9 +68,13 @@ jobs:
 
       rabbitmq:
         image: rabbitmq:3-management
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
         ports:
           - 5672:5672
           - 15672:15672
+        options: --health-cmd "rabbitmq-diagnostics check_port_connectivity" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - name: Checkout Repository
@@ -110,11 +114,26 @@ jobs:
             -o tsv)
           echo "AZURE_SERVICE_BUS_CONNECTION_STRING=${CONNECTION_STRING}" >> $GITHUB_ENV
 
+      - name: Wait for RabbitMQ to be Ready
+        run: |
+          for i in {1..10}; do
+            if curl -s -f http://localhost:15672 || nc -z localhost 5672; then
+              echo "RabbitMQ is up!"
+              exit 0
+            fi
+            echo "Waiting for RabbitMQ..."
+            sleep 5
+          done
+          echo "RabbitMQ did not start in time!" && exit 1
+
       - name: Run Integration Tests
         working-directory: src/OpenDDD.Tests
         env:
           KAFKA_BROKER: localhost:9092
           RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
           AZURE_SERVICE_BUS_CONNECTION_STRING: ${{ env.AZURE_SERVICE_BUS_CONNECTION_STRING }}
         run: dotnet test --no-build --configuration Release --filter "Category=Integration" --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults
 
