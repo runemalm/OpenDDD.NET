@@ -62,7 +62,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
         }
 
         [Fact]
-        public async Task SubscribeAsync_WhenAutoCreateTopicsIsEnabled_ShouldCreateTopicIfNotExists()
+        public async Task Subscribe_WhenAutoCreateTopicsIsEnabled_ShouldCreateTopicIfNotExists()
         {
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";
@@ -81,7 +81,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
         }
 
         [Fact]
-        public async Task SubscribeAsync_WhenAutoCreateTopicsIsDisabled_ShouldNotCreateTopic_AndLogErrorWhenTopicNotExist()
+        public async Task Subscribe_WhenAutoCreateTopicsIsDisabled_ShouldNotCreateTopic_AndLogErrorWhenTopicNotExist()
         {
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OpenDDD.Infrastructure.Events.RabbitMq;
 using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
@@ -117,7 +118,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         }
 
         [Fact]
-        public async Task SubscribeAsync_ShouldCreateTopicIfNotExists()
+        public async Task Subscribe_ShouldCreateTopicIfNotExists()
         {
             // Arrange
             await VerifyExchangeAndQueueDoNotExist();
@@ -143,6 +144,61 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             {
                 Assert.Fail($"Queue '{_testConsumerGroup}.{_testTopic}' does not exist.");
             }
+        }
+        
+        [Fact]
+        public async Task SubscribeAsync_ShouldReceivePublishedMessage()
+        {
+            // Arrange
+            var receivedMessages = new ConcurrentBag<string>();
+            var messageToSend = "Hello, OpenDDD!";
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
+            {
+                receivedMessages.Add(msg);
+            }, cts.Token);
+
+            await Task.Delay(500); // Allow time for the consumer to start
+
+            // Act
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+
+            // Wait for message to be received
+            await Task.Delay(1000);
+
+            // Assert
+            Assert.Contains(messageToSend, receivedMessages);
+        }
+
+        [Fact]
+        public async Task SubscribeAsync_ShouldDeliverMessageToOnlyOneCompetingConsumer()
+        {
+            // Arrange
+            var receivedMessages = new ConcurrentDictionary<string, int>();
+            var messageToSend = "Competing Consumer Test";
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+            async Task MessageHandler(string msg, CancellationToken token)
+            {
+                receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
+            }
+
+            // Subscribe multiple competing consumers to the same topic
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
+
+            await Task.Delay(500); // Allow time for consumers to start
+
+            // Act
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+
+            // Wait for message processing
+            await Task.Delay(1000);
+
+            // Assert: Only one consumer should receive the message
+            Assert.Equal(1, receivedMessages.GetValueOrDefault("received", 0));
         }
     }
 }
