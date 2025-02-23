@@ -297,3 +297,27 @@ azure-get-servicebus-connection: ##@Azure	 Get the Service Bus connection string
 .PHONY: azure-delete-servicebus-namespace
 azure-delete-servicebus-namespace: ##@Azure	 Delete the Azure Service Bus namespace
 	az servicebus namespace delete --resource-group $(AZURE_RESOURCE_GROUP) --name $(AZURE_SERVICEBUS_NAMESPACE)
+
+.PHONY: azure-list-servicebus-namespaces
+azure-list-servicebus-namespaces: ##@Azure	 List all Azure Service Bus namespaces in the resource group
+	az servicebus namespace list --resource-group $(AZURE_RESOURCE_GROUP) --output table
+
+.PHONY: azure-list-servicebus-topics
+azure-list-servicebus-topics: ##@Azure	 List all topics in the Azure Service Bus namespace
+	az servicebus topic list --resource-group $(AZURE_RESOURCE_GROUP) --namespace-name $(AZURE_SERVICEBUS_NAMESPACE) --output table
+
+.PHONY: azure-list-servicebus-subscriptions
+azure-list-servicebus-subscriptions: ##@Azure	 List all subscriptions for a given topic (usage: make azure-list-servicebus-subscriptions TOPIC_NAME=<topic>)
+	@if [ -z "$(TOPIC_NAME)" ]; then \
+		echo "Error: Specify the topic name using TOPIC_NAME=<topic>"; \
+		exit 1; \
+	fi
+	az servicebus topic subscription list --resource-group $(AZURE_RESOURCE_GROUP) --namespace-name $(AZURE_SERVICEBUS_NAMESPACE) --topic-name $(TOPIC_NAME) --output table
+
+.PHONY: azure-list-servicebus-queues
+azure-list-servicebus-queues: ##@Azure	 List all queues in the Azure Service Bus namespace
+	az servicebus queue list --resource-group $(AZURE_RESOURCE_GROUP) --namespace-name $(AZURE_SERVICEBUS_NAMESPACE) --output table
+
+.PHONY: azure-list-servicebus-authorization-rules
+azure-list-servicebus-authorization-rules: ##@Azure	 List all authorization rules for the Azure Service Bus namespace
+	az servicebus namespace authorization-rule list --resource-group $(AZURE_RESOURCE_GROUP) --namespace-name $(AZURE_SERVICEBUS_NAMESPACE) --output table
