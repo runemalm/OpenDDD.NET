@@ -116,9 +116,9 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             }
             catch (OperationInterruptedException) { /* Queue does not exist */ }
         }
-
+        
         [Fact]
-        public async Task Subscribe_ShouldCreateTopicIfNotExists()
+        public async Task Configuration_ShouldCreateTopic_WhenSubscribing_AndTopicDoNotExist_AndAutoCreateTopicIsEnabled()
         {
             // Arrange
             await VerifyExchangeAndQueueDoNotExist();
@@ -147,58 +147,160 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         }
         
         [Fact]
-        public async Task SubscribeAsync_ShouldReceivePublishedMessage()
+        public async Task AtLeastOnceGurantee_ShouldDeliverToLateSubscriber_WhenSubscribedBefore()
         {
             // Arrange
             var receivedMessages = new ConcurrentBag<string>();
-            var messageToSend = "Hello, OpenDDD!";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var messageToSend = "Persistent Message Test";
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
+            // First subscription to establish the listener group
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
+            {
+                Assert.Fail("First subscription should not receive the message.");
+            }, cts.Token);
+            await Task.Delay(500);
+            
+            // Unsubscribe
+            await _messagingProvider.UnsubscribeAsync(_testTopic, _testConsumerGroup, cts.Token);
+            await Task.Delay(500);
+
+            // Act: Publish message
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+
+            // Delay to simulate late subscriber
+            await Task.Delay(2000);
+
+            // Late subscriber
             await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
             {
                 receivedMessages.Add(msg);
             }, cts.Token);
 
-            await Task.Delay(500); // Allow time for the consumer to start
-
-            // Act
-            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
-
-            // Wait for message to be received
+            // Wait for message processing
             await Task.Delay(1000);
 
             // Assert
             Assert.Contains(messageToSend, receivedMessages);
         }
-
+        
         [Fact]
-        public async Task SubscribeAsync_ShouldDeliverMessageToOnlyOneCompetingConsumer()
+        public async Task AtLeastOnceGurantee_ShouldNotDeliverToLateSubscriber_WhenNotSubscribedBefore()
+        {
+            // Arrange
+            var receivedMessages = new ConcurrentBag<string>();
+            var messageToSend = "Non-Persistent Message Test";
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+            // Act: Publish message before any subscription
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+
+            // Delay to simulate late subscriber
+            await Task.Delay(2000);
+
+            // Late subscriber
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
+            {
+                receivedMessages.Add(msg);
+            }, cts.Token);
+
+            // Wait for message processing
+            await Task.Delay(1000);
+
+            // Assert
+            Assert.DoesNotContain(messageToSend, receivedMessages);
+        }
+        
+        [Fact]
+        public async Task AtLeastOnceGurantee_ShouldRedeliverLater_WhenMessageNotAcked()
+        {
+            // Arrange
+            var receivedMessages = new ConcurrentBag<string>();
+            var messageToSend = "Redelivery Test";
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+            async Task FaultyHandler(string msg, CancellationToken token)
+            {
+                receivedMessages.Add(msg);
+                throw new Exception("Simulated consumer crash before acknowledgment.");
+            }
+
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, FaultyHandler, cts.Token);
+            await Task.Delay(500); // Ensure setup
+
+            // Act: Publish message
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+
+            // Wait for redelivery
+            await Task.Delay(3000);
+
+            // Assert: The message should be received multiple times due to reattempts
+            Assert.True(receivedMessages.Count > 1, "Message should be redelivered at least once.");
+        }
+        
+        [Fact]
+        public async Task CompetingConsumers_ShouldDeliverOnlyOnce_WhenMultipleConsumersInGroup()
         {
             // Arrange
             var receivedMessages = new ConcurrentDictionary<string, int>();
             var messageToSend = "Competing Consumer Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
             async Task MessageHandler(string msg, CancellationToken token)
             {
                 receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
             }
 
-            // Subscribe multiple competing consumers to the same topic
+            // Multiple competing consumers in the same group
             await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
             await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
             await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
-
             await Task.Delay(500); // Allow time for consumers to start
 
             // Act
             await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
 
-            // Wait for message processing
+            // Wait for processing
             await Task.Delay(1000);
 
-            // Assert: Only one consumer should receive the message
+            // Assert: Only one of the competing consumers should receive the message
             Assert.Equal(1, receivedMessages.GetValueOrDefault("received", 0));
+        }
+        
+        [Fact]
+        public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
+        {
+            // Arrange
+            var receivedMessages = new ConcurrentDictionary<string, int>();
+            var totalMessages = 10;
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+            async Task MessageHandler(string msg, CancellationToken token)
+            {
+                receivedMessages.AddOrUpdate(msg, 1, (key, value) => value + 1);
+            }
+
+            // Multiple competing consumers in the same group
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
+            await Task.Delay(500); // Allow time for consumers to start
+
+            // Act: Publish multiple messages
+            for (int i = 0; i < totalMessages; i++)
+            {
+                await _messagingProvider.PublishAsync(_testTopic, $"Message {i}", cts.Token);
+            }
+
+            // Wait for processing
+            await Task.Delay(2000);
+
+            // Assert: Messages should be evenly distributed across consumers
+            var messageCounts = receivedMessages.Values;
+            var minReceived = messageCounts.Min();
+            var maxReceived = messageCounts.Max();
+    
+            Assert.True(maxReceived - minReceived <= 1, "Messages should be evenly distributed among competing consumers.");
         }
     }
 }

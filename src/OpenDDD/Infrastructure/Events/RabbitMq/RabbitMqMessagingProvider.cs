@@ -14,6 +14,7 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         private IConnection? _connection;
         private IChannel? _channel;
         private readonly ConcurrentBag<IAsyncBasicConsumer> _consumers = new();
+        private readonly ConcurrentDictionary<string, string> _consumerTags = new();
         
         public RabbitMqMessagingProvider(
             IConnectionFactory factory,
@@ -47,9 +48,33 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
             var consumer = _consumerFactory.CreateConsumer(_channel, messageHandler);
             _consumers.Add(consumer);
-            await _channel.BasicConsumeAsync(queueName, autoAck: false, consumer, cancellationToken);
+
+            var consumerTag = await _channel.BasicConsumeAsync(queueName, autoAck: false, consumer, cancellationToken);
+
+            _consumerTags[queueName] = consumerTag;
 
             _logger.LogDebug("Subscribed to RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+        }
+        
+        public async Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
+
+            var queueName = $"{consumerGroup}.{topic}";
+
+            if (_consumerTags.TryRemove(queueName, out var consumerTag))
+            {
+                await _channel.BasicCancelAsync(consumerTag, false, cancellationToken);
+                _logger.LogDebug("Unsubscribed from RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+            }
+            else
+            {
+                throw new InvalidOperationException($"No active subscription found for queue '{queueName}' in consumer group '{consumerGroup}'");
+            }
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)

@@ -77,6 +77,11 @@ namespace OpenDDD.Infrastructure.Events.Azure
             await processor.StartProcessingAsync(cancellationToken);
         }
 
+        public Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(topic))

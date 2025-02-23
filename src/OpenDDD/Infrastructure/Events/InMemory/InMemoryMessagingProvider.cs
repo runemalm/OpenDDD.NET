@@ -25,6 +25,11 @@ namespace OpenDDD.Infrastructure.Events.InMemory
             return Task.CompletedTask;
         }
 
+        public Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task PublishAsync(string topic, string message, CancellationToken ct)
         {
             var matchingGroups = _subscribers.Keys.Where(key => key.StartsWith($"{topic}:"));

@@ -68,6 +68,11 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             _consumerTasks.Add(consumerTask);
         }
         
+        public Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+        
         private async Task StartConsumerLoop(
             IConsumer<Ignore, string> consumer, 
             Func<string, CancellationToken, Task> messageHandler, 
