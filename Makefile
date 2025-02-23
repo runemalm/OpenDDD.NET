@@ -221,8 +221,6 @@ templates-rebuild: templates-uninstall templates-pack templates-install ##@Templ
 # ACT
 ##########################################################################
 
-# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:full-latest
-# ACT_IMAGE := ghcr.io/catthehacker/ubuntu:runner-latest
 ACT_IMAGE := ghcr.io/catthehacker/ubuntu:act-latest
 
 .PHONY: act-install
@@ -321,3 +319,34 @@ azure-list-servicebus-queues: ##@Azure	 List all queues in the Azure Service Bus
 .PHONY: azure-list-servicebus-authorization-rules
 azure-list-servicebus-authorization-rules: ##@Azure	 List all authorization rules for the Azure Service Bus namespace
 	az servicebus namespace authorization-rule list --resource-group $(AZURE_RESOURCE_GROUP) --namespace-name $(AZURE_SERVICEBUS_NAMESPACE) --output table
+
+##########################################################################
+# RABBITMQ
+##########################################################################
+
+RABBITMQ_PORT := 5672
+
+.PHONY: rabbitmq-start
+rabbitmq-start: ##@@RabbitMQ	 Start a RabbitMQ container
+	docker run --rm -d --name rabbitmq --hostname rabbitmq \
+		-e RABBITMQ_DEFAULT_USER=$(RABBITMQ_DEFAULT_USER) \
+		-e RABBITMQ_DEFAULT_PASS=$(RABBITMQ_DEFAULT_PASS) \
+		-p 5672:$(RABBITMQ_PORT) -p 15672:15672 rabbitmq:management
+	@echo "RabbitMQ started. Management UI available at http://localhost:15672"
+
+.PHONY: rabbitmq-stop
+rabbitmq-stop: ##@RabbitMQ	 Stop the RabbitMQ container
+	docker stop rabbitmq
+	@echo "RabbitMQ stopped."
+
+.PHONY: rabbitmq-status
+rabbitmq-status: ##@RabbitMQ	 Check RabbitMQ container status
+	docker ps | grep rabbitmq || echo "RabbitMQ is not running."
+
+.PHONY: rabbitmq-get-connection
+rabbitmq-get-connection: ##@RabbitMQ	 Get the RabbitMQ connection string
+	@echo "amqp://$(RABBITMQ_DEFAULT_USER):$(RABBITMQ_DEFAULT_PASS)@localhost:$(RABBITMQ_PORT)/"
+
+.PHONY: rabbitmq-logs
+rabbitmq-logs: ##@RabbitMQ	 Show RabbitMQ logs
+	docker logs -f rabbitmq
