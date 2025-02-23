@@ -118,7 +118,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         }
         
         [Fact]
-        public async Task Configuration_ShouldCreateTopic_WhenSubscribing_AndTopicDoNotExist_AndAutoCreateTopicIsEnabled()
+        public async Task AutoCreateTopic_ShouldCreateTopicOnSubscribe_WhenSettingEnabled()
         {
             // Arrange
             await VerifyExchangeAndQueueDoNotExist();

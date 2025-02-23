@@ -77,9 +77,37 @@ namespace OpenDDD.Infrastructure.Events.Azure
             await processor.StartProcessingAsync(cancellationToken);
         }
 
-        public Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
+        public async Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+            }
+
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+            {
+                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
+            }
+
+            var subscriptionName = consumerGroup;
+
+            _logger.LogInformation("Unsubscribing from topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
+
+            var processor = _processors.FirstOrDefault(p => 
+                p.EntityPath.Equals($"{topic}/Subscriptions/{subscriptionName}", StringComparison.OrdinalIgnoreCase));
+
+            if (processor != null)
+            {
+                _processors.Remove(processor);
+                _logger.LogInformation("Stopping and disposing message processor for topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
+
+                await processor.StopProcessingAsync(cancellationToken);
+                await processor.DisposeAsync();
+            }
+            else
+            {
+                _logger.LogWarning("No active subscription found for topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
+            }
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
