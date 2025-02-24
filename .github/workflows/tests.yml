@@ -57,11 +57,20 @@ jobs:
         dotnet-version: [8.0.x]
 
     services:
+      zookeeper:
+        image: confluentinc/cp-zookeeper:latest
+        env:
+          ZOOKEEPER_CLIENT_PORT: 2181
+        ports:
+          - 2181:2181
+
       kafka:
         image: confluentinc/cp-kafka:latest
         env:
-          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_BROKER_ID: 1
           KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
         ports:
           - 9092:9092
         options: --network-alias kafka
@@ -126,10 +135,22 @@ jobs:
           done
           echo "RabbitMQ did not start in time!" && exit 1
 
+      - name: Wait for Kafka to be Ready
+        run: |
+          for i in {1..10}; do
+            if nc -z localhost 9092; then
+              echo "Kafka is up!"
+              exit 0
+            fi
+            echo "Waiting for Kafka..."
+            sleep 5
+          done
+          echo "Kafka did not start in time!" && exit 1
+
       - name: Run Integration Tests
         working-directory: src/OpenDDD.Tests
         env:
-          KAFKA_BROKER: localhost:9092
+          KAFKA_BOOTSTRAP_SERVERS: localhost:9092
           RABBITMQ_HOST: localhost
           RABBITMQ_PORT: 5672
           RABBITMQ_USERNAME: guest

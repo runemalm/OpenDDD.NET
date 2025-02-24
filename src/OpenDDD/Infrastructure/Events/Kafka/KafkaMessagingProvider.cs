@@ -12,10 +12,9 @@ namespace OpenDDD.Infrastructure.Events.Kafka
         private readonly IProducer<Null, string> _producer;
         private readonly IAdminClient _adminClient;
         private readonly bool _autoCreateTopics;
-        private readonly KafkaConsumerFactory _consumerFactory;
+        private readonly IKafkaConsumerFactory _consumerFactory;
         private readonly ILogger<KafkaMessagingProvider> _logger;
-        private readonly ConcurrentBag<IConsumer<Ignore, string>> _consumers = new();
-        private readonly List<Task> _consumerTasks = new();
+        private readonly ConcurrentDictionary<string, KafkaConsumer> _consumers = new();
         private readonly CancellationTokenSource _cts = new();
         private bool _disposed;
 
@@ -23,7 +22,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             string bootstrapServers,
             IAdminClient adminClient,
             IProducer<Null, string> producer,
-            KafkaConsumerFactory consumerFactory,
+            IKafkaConsumerFactory consumerFactory,
             bool autoCreateTopics,
             ILogger<KafkaMessagingProvider> logger)
         {
@@ -52,61 +51,47 @@ namespace OpenDDD.Infrastructure.Events.Kafka
 
             if (messageHandler is null)
                 throw new ArgumentNullException(nameof(messageHandler));
-
+            
             if (_autoCreateTopics)
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
             }
-
-            var consumer = _consumerFactory.Create(consumerGroup);
-            _consumers.Add(consumer);
-            consumer.Subscribe(topic);
-
-            _logger.LogDebug("Subscribed to Kafka topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
-            
-            var consumerTask = Task.Run(() => StartConsumerLoop(consumer, messageHandler, _cts.Token), _cts.Token);
-            _consumerTasks.Add(consumerTask);
-        }
-        
-        public Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-        
-        private async Task StartConsumerLoop(
-            IConsumer<Ignore, string> consumer, 
-            Func<string, CancellationToken, Task> messageHandler, 
-            CancellationToken cancellationToken)
-        {
-            try
+            else
             {
-                while (!cancellationToken.IsCancellationRequested)
+                var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+                if (!metadata.Topics.Any(t => t.Topic == topic))
                 {
-                    // Seems like consume don't respect cancellation token.
-                    // See: https://github.com/confluentinc/confluent-kafka-dotnet/issues/1085
-                    var result = consumer.Consume(cancellationToken);
-                    if (result?.Message != null)
-                    {
-                        _logger.LogDebug("Received message from Kafka: {Message}", result.Message.Value);
-                        await messageHandler(result.Message.Value, cancellationToken);
-                        consumer.Commit(result);
-                        _logger.LogDebug("Message processed and offset committed: {Offset}", result.Offset);
-                    }
+                    _logger.LogError("Cannot subscribe to non-existent topic: {Topic}", topic);
+                    throw new KafkaException(new Error(ErrorCode.UnknownTopicOrPart, $"Topic '{topic}' does not exist."));
                 }
             }
-            catch (OperationCanceledException)
+
+            var kafkaConsumer = _consumers.GetOrAdd(consumerGroup, _ => _consumerFactory.Create(consumerGroup));
+
+            kafkaConsumer.Subscribe(topic);
+
+            _logger.LogDebug("Subscribed to Kafka topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+
+            kafkaConsumer.StartProcessing(messageHandler, _cts.Token);
+        }
+        
+        public async Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
+            
+            if (!_consumers.TryRemove(consumerGroup, out var kafkaConsumer))
             {
-                _logger.LogDebug("Kafka consumer loop cancelled.");
+                _logger.LogWarning("No active consumer found for consumer group '{ConsumerGroup}'. It may have already stopped.", consumerGroup);
+                return;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred in Kafka consumer loop.");
-            }
-            finally
-            {
-                _logger.LogDebug("Closing consumer.");
-                consumer.Close();
-            }
+
+            _logger.LogInformation("Stopping consumer group '{ConsumerGroup}'...", consumerGroup);
+            await kafkaConsumer.StopProcessingAsync();
+            kafkaConsumer.Dispose();
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken)
@@ -130,21 +115,46 @@ namespace OpenDDD.Infrastructure.Events.Kafka
         {
             try
             {
-                var metadata = _adminClient.GetMetadata(topic, TimeSpan.FromSeconds(5));
-                if (metadata.Topics.Any(t => t.Topic == topic)) return; // Topic exists
+                var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+
+                if (metadata.Topics.Any(t => t.Topic == topic))
+                {
+                    _logger.LogDebug("Topic '{Topic}' already exists. Skipping creation.", topic);
+                    return;
+                }
 
                 _logger.LogDebug("Creating Kafka topic: {Topic}", topic);
                 await _adminClient.CreateTopicsAsync(new[]
                 {
                     new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 }
                 }, null);
+
+                for (int i = 0; i < 10; i++)
+                {
+                    await Task.Delay(500, cancellationToken);
+                    metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(1));
+
+                    if (metadata.Topics.Any(t => t.Topic == topic))
+                    {
+                        _logger.LogDebug("Kafka topic '{Topic}' is now available.", topic);
+                        return;
+                    }
+                }
+
+                throw new KafkaException(new Error(ErrorCode.UnknownTopicOrPart, $"Failed to create topic '{topic}' within timeout."));
+            }
+            catch (KafkaException ex)
+            {
+                _logger.LogError(ex, "Kafka error while creating topic {Topic}: {Message}", topic, ex.Message);
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError("Could not check or create Kafka topic {Topic}: {Message}", topic, ex.Message);
+                _logger.LogError(ex, "Unexpected error while creating Kafka topic {Topic}", topic);
+                throw new InvalidOperationException($"Failed to create topic '{topic}'", ex);
             }
         }
-
+        
         public async ValueTask DisposeAsync()
         {
             if (_disposed) return;
@@ -152,22 +162,17 @@ namespace OpenDDD.Infrastructure.Events.Kafka
 
             _logger.LogDebug("Disposing KafkaMessagingProvider...");
 
-            _logger.LogDebug("Cancelling consumer tasks...");
             _cts.Cancel();
             
-            _logger.LogDebug("Waiting for all consumer tasks to complete...");
-            await Task.WhenAll(_consumerTasks);
+            var tasks = _consumers.Values.Select(c => c.StopProcessingAsync()).ToList();
+            await Task.WhenAll(tasks);
 
-            foreach (var consumer in _consumers)
+            foreach (var consumer in _consumers.Values)
             {
-                _logger.LogDebug("Disposing consumer...");
                 consumer.Dispose();
             }
 
-            _logger.LogDebug("Disposing producer...");
             _producer.Dispose();
-        
-            _logger.LogDebug("Disposing admin client...");
             _adminClient.Dispose();
         }
     }
