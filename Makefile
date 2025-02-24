@@ -33,6 +33,8 @@ FEED_DIR := $(HOME)/Projects/LocalFeed
 USER_NUGET_CONFIG_DIR=$(HOME)/.config/NuGet/NuGet.Config
 SPHINXDOC_IMG := openddd.net/sphinxdoc
 
+NETWORK := opendddnet
+
 BLUE      := $(shell tput -Txterm setaf 4)
 GREEN     := $(shell tput -Txterm setaf 2)
 TURQUOISE := $(shell tput -Txterm setaf 6)
@@ -350,3 +352,77 @@ rabbitmq-get-connection: ##@RabbitMQ	 Get the RabbitMQ connection string
 .PHONY: rabbitmq-logs
 rabbitmq-logs: ##@RabbitMQ	 Show RabbitMQ logs
 	docker logs -f rabbitmq
+
+##########################################################################
+# KAFKA
+##########################################################################
+
+ZOOKEEPER_CONTAINER := opendddnet-zookeeper
+
+KAFKA_NETWORK := $(NETWORK)
+KAFKA_CONTAINER := opendddnet-kafka
+KAFKA_BROKER := localhost:9092
+KAFKA_ZOOKEEPER := localhost:2181
+
+.PHONY: kafka-start
+kafka-start: ##@Kafka	 Start Kafka and Zookeeper using Docker
+	@docker network inspect $(KAFKA_NETWORK) >/dev/null 2>&1 || docker network create $(KAFKA_NETWORK)
+	@docker run -d --rm --name $(ZOOKEEPER_CONTAINER) --network $(KAFKA_NETWORK) -p 2181:2181 \
+	    wurstmeister/zookeeper:latest
+	@docker run -d --rm --name $(KAFKA_CONTAINER) --network $(KAFKA_NETWORK) -p 9092:9092 \
+	    -e KAFKA_BROKER_ID=1 \
+	    -e KAFKA_ZOOKEEPER_CONNECT=$(ZOOKEEPER_CONTAINER):2181 \
+	    -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 \
+	    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
+	    -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+	    wurstmeister/kafka:latest
+
+.PHONY: kafka-stop
+kafka-stop: ##@Kafka	 Stop Kafka and Zookeeper
+	@docker stop $(KAFKA_CONTAINER) || true
+	@docker stop $(ZOOKEEPER_CONTAINER) || true
+
+.PHONY: kafka-logs
+kafka-logs: ##@Kafka	 Show Kafka logs
+	@docker logs -f $(KAFKA_CONTAINER)
+
+.PHONY: kafka-shell
+kafka-shell: ##@@Kafka	 Open a shell inside the Kafka container
+	docker exec -it $(KAFKA_CONTAINER) /bin/sh
+
+.PHONY: kafka-create-topic
+kafka-create-topic: ##@Kafka	 Create a Kafka topic (uses NAME)
+ifndef NAME
+	$(error Topic name not specified. Usage: make kafka-create-topic NAME=<TopicName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-topics.sh --create --topic $(NAME) --bootstrap-server $(KAFKA_BROKER) --replication-factor 1 --partitions 1
+
+.PHONY: kafka-list-brokers
+kafka-list-brokers: ##@Kafka	 List Kafka broker configurations
+	@docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type brokers
+
+.PHONY: kafka-list-topics
+kafka-list-topics: ##@Kafka	 List all Kafka topics
+	@docker exec -it $(KAFKA_CONTAINER) kafka-topics.sh --list --bootstrap-server $(KAFKA_BROKER)
+
+.PHONY: kafka-broker-status
+kafka-broker-status: ##@Kafka	 Show Kafka broker status
+	@docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+
+.PHONY: kafka-list-consumer-groups
+kafka-list-consumer-groups: ##@Kafka	 List active Kafka consumer groups
+	@docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+
+.PHONY: kafka-consume
+kafka-consume: ##@Kafka	 Consume messages from a Kafka topic (uses NAME)
+ifndef NAME
+	$(error Topic name not specified. Usage: make kafka-consume NAME=<TopicName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-console-consumer.sh --bootstrap-server $(KAFKA_BROKER) --topic $(NAME) --from-beginning
+
+.PHONY: kafka-produce
+kafka-produce: ##@Kafka	 Produce messages to a Kafka topic (uses NAME)
+ifndef NAME
+	$(error Topic name not specified. Usage: make kafka-produce NAME=<TopicName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-console-producer.sh --broker-list $(KAFKA_BROKER) --topic $(NAME)
