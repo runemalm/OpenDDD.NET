@@ -5,6 +5,7 @@ using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Tests.Base;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Xunit.Abstractions;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
 {
@@ -17,7 +18,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
         private readonly ServiceBusClient _serviceBusClient;
         private readonly AzureServiceBusMessagingProvider _messagingProvider;
 
-        public AzureServiceBusMessagingProviderTests()
+        public AzureServiceBusMessagingProviderTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
             _connectionString = Environment.GetEnvironmentVariable("AZURE_SERVICE_BUS_CONNECTION_STRING")
                 ?? throw new InvalidOperationException("AZURE_SERVICE_BUS_CONNECTION_STRING is not set.");
@@ -35,13 +36,12 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
 
         public async Task InitializeAsync()
         {
-            // Start each test with an empty service bus namespace
             await CleanupTopicsAndSubscriptionsAsync();
         }
 
         public async Task DisposeAsync()
         {
-            // Don't delete after latest run test in case we need to inspect what was created
+            
         }
 
         private async Task CleanupTopicsAndSubscriptionsAsync()

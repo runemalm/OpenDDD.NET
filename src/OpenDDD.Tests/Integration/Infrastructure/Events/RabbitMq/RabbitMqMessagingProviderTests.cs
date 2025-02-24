@@ -6,6 +6,7 @@ using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using OpenDDD.Tests.Base;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
+using Xunit.Abstractions;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
 {
@@ -22,7 +23,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         private readonly string _testTopic = "OpenDddTestTopic";
         private readonly string _testConsumerGroup = "OpenDddTestGroup";
 
-        public RabbitMqMessagingProviderTests()
+        public RabbitMqMessagingProviderTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
             _loggerMock = new Mock<ILogger<RabbitMqMessagingProvider>>();
 
@@ -42,12 +43,12 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         public async Task InitializeAsync()
         {
             await EnsureConnectionAndChannelOpenAsync();
-            await DeleteExchangesAndQueuesAsync();
+            await CleanupExchangesAndQueuesAsync();
         }
 
         public async Task DisposeAsync()
         {
-            await DeleteExchangesAndQueuesAsync();
+            await CleanupExchangesAndQueuesAsync();
 
             if (_channel is not null)
             {
@@ -102,7 +103,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             }
         }
 
-        private async Task DeleteExchangesAndQueuesAsync()
+        private async Task CleanupExchangesAndQueuesAsync()
         {
             try
             {
