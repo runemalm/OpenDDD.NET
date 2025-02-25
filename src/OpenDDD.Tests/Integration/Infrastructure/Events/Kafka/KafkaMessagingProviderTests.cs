@@ -243,10 +243,12 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             var consumerGroup = "test-consumer-group";
             var receivedMessages = new ConcurrentDictionary<string, int>();
             var messageToSend = "Competing Consumer Test";
+            var subscriberReceived = new TaskCompletionSource<bool>();
         
             async Task MessageHandler(string msg, CancellationToken token)
             {
                 receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
+                subscriberReceived.SetResult(true);
             }
         
             // Multiple competing consumers in the same group
@@ -258,7 +260,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
         
             // Wait for processing
-            await Task.Delay(5000);
+            await subscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(20));
         
             // Assert: Only one of the competing consumers should receive the message
             receivedMessages.GetValueOrDefault("received", 0).Should().Be(1);
