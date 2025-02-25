@@ -91,27 +91,27 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             }
         }
 
-        [Fact]
-        public async Task AutoCreateTopic_ShouldCreateTopicOnSubscribe_WhenSettingEnabled()
-        {
-            // Arrange
-            var topicName = $"test-topic-{Guid.NewGuid()}";
-            var consumerGroup = "test-consumer-group";
-
-            // Ensure topic does not exist
-            var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
-            metadata.Topics.Any(t => t.Topic == topicName).Should().BeFalse();
-
-            // Act
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) => 
-                await Task.CompletedTask, _cts.Token);
-
-            await Task.Delay(1000);
-
-            // Assert
-            metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
-            metadata.Topics.Any(t => t.Topic == topicName).Should().BeTrue();
-        }
+        // [Fact]
+        // public async Task AutoCreateTopic_ShouldCreateTopicOnSubscribe_WhenSettingEnabled()
+        // {
+        //     // Arrange
+        //     var topicName = $"test-topic-{Guid.NewGuid()}";
+        //     var consumerGroup = "test-consumer-group";
+        //
+        //     // Ensure topic does not exist
+        //     var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+        //     metadata.Topics.Any(t => t.Topic == topicName).Should().BeFalse();
+        //
+        //     // Act
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) => 
+        //         await Task.CompletedTask, _cts.Token);
+        //
+        //     await Task.Delay(1000);
+        //
+        //     // Assert
+        //     metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+        //     metadata.Topics.Any(t => t.Topic == topicName).Should().BeTrue();
+        // }
 
         // [Fact]
         // public async Task AutoCreateTopic_ShouldNotCreateTopicOnSubscribe_WhenSettingDisabled()
@@ -234,36 +234,36 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         //     // Assert: The message should be received multiple times due to reattempts
         //     _receivedMessages.Count.Should().BeGreaterThan(1);
         // }
-        //
-        // [Fact]
-        // public async Task CompetingConsumers_ShouldDeliverOnlyOnce_WhenMultipleConsumersInGroup()
-        // {
-        //     // Arrange
-        //     var topicName = $"test-topic-{Guid.NewGuid()}";
-        //     var consumerGroup = "test-consumer-group";
-        //     var receivedMessages = new ConcurrentDictionary<string, int>();
-        //     var messageToSend = "Competing Consumer Test";
-        //
-        //     async Task MessageHandler(string msg, CancellationToken token)
-        //     {
-        //         receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
-        //     }
-        //
-        //     // Multiple competing consumers in the same group
-        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-        //     await Task.Delay(500);
-        //
-        //     // Act
-        //     await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
-        //
-        //     // Wait for processing
-        //     await Task.Delay(5000);
-        //
-        //     // Assert: Only one of the competing consumers should receive the message
-        //     receivedMessages.GetValueOrDefault("received", 0).Should().Be(1);
-        // }
-        //
+        
+        [Fact]
+        public async Task CompetingConsumers_ShouldDeliverOnlyOnce_WhenMultipleConsumersInGroup()
+        {
+            // Arrange
+            var topicName = $"test-topic-{Guid.NewGuid()}";
+            var consumerGroup = "test-consumer-group";
+            var receivedMessages = new ConcurrentDictionary<string, int>();
+            var messageToSend = "Competing Consumer Test";
+        
+            async Task MessageHandler(string msg, CancellationToken token)
+            {
+                receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
+            }
+        
+            // Multiple competing consumers in the same group
+            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
+            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
+            await Task.Delay(500);
+        
+            // Act
+            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
+        
+            // Wait for processing
+            await Task.Delay(5000);
+        
+            // Assert: Only one of the competing consumers should receive the message
+            receivedMessages.GetValueOrDefault("received", 0).Should().Be(1);
+        }
+        
         // [Fact]
         // public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
         // {

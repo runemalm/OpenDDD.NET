@@ -79,6 +79,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
         public async Task StopProcessingAsync()
         {
             _cts.Cancel();
+
             if (_consumerTask != null)
             {
                 await _consumerTask;
