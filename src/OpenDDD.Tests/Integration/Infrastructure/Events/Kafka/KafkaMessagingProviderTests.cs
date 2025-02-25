@@ -19,7 +19,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         private readonly ILogger<KafkaMessagingProvider> _logger;
         private readonly ILogger<KafkaConsumer> _consumerLogger;
         private readonly KafkaMessagingProvider _messagingProvider;
-        private readonly CancellationTokenSource _cts = new();
+        private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(60));
 
         public KafkaMessagingProviderTests(ITestOutputHelper testOutputHelper) 
             : base(testOutputHelper, enableLogging: true)
@@ -260,8 +260,15 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
         
             // Wait for processing
-            await subscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(20));
-        
+            try
+            {
+                await subscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(20));
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogDebug("Timed out waiting for subscriber to receive message.");
+            }
+
             // Assert: Only one of the competing consumers should receive the message
             receivedMessages.GetValueOrDefault("received", 0).Should().Be(1);
         }
