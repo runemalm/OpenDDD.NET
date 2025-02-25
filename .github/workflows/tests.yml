@@ -65,7 +65,7 @@ jobs:
           - 2181:2181
 
       kafka:
-        image: confluentinc/cp-kafka:latest
+        image: wurstmeister/kafka:latest
         env:
           KAFKA_BROKER_ID: 1
           KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
