@@ -129,7 +129,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
                     new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 }
                 }, null);
 
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 30; i++)
                 {
                     await Task.Delay(500, cancellationToken);
                     metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(1));

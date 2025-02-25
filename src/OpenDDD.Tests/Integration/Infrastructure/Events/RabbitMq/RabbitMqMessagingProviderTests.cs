@@ -1,12 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Xunit.Abstractions;
 using Moq;
 using OpenDDD.Infrastructure.Events.RabbitMq;
 using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using OpenDDD.Tests.Base;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
-using Xunit.Abstractions;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
 {

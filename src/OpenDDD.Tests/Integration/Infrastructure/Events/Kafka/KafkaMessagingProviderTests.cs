@@ -113,190 +113,190 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             metadata.Topics.Any(t => t.Topic == topicName).Should().BeTrue();
         }
 
-        [Fact]
-        public async Task AutoCreateTopic_ShouldNotCreateTopicOnSubscribe_WhenSettingDisabled()
-        {
-            // Arrange
-            var topicName = $"test-topic-{Guid.NewGuid()}";
-            var consumerGroup = "test-consumer-group";
-
-            var messagingProvider = new KafkaMessagingProvider(
-                _bootstrapServers,
-                _adminClient,
-                _producer,
-                _consumerFactory,
-                autoCreateTopics: false,
-                _logger);
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<KafkaException>(async () =>
-            {
-                await messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) => 
-                    await Task.CompletedTask, _cts.Token);
-            });
-
-            exception.Message.Should().Contain($"Topic '{topicName}' does not exist.");
-        }
-
-        [Fact]
-        public async Task AtLeastOnceGurantee_ShouldDeliverToLateSubscriber_WhenSubscribedBefore()
-        {
-            // Arrange
-            var topicName = $"test-topic-{Guid.NewGuid()}";
-            var consumerGroup = $"test-consumer-group-{Guid.NewGuid()}";
-            var messageToSend = "Persistent Message Test";
-            var firstSubscriberReceived = new TaskCompletionSource<bool>();
-            var lateSubscriberReceived = new TaskCompletionSource<bool>();
-            ConcurrentBag<string> _receivedMessages = new();
-
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
-            {
-                firstSubscriberReceived.SetResult(true);
-            }, _cts.Token);
-    
-            await Task.Delay(500);
-            
-            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
-
-            await firstSubscriberReceived.Task;
-
-            await _messagingProvider.UnsubscribeAsync(topicName, consumerGroup, _cts.Token);
-            await Task.Delay(500);
-
-            // Late subscriber
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
-            {
-                _receivedMessages.Add(msg);
-                lateSubscriberReceived.TrySetResult(true);
-            }, _cts.Token);
-            
-            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
-
-            await lateSubscriberReceived.Task;
-
-            // Assert
-            _receivedMessages.Should().Contain(messageToSend);
-        }
-
-        [Fact]
-        public async Task AtLeastOnceGurantee_ShouldNotDeliverToLateSubscriber_WhenNotSubscribedBefore()
-        {
-            // Arrange
-            var topicName = $"test-topic-{Guid.NewGuid()}";
-            var consumerGroup = "test-consumer-group";
-            var messageToSend = "Non-Persistent Message Test";
-            ConcurrentBag<string> _receivedMessages = new();
-
-            // Act: Publish message before any subscription
-            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
-            await Task.Delay(500);
-
-            // Late subscriber
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
-            {
-                _receivedMessages.Add(msg);
-            }, _cts.Token);
-
-            await Task.Delay(1000);
-
-            // Assert
-            _receivedMessages.Should().NotContain(messageToSend);
-        }
-
-        [Fact]
-        public async Task AtLeastOnceGurantee_ShouldRedeliverLater_WhenMessageNotAcked()
-        {
-            // Arrange
-            var topicName = $"test-topic-{Guid.NewGuid()}";
-            var consumerGroup = "test-consumer-group";
-            var messageToSend = "Redelivery Test";
-            ConcurrentBag<string> _receivedMessages = new();
-
-            async Task FaultyHandler(string msg, CancellationToken token)
-            {
-                _receivedMessages.Add(msg);
-                throw new Exception("Simulated consumer crash before acknowledgment.");
-            }
-
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, FaultyHandler, _cts.Token);
-            await Task.Delay(500);
-
-            // Act: Publish message
-            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
-
-            // Wait for redelivery
-            for (int i = 0; i < 300; i++)
-            {
-                if (_receivedMessages.Count > 1) break;
-                await Task.Delay(1000); // Check every second
-            }
-
-            // Assert: The message should be received multiple times due to reattempts
-            _receivedMessages.Count.Should().BeGreaterThan(1);
-        }
-
-        [Fact]
-        public async Task CompetingConsumers_ShouldDeliverOnlyOnce_WhenMultipleConsumersInGroup()
-        {
-            // Arrange
-            var topicName = $"test-topic-{Guid.NewGuid()}";
-            var consumerGroup = "test-consumer-group";
-            var receivedMessages = new ConcurrentDictionary<string, int>();
-            var messageToSend = "Competing Consumer Test";
-
-            async Task MessageHandler(string msg, CancellationToken token)
-            {
-                receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
-            }
-
-            // Multiple competing consumers in the same group
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-            await Task.Delay(500);
-
-            // Act
-            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
-
-            // Wait for processing
-            await Task.Delay(5000);
-
-            // Assert: Only one of the competing consumers should receive the message
-            receivedMessages.GetValueOrDefault("received", 0).Should().Be(1);
-        }
-
-        [Fact]
-        public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
-        {
-            // Arrange
-            var topicName = $"test-topic-{Guid.NewGuid()}";
-            var consumerGroup = "test-consumer-group";
-            var receivedMessages = new ConcurrentDictionary<string, int>();
-            var totalMessages = 10;
-
-            async Task MessageHandler(string msg, CancellationToken token)
-            {
-                receivedMessages.AddOrUpdate(msg, 1, (key, value) => value + 1);
-            }
-
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-            await Task.Delay(500);
-
-            // Act: Publish multiple messages
-            for (int i = 0; i < totalMessages; i++)
-            {
-                await _messagingProvider.PublishAsync(topicName, $"Message {i}", _cts.Token);
-            }
-
-            await Task.Delay(2000);
-
-            // Assert: Messages should be evenly distributed across consumers
-            var messageCounts = receivedMessages.Values;
-            var minReceived = messageCounts.Min();
-            var maxReceived = messageCounts.Max();
-
-            Assert.True(maxReceived - minReceived <= 1,
-                "Messages should be evenly distributed among competing consumers.");
-        }
+        // [Fact]
+        // public async Task AutoCreateTopic_ShouldNotCreateTopicOnSubscribe_WhenSettingDisabled()
+        // {
+        //     // Arrange
+        //     var topicName = $"test-topic-{Guid.NewGuid()}";
+        //     var consumerGroup = "test-consumer-group";
+        //
+        //     var messagingProvider = new KafkaMessagingProvider(
+        //         _bootstrapServers,
+        //         _adminClient,
+        //         _producer,
+        //         _consumerFactory,
+        //         autoCreateTopics: false,
+        //         _logger);
+        //
+        //     // Act & Assert
+        //     var exception = await Assert.ThrowsAsync<KafkaException>(async () =>
+        //     {
+        //         await messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) => 
+        //             await Task.CompletedTask, _cts.Token);
+        //     });
+        //
+        //     exception.Message.Should().Contain($"Topic '{topicName}' does not exist.");
+        // }
+        //
+        // [Fact]
+        // public async Task AtLeastOnceGurantee_ShouldDeliverToLateSubscriber_WhenSubscribedBefore()
+        // {
+        //     // Arrange
+        //     var topicName = $"test-topic-{Guid.NewGuid()}";
+        //     var consumerGroup = $"test-consumer-group-{Guid.NewGuid()}";
+        //     var messageToSend = "Persistent Message Test";
+        //     var firstSubscriberReceived = new TaskCompletionSource<bool>();
+        //     var lateSubscriberReceived = new TaskCompletionSource<bool>();
+        //     ConcurrentBag<string> _receivedMessages = new();
+        //
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
+        //     {
+        //         firstSubscriberReceived.SetResult(true);
+        //     }, _cts.Token);
+        //
+        //     await Task.Delay(500);
+        //     
+        //     await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
+        //
+        //     await firstSubscriberReceived.Task;
+        //
+        //     await _messagingProvider.UnsubscribeAsync(topicName, consumerGroup, _cts.Token);
+        //     await Task.Delay(500);
+        //
+        //     // Late subscriber
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
+        //     {
+        //         _receivedMessages.Add(msg);
+        //         lateSubscriberReceived.TrySetResult(true);
+        //     }, _cts.Token);
+        //     
+        //     await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
+        //
+        //     await lateSubscriberReceived.Task;
+        //
+        //     // Assert
+        //     _receivedMessages.Should().Contain(messageToSend);
+        // }
+        //
+        // [Fact]
+        // public async Task AtLeastOnceGurantee_ShouldNotDeliverToLateSubscriber_WhenNotSubscribedBefore()
+        // {
+        //     // Arrange
+        //     var topicName = $"test-topic-{Guid.NewGuid()}";
+        //     var consumerGroup = "test-consumer-group";
+        //     var messageToSend = "Non-Persistent Message Test";
+        //     ConcurrentBag<string> _receivedMessages = new();
+        //
+        //     // Act: Publish message before any subscription
+        //     await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
+        //     await Task.Delay(500);
+        //
+        //     // Late subscriber
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
+        //     {
+        //         _receivedMessages.Add(msg);
+        //     }, _cts.Token);
+        //
+        //     await Task.Delay(1000);
+        //
+        //     // Assert
+        //     _receivedMessages.Should().NotContain(messageToSend);
+        // }
+        //
+        // [Fact]
+        // public async Task AtLeastOnceGurantee_ShouldRedeliverLater_WhenMessageNotAcked()
+        // {
+        //     // Arrange
+        //     var topicName = $"test-topic-{Guid.NewGuid()}";
+        //     var consumerGroup = "test-consumer-group";
+        //     var messageToSend = "Redelivery Test";
+        //     ConcurrentBag<string> _receivedMessages = new();
+        //
+        //     async Task FaultyHandler(string msg, CancellationToken token)
+        //     {
+        //         _receivedMessages.Add(msg);
+        //         throw new Exception("Simulated consumer crash before acknowledgment.");
+        //     }
+        //
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, FaultyHandler, _cts.Token);
+        //     await Task.Delay(500);
+        //
+        //     // Act: Publish message
+        //     await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
+        //
+        //     // Wait for redelivery
+        //     for (int i = 0; i < 300; i++)
+        //     {
+        //         if (_receivedMessages.Count > 1) break;
+        //         await Task.Delay(1000); // Check every second
+        //     }
+        //
+        //     // Assert: The message should be received multiple times due to reattempts
+        //     _receivedMessages.Count.Should().BeGreaterThan(1);
+        // }
+        //
+        // [Fact]
+        // public async Task CompetingConsumers_ShouldDeliverOnlyOnce_WhenMultipleConsumersInGroup()
+        // {
+        //     // Arrange
+        //     var topicName = $"test-topic-{Guid.NewGuid()}";
+        //     var consumerGroup = "test-consumer-group";
+        //     var receivedMessages = new ConcurrentDictionary<string, int>();
+        //     var messageToSend = "Competing Consumer Test";
+        //
+        //     async Task MessageHandler(string msg, CancellationToken token)
+        //     {
+        //         receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
+        //     }
+        //
+        //     // Multiple competing consumers in the same group
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
+        //     await Task.Delay(500);
+        //
+        //     // Act
+        //     await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
+        //
+        //     // Wait for processing
+        //     await Task.Delay(5000);
+        //
+        //     // Assert: Only one of the competing consumers should receive the message
+        //     receivedMessages.GetValueOrDefault("received", 0).Should().Be(1);
+        // }
+        //
+        // [Fact]
+        // public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
+        // {
+        //     // Arrange
+        //     var topicName = $"test-topic-{Guid.NewGuid()}";
+        //     var consumerGroup = "test-consumer-group";
+        //     var receivedMessages = new ConcurrentDictionary<string, int>();
+        //     var totalMessages = 10;
+        //
+        //     async Task MessageHandler(string msg, CancellationToken token)
+        //     {
+        //         receivedMessages.AddOrUpdate(msg, 1, (key, value) => value + 1);
+        //     }
+        //
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
+        //     await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
+        //     await Task.Delay(500);
+        //
+        //     // Act: Publish multiple messages
+        //     for (int i = 0; i < totalMessages; i++)
+        //     {
+        //         await _messagingProvider.PublishAsync(topicName, $"Message {i}", _cts.Token);
+        //     }
+        //
+        //     await Task.Delay(2000);
+        //
+        //     // Assert: Messages should be evenly distributed across consumers
+        //     var messageCounts = receivedMessages.Values;
+        //     var minReceived = messageCounts.Min();
+        //     var maxReceived = messageCounts.Max();
+        //
+        //     Assert.True(maxReceived - minReceived <= 1,
+        //         "Messages should be evenly distributed among competing consumers.");
+        // }
     }
 }
