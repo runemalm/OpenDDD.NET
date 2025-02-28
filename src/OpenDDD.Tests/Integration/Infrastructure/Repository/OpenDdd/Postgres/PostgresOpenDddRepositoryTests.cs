@@ -6,12 +6,13 @@ using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
 using OpenDDD.Infrastructure.Persistence.Serializers;
 using OpenDDD.Infrastructure.Repository.OpenDdd.Postgres;
+using OpenDDD.Tests.Base;
 using OpenDDD.Tests.Domain.Model;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Repository.OpenDdd.Postgres
 {
     [Collection("PostgresTests")]
-    public class PostgresOpenDddRepositoryTests : IAsyncLifetime
+    public class PostgresOpenDddRepositoryTests : IntegrationTests, IAsyncLifetime
     {
         private readonly string _connectionString;
         private readonly PostgresDatabaseSession _session;
