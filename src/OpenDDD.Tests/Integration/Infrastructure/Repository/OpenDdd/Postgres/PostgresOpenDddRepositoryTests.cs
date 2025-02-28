@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using FluentAssertions;
 using Npgsql;
+using Xunit.Abstractions;
 using OpenDDD.API.Extensions;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
@@ -21,7 +22,8 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Repository.OpenDdd.Postgres
         private readonly NpgsqlConnection _connection;
         private readonly NpgsqlTransaction _transaction;
 
-        public PostgresOpenDddRepositoryTests()
+        public PostgresOpenDddRepositoryTests(ITestOutputHelper testOutputHelper) 
+            : base(testOutputHelper, enableLogging: true)
         {
             _connectionString = Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION_STRING") 
                                 ?? "Host=localhost;Port=5432;Database=testdb;Username=testuser;Password=testpassword";
