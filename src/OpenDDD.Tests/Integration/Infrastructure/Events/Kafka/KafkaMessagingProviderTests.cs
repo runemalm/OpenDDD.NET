@@ -307,7 +307,9 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-            await Task.Delay(20000);
+            
+            // await Task.Delay(1000);
+            await WaitForKafkaConsumerGroupStable(consumerGroup, _cts.Token);
 
             // Act
             for (int i = 0; i < totalMessages; i++)
@@ -332,6 +334,27 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         
             Assert.True(maxReceived - minReceived <= 1,
                 "Messages should be evenly distributed among competing consumers.");
+        }
+        
+        private async Task WaitForKafkaConsumerGroupStable(string consumerGroup, CancellationToken cancellationToken)
+        {
+            var maxAttempts = 10;
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                var groupInfo = _adminClient.ListGroups(TimeSpan.FromSeconds(5))
+                    .FirstOrDefault(g => g.Group == consumerGroup);
+
+                if (groupInfo?.State == "Stable")
+                {
+                    _logger.LogDebug("Consumer group {ConsumerGroup} is now stable.", consumerGroup);
+                    return;
+                }
+
+                _logger.LogDebug("Waiting for consumer group {ConsumerGroup} to stabilize...", consumerGroup);
+                await Task.Delay(500, cancellationToken);
+            }
+
+            throw new TimeoutException($"Consumer group {consumerGroup} did not stabilize in time.");
         }
     }
 }
