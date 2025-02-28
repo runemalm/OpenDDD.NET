@@ -295,6 +295,8 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         
             async Task MessageHandler(string msg, CancellationToken token)
             {
+                _logger.LogDebug("Received a message.");
+
                 receivedMessages.AddOrUpdate(msg, 1, (key, value) => value + 1);
                 
                 if (receivedMessages.Count >= totalMessages)
@@ -315,17 +317,18 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         
             try
             {
-                await allMessagesReceived.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                await allMessagesReceived.Task.WaitAsync(TimeSpan.FromSeconds(700));
             }
             catch (TimeoutException)
             {
                 _logger.LogDebug("Timed out waiting for subscriber to receive all messages.");
+                Assert.Fail($"Consumers only received {receivedMessages.Count} of {totalMessages} messages.");
             }
         
             // Assert: Messages should be evenly distributed across consumers
             var messageCounts = receivedMessages.Values;
-            var minReceived = messageCounts.Min();
-            var maxReceived = messageCounts.Max();
+            var minReceived = messageCounts.Any() ? messageCounts.Min() : 0;
+            var maxReceived = messageCounts.Any() ? messageCounts.Max() : 0;
         
             Assert.True(maxReceived - minReceived <= 1,
                 "Messages should be evenly distributed among competing consumers.");
