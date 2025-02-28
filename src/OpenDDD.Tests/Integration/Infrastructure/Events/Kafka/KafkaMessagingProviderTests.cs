@@ -317,7 +317,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         
             try
             {
-                await allMessagesReceived.Task.WaitAsync(TimeSpan.FromSeconds(700));
+                await allMessagesReceived.Task.WaitAsync(TimeSpan.FromSeconds(10));
             }
             catch (TimeoutException)
             {

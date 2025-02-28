@@ -6,5 +6,6 @@
         Task<T?> GetAsync<T>(string key, CancellationToken ct);
         Task<IEnumerable<T>> GetByPrefixAsync<T>(string keyPrefix, CancellationToken ct);
         Task RemoveAsync(string key, CancellationToken ct);
+        Task ClearAsync(CancellationToken ct);
     }
 }
