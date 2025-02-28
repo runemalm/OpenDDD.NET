@@ -85,6 +85,16 @@ jobs:
           - 15672:15672
         options: --health-cmd "rabbitmq-diagnostics check_port_connectivity" --health-interval 10s --health-timeout 5s --health-retries 5
 
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: --health-cmd "pg_isready -U testuser" --health-interval 10s --health-timeout 5s --health-retries 5
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -147,6 +157,18 @@ jobs:
           done
           echo "Kafka did not start in time!" && exit 1
 
+      - name: Wait for PostgreSQL to be Ready
+        run: |
+          for i in {1..10}; do
+            if PGPASSWORD=testpassword psql -h localhost -U testuser -d testdb -c "SELECT 1" &> /dev/null; then
+              echo "PostgreSQL is up!"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+          echo "PostgreSQL did not start in time!" && exit 1
+
       - name: Run Integration Tests
         working-directory: src/OpenDDD.Tests
         env:
@@ -156,6 +178,7 @@ jobs:
           RABBITMQ_USERNAME: guest
           RABBITMQ_PASSWORD: guest
           AZURE_SERVICE_BUS_CONNECTION_STRING: ${{ env.AZURE_SERVICE_BUS_CONNECTION_STRING }}
+          POSTGRES_TEST_CONNECTION_STRING: "Host=localhost;Port=5432;Database=testdb;Username=testuser;Password=testpassword"
         run: dotnet test --no-build --configuration Release --filter "Category=Integration" --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults
 
       - name: Delete Azure Service Bus namespace After Tests
