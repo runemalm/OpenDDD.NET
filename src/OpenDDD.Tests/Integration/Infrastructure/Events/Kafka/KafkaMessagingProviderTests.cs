@@ -307,7 +307,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
-            await Task.Delay(500);
+            await Task.Delay(20000);
 
             // Act
             for (int i = 0; i < totalMessages; i++)
