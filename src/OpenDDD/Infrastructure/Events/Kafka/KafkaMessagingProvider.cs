@@ -37,11 +37,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
         
-        public async Task SubscribeAsync(
-            string topic,
-            string consumerGroup,
-            Func<string, CancellationToken, Task> messageHandler,
-            CancellationToken cancellationToken)
+        private static string GetGroupKey(string topic, string consumerGroup)
         {
             if (string.IsNullOrWhiteSpace(topic))
                 throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
@@ -49,9 +45,20 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             if (string.IsNullOrWhiteSpace(consumerGroup))
                 throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
 
+            return $"{topic}:{consumerGroup}";
+        }
+        
+        public async Task SubscribeAsync(
+            string topic,
+            string consumerGroup,
+            Func<string, CancellationToken, Task> messageHandler,
+            CancellationToken cancellationToken)
+        {
             if (messageHandler is null)
                 throw new ArgumentNullException(nameof(messageHandler));
-            
+
+            var groupKey = GetGroupKey(topic, consumerGroup);
+
             if (_autoCreateTopics)
             {
                 await CreateTopicIfNotExistsAsync(topic, cancellationToken);
@@ -66,9 +73,12 @@ namespace OpenDDD.Infrastructure.Events.Kafka
                 }
             }
 
-            var kafkaConsumer = _consumers.GetOrAdd(consumerGroup, _ => _consumerFactory.Create(consumerGroup));
-
-            kafkaConsumer.Subscribe(topic);
+            var kafkaConsumer = _consumers.GetOrAdd(groupKey, _ =>
+            {
+                var newConsumer = _consumerFactory.Create(consumerGroup);
+                newConsumer.Subscribe(topic);
+                return newConsumer;
+            });
 
             _logger.LogDebug("Subscribed to Kafka topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
 
@@ -77,19 +87,15 @@ namespace OpenDDD.Infrastructure.Events.Kafka
         
         public async Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(topic))
-                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+            var groupKey = GetGroupKey(topic, consumerGroup);
 
-            if (string.IsNullOrWhiteSpace(consumerGroup))
-                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
-            
-            if (!_consumers.TryRemove(consumerGroup, out var kafkaConsumer))
+            if (!_consumers.TryRemove(groupKey, out var kafkaConsumer))
             {
-                _logger.LogWarning("No active consumer found for consumer group '{ConsumerGroup}'. It may have already stopped.", consumerGroup);
+                _logger.LogWarning("No active consumer found for consumer group '{ConsumerGroup}' on topic '{Topic}'. It may have already stopped.", consumerGroup, topic);
                 return;
             }
 
-            _logger.LogInformation("Stopping consumer group '{ConsumerGroup}'...", consumerGroup);
+            _logger.LogDebug("Stopping consumer for topic '{Topic}' and consumer group '{ConsumerGroup}'...", topic, consumerGroup);
             await kafkaConsumer.StopProcessingAsync();
             kafkaConsumer.Dispose();
         }
