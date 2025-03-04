@@ -16,7 +16,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
         private readonly ILogger<AzureServiceBusMessagingProvider> _logger;
         private readonly ServiceBusClient _serviceBusClient;
         private readonly AzureServiceBusMessagingProvider _messagingProvider;
-        private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(60));
+        private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(120));
 
         public AzureServiceBusMessagingProviderTests(ITestOutputHelper testOutputHelper)
             : base(testOutputHelper, enableLogging: true)
