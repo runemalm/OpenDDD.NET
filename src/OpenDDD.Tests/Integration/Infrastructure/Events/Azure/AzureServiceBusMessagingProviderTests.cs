@@ -1,37 +1,38 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Moq;
+using Xunit.Abstractions;
 using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Tests.Base;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Xunit.Abstractions;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
 {
-    [Collection("AzureServiceBusTests")] // Ensure tests run sequentially
+    [Collection("AzureServiceBusTests")]
     public class AzureServiceBusMessagingProviderTests : IntegrationTests, IAsyncLifetime
     {
         private readonly string _connectionString;
         private readonly ServiceBusAdministrationClient _adminClient;
-        private readonly Mock<ILogger<AzureServiceBusMessagingProvider>> _loggerMock;
+        private readonly ILogger<AzureServiceBusMessagingProvider> _logger;
         private readonly ServiceBusClient _serviceBusClient;
         private readonly AzureServiceBusMessagingProvider _messagingProvider;
+        private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(60));
 
-        public AzureServiceBusMessagingProviderTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        public AzureServiceBusMessagingProviderTests(ITestOutputHelper testOutputHelper)
+            : base(testOutputHelper, enableLogging: true)
         {
             _connectionString = Environment.GetEnvironmentVariable("AZURE_SERVICE_BUS_CONNECTION_STRING")
                 ?? throw new InvalidOperationException("AZURE_SERVICE_BUS_CONNECTION_STRING is not set.");
 
             _adminClient = new ServiceBusAdministrationClient(_connectionString);
             _serviceBusClient = new ServiceBusClient(_connectionString);
-            _loggerMock = new Mock<ILogger<AzureServiceBusMessagingProvider>>();
-
+            _logger = LoggerFactory.CreateLogger<AzureServiceBusMessagingProvider>();
+            
             _messagingProvider = new AzureServiceBusMessagingProvider(
                 _serviceBusClient, 
                 _adminClient, 
                 autoCreateTopics: true, 
-                _loggerMock.Object);
+                _logger);
         }
 
         public async Task InitializeAsync()
@@ -41,7 +42,8 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
 
         public async Task DisposeAsync()
         {
-            
+            await _cts.CancelAsync();
+            await _messagingProvider.DisposeAsync();
         }
 
         private async Task CleanupTopicsAndSubscriptionsAsync()
@@ -86,8 +88,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
         {
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";
-        
-            // Ensure topic does not exist before the test
+
             if (await _adminClient.TopicExistsAsync(topicName))
             {
                 await _adminClient.DeleteTopicAsync(topicName);
@@ -97,7 +98,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
                 _serviceBusClient, 
                 _adminClient, 
                 autoCreateTopics: false, 
-                _loggerMock.Object);
+                _logger);
         
             // Act & Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -118,31 +119,31 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             var subscriptionName = "test-subscription";
             var receivedMessages = new ConcurrentBag<string>();
             var messageToSend = "Persistent Message Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var messageReceivedTcs = new TaskCompletionSource<bool>();
 
             await _messagingProvider.SubscribeAsync(topicName, subscriptionName, async (msg, token) =>
             {
                 Assert.Fail("First subscription should not receive the message.");
-            }, cts.Token);
+            }, _cts.Token);
+            
             await Task.Delay(500);
 
-            await _messagingProvider.UnsubscribeAsync(topicName, subscriptionName, cts.Token);
+            await _messagingProvider.UnsubscribeAsync(topicName, subscriptionName, _cts.Token);
+            
             await Task.Delay(500);
 
-            // Act: Publish message
-            await _messagingProvider.PublishAsync(topicName, messageToSend, cts.Token);
+            // Act
+            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
 
-            // Delay to simulate late subscriber
-            await Task.Delay(2000);
-
-            // Late subscriber
             await _messagingProvider.SubscribeAsync(topicName, subscriptionName, async (msg, token) =>
             {
                 receivedMessages.Add(msg);
-            }, cts.Token);
+                messageReceivedTcs.TrySetResult(true);
+            }, _cts.Token);
 
-            // Wait for message processing
-            await Task.Delay(1000);
+            // Wait for message with timeout
+            await messageReceivedTcs.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
 
             // Assert
             Assert.Contains(messageToSend, receivedMessages);
@@ -156,21 +157,18 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             var subscriptionName = "test-subscription";
             var receivedMessages = new ConcurrentBag<string>();
             var messageToSend = "Non-Persistent Message Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
-            // Act: Publish message before any subscription
-            await _messagingProvider.PublishAsync(topicName, messageToSend, cts.Token);
+            // Act
+            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
 
             await Task.Delay(500);
 
-            // Late subscriber
             await _messagingProvider.SubscribeAsync(topicName, subscriptionName, async (msg, token) =>
             {
                 receivedMessages.Add(msg);
-            }, cts.Token);
+            }, _cts.Token);
 
-            // Wait for message processing
-            await Task.Delay(1000);
+            await Task.Delay(5000);
 
             // Assert
             Assert.DoesNotContain(messageToSend, receivedMessages);
@@ -184,7 +182,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             var subscriptionName = "test-subscription";
             var receivedMessages = new ConcurrentBag<string>();
             var messageToSend = "Redelivery Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
             async Task FaultyHandler(string msg, CancellationToken token)
             {
@@ -192,16 +189,19 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
                 throw new Exception("Simulated consumer crash before acknowledgment.");
             }
 
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, FaultyHandler, cts.Token);
+            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, FaultyHandler, _cts.Token);
             await Task.Delay(500);
 
-            // Act: Publish message
-            await _messagingProvider.PublishAsync(topicName, messageToSend, cts.Token);
+            // Act
+            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
 
-            // Wait for redelivery
-            await Task.Delay(3000);
+            for (int i = 0; i < 300; i++)
+            {
+                if (receivedMessages.Count > 1) break;
+                await Task.Delay(1000);
+            }
 
-            // Assert: The message should be received multiple times due to reattempts
+            // Assert
             Assert.True(receivedMessages.Count > 1, "Message should be redelivered at least once.");
         }
 
@@ -213,26 +213,23 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             var subscriptionName = "test-consumer-group";
             var receivedMessages = new ConcurrentDictionary<string, int>();
             var messageToSend = "Competing Consumer Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
             async Task MessageHandler(string msg, CancellationToken token)
             {
                 receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
             }
 
-            // Multiple competing consumers in the same group
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, cts.Token);
+            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, _cts.Token);
+            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, _cts.Token);
+            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, _cts.Token);
             await Task.Delay(500);
 
             // Act
-            await _messagingProvider.PublishAsync(topicName, messageToSend, cts.Token);
+            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
 
-            // Wait for processing
-            await Task.Delay(1000);
+            await Task.Delay(3000);
 
-            // Assert: Only one of the competing consumers should receive the message
+            // Assert
             Assert.Equal(1, receivedMessages.GetValueOrDefault("received", 0));
         }
 
@@ -241,38 +238,65 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
         {
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";
-            var subscriptionName = "test-consumer-group";
-            var receivedMessages = new ConcurrentDictionary<string, int>();
-            var totalMessages = 10;
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var consumerGroup = "test-consumer-group";
+            var totalMessages = 50;
+            var numConsumers = 10;
+            var variancePercentage = 0.1;
+            var perConsumerMessageCount = new ConcurrentDictionary<Guid, int>(); // Track messages per consumer
+            var allMessagesProcessed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            async Task MessageHandler(string msg, CancellationToken token)
+            async Task Subscribe()
             {
-                receivedMessages.AddOrUpdate(msg, 1, (key, value) => value + 1);
+                var consumerId = Guid.NewGuid();
+
+                async Task MessageHandler(string msg, CancellationToken token)
+                {
+                    perConsumerMessageCount.AddOrUpdate(consumerId, 1, (_, count) => count + 1);
+                    _logger.LogDebug($"Subscriber {consumerId} received a message.");
+
+                    if (perConsumerMessageCount.Values.Sum() >= totalMessages)
+                    {
+                        allMessagesProcessed.TrySetResult(true);
+                    }
+                }
+
+                await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
+            }
+            
+            for (int i = 0; i < numConsumers; i++)
+            {
+                await Subscribe();
             }
 
-            // Multiple competing consumers in the same group
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, MessageHandler, cts.Token);
             await Task.Delay(500);
-
-            // Act: Publish multiple messages
+            
+            // Act
             for (int i = 0; i < totalMessages; i++)
             {
-                await _messagingProvider.PublishAsync(topicName, $"Message {i}", cts.Token);
+                await _messagingProvider.PublishAsync(topicName, "Test Message", _cts.Token);
             }
 
-            // Wait for processing
-            await Task.Delay(2000);
+            try
+            {
+                await allMessagesProcessed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogDebug("Timed out waiting for consumers to receive all messages.");
+                Assert.Fail($"Consumers only processed {perConsumerMessageCount.Values.Sum()} of {totalMessages} messages.");
+            }
 
-            // Assert: Messages should be evenly distributed across consumers
-            var messageCounts = receivedMessages.Values;
-            var minReceived = messageCounts.Min();
-            var maxReceived = messageCounts.Max();
+            // Assert
+            var messageCounts = perConsumerMessageCount.Values.ToList();
+            var expectedPerConsumer = totalMessages / numConsumers;
+            var variance = (int)(expectedPerConsumer * variancePercentage);
+            var minAllowed = expectedPerConsumer - variance;
+            var maxAllowed = expectedPerConsumer + variance;
 
-            Assert.True(maxReceived - minReceived <= 1,
-                "Messages should be evenly distributed among competing consumers.");
+            foreach (var count in messageCounts)
+            {
+                Assert.InRange(count, minAllowed, maxAllowed);
+            }
         }
     }
 }
