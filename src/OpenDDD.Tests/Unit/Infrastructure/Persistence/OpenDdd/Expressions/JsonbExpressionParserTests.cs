@@ -1,10 +1,9 @@
 ﻿using System.Linq.Expressions;
-using Xunit;
 using FluentAssertions;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions;
 using OpenDDD.Tests.Base;
 
-namespace OpenDDD.Tests.Infrastructure.Persistence.OpenDdd.Expressions
+namespace OpenDDD.Tests.Unit.Infrastructure.Persistence.OpenDdd.Expressions
 {
     public class JsonbExpressionParserTests : UnitTests
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
-using OpenDDD.Tests.Domain.Model;
+using OpenDDD.Tests.Base.Domain.Model;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Persistence.EfCore.Configurations
 {

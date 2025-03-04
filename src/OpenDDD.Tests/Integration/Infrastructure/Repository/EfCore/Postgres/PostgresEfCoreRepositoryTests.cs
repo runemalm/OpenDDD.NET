@@ -14,7 +14,7 @@ using OpenDDD.Infrastructure.Persistence.EfCore.UoW;
 using OpenDDD.Infrastructure.Repository.EfCore;
 using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Tests.Base;
-using OpenDDD.Tests.Domain.Model;
+using OpenDDD.Tests.Base.Domain.Model;
 using OpenDDD.Tests.Integration.Infrastructure.Persistence.EfCore.DbContext.Postgres;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Repository.EfCore.Postgres

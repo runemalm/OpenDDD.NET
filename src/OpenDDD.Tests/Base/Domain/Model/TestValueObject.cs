@@ -1,6 +1,6 @@
 ﻿using OpenDDD.Domain.Model;
 
-namespace OpenDDD.Tests.Domain.Model
+namespace OpenDDD.Tests.Base.Domain.Model
 {
     public class TestValueObject : IValueObject
     {

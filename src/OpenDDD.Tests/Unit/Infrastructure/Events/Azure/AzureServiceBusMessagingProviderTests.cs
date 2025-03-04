@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
-using Moq;
-using Azure;
+﻿using Azure;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Microsoft.Extensions.Logging;
+using Moq;
 using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Tests.Base;
 
-namespace OpenDDD.Tests.Infrastructure.Events.Azure
+namespace OpenDDD.Tests.Unit.Infrastructure.Events.Azure
 {
     public class AzureServiceBusMessagingProviderTests : UnitTests
     {

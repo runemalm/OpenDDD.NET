@@ -1,6 +1,6 @@
 ﻿using OpenDDD.Domain.Model;
 
-namespace OpenDDD.Tests.Infrastructure.Events
+namespace OpenDDD.Tests.Unit.Infrastructure.Events
 {
     public class TestEvent : IDomainEvent
     {

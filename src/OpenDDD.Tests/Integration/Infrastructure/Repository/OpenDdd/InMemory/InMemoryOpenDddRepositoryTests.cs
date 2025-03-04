@@ -8,7 +8,7 @@ using OpenDDD.Infrastructure.Persistence.Serializers;
 using OpenDDD.Infrastructure.Persistence.Storage.InMemory;
 using OpenDDD.Infrastructure.Repository.OpenDdd.InMemory;
 using OpenDDD.Tests.Base;
-using OpenDDD.Tests.Domain.Model;
+using OpenDDD.Tests.Base.Domain.Model;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Repository.OpenDdd.InMemory
 {

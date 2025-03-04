@@ -3,7 +3,7 @@ using Moq;
 using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Tests.Base;
 
-namespace OpenDDD.Tests.Infrastructure.Events.InMemory
+namespace OpenDDD.Tests.Unit.Infrastructure.Events.InMemory
 {
     public class InMemoryMessagingProviderTests : UnitTests
     {

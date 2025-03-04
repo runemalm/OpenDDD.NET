@@ -1,6 +1,6 @@
 ﻿using OpenDDD.Domain.Model.Base;
 
-namespace OpenDDD.Tests.Domain.Model
+namespace OpenDDD.Tests.Base.Domain.Model
 {
     public class TestAggregateRoot : AggregateRootBase<Guid>
     {

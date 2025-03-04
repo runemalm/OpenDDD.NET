@@ -1,8 +1,7 @@
-﻿using Xunit;
-using OpenDDD.Infrastructure.Events;
+﻿using OpenDDD.Infrastructure.Events;
 using OpenDDD.Tests.Base;
 
-namespace OpenDDD.Tests.Infrastructure.Events
+namespace OpenDDD.Tests.Unit.Infrastructure.Events
 {
     public class EventSerializerTests : UnitTests
     {

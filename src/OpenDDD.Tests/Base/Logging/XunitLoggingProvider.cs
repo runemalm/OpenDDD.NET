@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace OpenDDD.Tests.Logging
+namespace OpenDDD.Tests.Base.Logging
 {
     public class XunitLoggerProvider : ILoggerProvider
     {

@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Confluent.Kafka;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OpenDDD.Infrastructure.Events.Kafka;
 using OpenDDD.Infrastructure.Events.Kafka.Factories;
 using OpenDDD.Tests.Base;
-using Confluent.Kafka;
 
-namespace OpenDDD.Tests.Infrastructure.Events.Kafka
+namespace OpenDDD.Tests.Unit.Infrastructure.Events.Kafka
 {
     public class KafkaMessagingProviderTests : UnitTests
     {

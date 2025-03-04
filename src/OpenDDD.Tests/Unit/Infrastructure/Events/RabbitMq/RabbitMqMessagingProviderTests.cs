@@ -1,12 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
-using Xunit;
 using Moq;
 using OpenDDD.Infrastructure.Events.RabbitMq;
 using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using OpenDDD.Tests.Base;
 using RabbitMQ.Client;
 
-namespace OpenDDD.Tests.Infrastructure.Events.RabbitMq
+namespace OpenDDD.Tests.Unit.Infrastructure.Events.RabbitMq
 {
     public class RabbitMqMessagingProviderTests : UnitTests
     {

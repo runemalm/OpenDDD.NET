@@ -1,9 +1,8 @@
-﻿using Xunit;
-using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
+﻿using OpenDDD.Infrastructure.Persistence.OpenDdd.Serializers;
 using OpenDDD.Tests.Base;
-using OpenDDD.Tests.Domain.Model;
+using OpenDDD.Tests.Base.Domain.Model;
 
-namespace OpenDDD.Tests.Infrastructure.Persistence.OpenDdd.Serializers
+namespace OpenDDD.Tests.Unit.Infrastructure.Persistence.OpenDdd.Serializers
 {
     public class OpenDddAggregateSerializerTests : UnitTests
     {

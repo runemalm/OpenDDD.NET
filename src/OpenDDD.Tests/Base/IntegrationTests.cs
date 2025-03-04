@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using OpenDDD.Tests.Logging;
+using OpenDDD.Tests.Base.Logging;
 using Xunit.Abstractions;
 
 namespace OpenDDD.Tests.Base
