@@ -108,6 +108,24 @@ test-unit: ##@Test	 Run only unit tests
 test-integration: ##@Test	 Run only integration tests
 	cd $(TESTS_DIR) && dotnet test --configuration Release --filter "Category=Integration"
 
+.PHONY: test-ef-migrations-create-postgres
+test-ef-migrations-create-postgres: ##@Test Create PostgreSQL migrations for PostgresTestDbContext
+	cd $(TESTS_DIR) && \
+	dotnet ef migrations add Postgres_InitialCreate \
+	    --context PostgresTestDbContext \
+	    --output-dir Integration/Infrastructure/Persistence/EfCore/Migrations/Postgres \
+	    --project $(TESTS_DIR) \
+	    -- --database-provider postgres
+
+.PHONY: test-ef-migrations-create-sqlite
+test-ef-migrations-create-sqlite: ##@Test Create SQLite migrations for SqliteTestDbContext
+	cd $(TESTS_DIR) && \
+	dotnet ef migrations add Sqlite_InitialCreate \
+	    --context SqliteTestDbContext \
+	    --output-dir Integration/Infrastructure/Persistence/EfCore/Migrations/Sqlite \
+	    --project $(TESTS_DIR) \
+	    -- --database-provider sqlite
+
 ##########################################################################
 # BUILD
 ##########################################################################
@@ -437,7 +455,7 @@ POSTGRES_DB := testdb
 
 .PHONY: postgres-start
 postgres-start: ##@Postgres	 Start a PostgreSQL container
-	@docker run -d --name $(POSTGRES_CONTAINER) --network $(NETWORK) \
+	@docker run --rm -d --name $(POSTGRES_CONTAINER) --network $(NETWORK) \
 	    -e POSTGRES_DB=$(POSTGRES_DB) \
 	    -e POSTGRES_USER=$(POSTGRES_USER) \
 	    -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
