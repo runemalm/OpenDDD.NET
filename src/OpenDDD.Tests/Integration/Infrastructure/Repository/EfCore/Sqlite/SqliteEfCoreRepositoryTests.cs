@@ -19,7 +19,7 @@ using OpenDDD.Tests.Integration.Infrastructure.Persistence.EfCore.DbContext.Sqli
 namespace OpenDDD.Tests.Integration.Infrastructure.Repository.EfCore.Sqlite
 {
     [Collection("EfCoreTests")]
-    public class EfCoreSqliteRepositoryTests : IntegrationTests, IAsyncLifetime
+    public class SqliteEfCoreRepositoryTests : IntegrationTests, IAsyncLifetime
     {
         private readonly EfCoreDatabaseSession _session;
         private readonly Mock<IDomainPublisher> _mockDomainPublisher;
@@ -33,7 +33,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Repository.EfCore.Sqlite
         private readonly ILogger<OpenDddDbContextBase> _dbContextLogger;
         private readonly string _connectionString = "DataSource=:memory:";
 
-        public EfCoreSqliteRepositoryTests(ITestOutputHelper testOutputHelper)
+        public SqliteEfCoreRepositoryTests(ITestOutputHelper testOutputHelper)
             : base(testOutputHelper, enableLogging: true)
         {
             var options = new DbContextOptionsBuilder<SqliteTestDbContext>()

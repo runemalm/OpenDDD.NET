@@ -20,7 +20,7 @@ using OpenDDD.Tests.Integration.Infrastructure.Persistence.EfCore.DbContext.Post
 namespace OpenDDD.Tests.Integration.Infrastructure.Repository.EfCore.Postgres
 {
     [Collection("EfCoreTests")]
-    public class EfCorePostgresRepositoryTests : IntegrationTests, IAsyncLifetime
+    public class PostgresEfCoreRepositoryTests : IntegrationTests, IAsyncLifetime
     {
         private readonly string _connectionString;
         private readonly EfCoreDatabaseSession _session;
@@ -36,7 +36,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Repository.EfCore.Postgres
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<OpenDddDbContextBase> _dbContextLogger;
 
-        public EfCorePostgresRepositoryTests(ITestOutputHelper testOutputHelper)
+        public PostgresEfCoreRepositoryTests(ITestOutputHelper testOutputHelper)
             : base(testOutputHelper, enableLogging: true)
         {
             _connectionString = Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION_STRING")

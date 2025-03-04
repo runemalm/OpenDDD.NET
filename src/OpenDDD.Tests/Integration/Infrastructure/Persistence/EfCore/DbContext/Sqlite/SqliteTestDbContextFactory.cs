@@ -19,6 +19,5 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Persistence.EfCore.DbContext.
 
             return new SqliteTestDbContext(optionsBuilder.Options, openDddOptions, logger);
         }
-        
     }
 }

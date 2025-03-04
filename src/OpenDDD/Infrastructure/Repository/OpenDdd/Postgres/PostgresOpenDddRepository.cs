@@ -22,7 +22,7 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.Postgres
             Session = session ?? throw new ArgumentNullException(nameof(session));
             _tableName = typeof(TAggregateRoot).Name.ToLower().Pluralize();
         }
-        
+
         public override async Task<TAggregateRoot> GetAsync(TId id, CancellationToken ct)
         {
             var entity = await FindAsync(id, ct);
