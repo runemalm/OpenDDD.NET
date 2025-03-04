@@ -84,6 +84,12 @@ namespace OpenDDD.Infrastructure.Events.InMemory
 
         public Task PublishAsync(string topic, string message, CancellationToken ct)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+
             var messages = _messageLog.GetOrAdd(topic, _ => new List<string>());
             lock (messages)
             {
