@@ -37,27 +37,26 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
             var groupName = "test-subscription";
             var receivedMessages = new ConcurrentBag<string>();
             var messageToSend = "Persistent Message Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
             var lateSubscriberReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             await _messagingProvider.SubscribeAsync(topicName, groupName, async (msg, token) =>
             {
                 Assert.Fail("First subscription should not receive the message.");
-            }, cts.Token);
+            }, _cts.Token);
 
             await Task.Delay(500);
 
-            await _messagingProvider.UnsubscribeAsync(topicName, groupName, cts.Token);
+            await _messagingProvider.UnsubscribeAsync(topicName, groupName, _cts.Token);
 
             // Act
-            await _messagingProvider.PublishAsync(topicName, messageToSend, cts.Token);
+            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
 
             await _messagingProvider.SubscribeAsync(topicName, groupName, async (msg, token) =>
             {
                 receivedMessages.Add(msg);
                 lateSubscriberReceived.TrySetResult(true);
-            }, cts.Token);
+            }, _cts.Token);
 
             // Assert
             try
@@ -79,7 +78,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
             var topicName = "test-topic-no-late-subscriber";
             var consumerGroup = "test-consumer-group";
             var messageToSend = "Non-Persistent Message Test";
-            ConcurrentBag<string> _receivedMessages = new();
+            ConcurrentBag<string> receivedMessages = new();
         
             // Act
             await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
@@ -88,13 +87,13 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
             // Late subscriber
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
             {
-                _receivedMessages.Add(msg);
+                receivedMessages.Add(msg);
             }, _cts.Token);
         
             await Task.Delay(2000);
         
             // Assert
-            _receivedMessages.Should().NotContain(messageToSend);
+            receivedMessages.Should().NotContain(messageToSend);
         }
 
         [Fact]
@@ -104,11 +103,11 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
             var topicName = "test-topic-redelivery";
             var consumerGroup = "test-consumer-group";
             var messageToSend = "Redelivery Test";
-            ConcurrentBag<string> _receivedMessages = new();
+            ConcurrentBag<string> receivedMessages = new();
         
             async Task FaultyHandler(string msg, CancellationToken token)
             {
-                _receivedMessages.Add(msg);
+                receivedMessages.Add(msg);
                 throw new Exception("Simulated consumer crash before acknowledgment.");
             }
         
@@ -119,12 +118,12 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
         
             for (int i = 0; i < 20; i++)
             {
-                if (_receivedMessages.Count > 1) break;
+                if (receivedMessages.Count > 1) break;
                 await Task.Delay(500);
             }
         
             // Assert
-            _receivedMessages.Count.Should().BeGreaterThan(1);
+            receivedMessages.Count.Should().BeGreaterThan(1);
         }
 
         [Fact]
@@ -152,7 +151,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
                 }
             }
 
-            // Subscribe multiple consumers in the same group
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
 
