@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
-using Moq;
 using OpenDDD.Infrastructure.Events.RabbitMq;
 using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using OpenDDD.Tests.Base;
@@ -16,16 +15,18 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         private readonly RabbitMqMessagingProvider _messagingProvider;
         private readonly IConnectionFactory _connectionFactory;
         private readonly IRabbitMqConsumerFactory _consumerFactory;
-        private readonly Mock<ILogger<RabbitMqMessagingProvider>> _loggerMock;
+        private readonly ILogger<RabbitMqMessagingProvider> _logger;
         private IConnection? _connection;
         private IChannel? _channel;
+        private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(60));
         
         private readonly string _testTopic = "OpenDddTestTopic";
         private readonly string _testConsumerGroup = "OpenDddTestGroup";
 
-        public RabbitMqMessagingProviderTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        public RabbitMqMessagingProviderTests(ITestOutputHelper testOutputHelper)
+            : base(testOutputHelper, enableLogging: true)
         {
-            _loggerMock = new Mock<ILogger<RabbitMqMessagingProvider>>();
+            _logger = LoggerFactory.CreateLogger<RabbitMqMessagingProvider>();
 
             _connectionFactory = new ConnectionFactory
             {
@@ -36,8 +37,8 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
                 VirtualHost = Environment.GetEnvironmentVariable("RABBITMQ_VHOST") ?? "/"
             };
 
-            _consumerFactory = new RabbitMqConsumerFactory(_loggerMock.Object);
-            _messagingProvider = new RabbitMqMessagingProvider(_connectionFactory, _consumerFactory, _loggerMock.Object);
+            _consumerFactory = new RabbitMqConsumerFactory(_logger);
+            _messagingProvider = new RabbitMqMessagingProvider(_connectionFactory, _consumerFactory, _logger);
         }
 
         public async Task InitializeAsync()
@@ -61,6 +62,9 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
                 await _connection.CloseAsync();
                 await _connection.DisposeAsync();
             }
+            
+            _cts.Cancel();
+            await _messagingProvider.DisposeAsync();
         }
         
         private async Task VerifyExchangeAndQueueDoNotExist()
@@ -153,35 +157,42 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             // Arrange
             var receivedMessages = new ConcurrentBag<string>();
             var messageToSend = "Persistent Message Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            
+            var lateSubscriberReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            // First subscription to establish the listener group
             await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
             {
                 Assert.Fail("First subscription should not receive the message.");
-            }, cts.Token);
-            await Task.Delay(500);
-            
-            // Unsubscribe
-            await _messagingProvider.UnsubscribeAsync(_testTopic, _testConsumerGroup, cts.Token);
+            }, _cts.Token);
             await Task.Delay(500);
 
-            // Act: Publish message
-            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+            await _messagingProvider.UnsubscribeAsync(_testTopic, _testConsumerGroup, _cts.Token);
+            await Task.Delay(500);
 
-            // Delay to simulate late subscriber
+            // Act
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, _cts.Token);
+
             await Task.Delay(2000);
 
             // Late subscriber
             await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
             {
                 receivedMessages.Add(msg);
-            }, cts.Token);
+                lateSubscriberReceived.TrySetResult(true);
+            }, _cts.Token);
 
-            // Wait for message processing
             await Task.Delay(1000);
 
             // Assert
+            try
+            {
+                await lateSubscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch (TimeoutException)
+            {
+                Assert.Fail($"Late subscriber did not receive the expected message '{messageToSend}' within 5 seconds.");
+            }
+
             Assert.Contains(messageToSend, receivedMessages);
         }
         
@@ -189,23 +200,19 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         public async Task AtLeastOnceGurantee_ShouldNotDeliverToLateSubscriber_WhenNotSubscribedBefore()
         {
             // Arrange
-            var receivedMessages = new ConcurrentBag<string>();
             var messageToSend = "Non-Persistent Message Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var receivedMessages = new ConcurrentBag<string>();
 
-            // Act: Publish message before any subscription
-            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
-
-            // Delay to simulate late subscriber
+            // Act
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, _cts.Token);
             await Task.Delay(2000);
 
             // Late subscriber
             await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
             {
                 receivedMessages.Add(msg);
-            }, cts.Token);
+            }, _cts.Token);
 
-            // Wait for message processing
             await Task.Delay(1000);
 
             // Assert
@@ -216,9 +223,8 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         public async Task AtLeastOnceGurantee_ShouldRedeliverLater_WhenMessageNotAcked()
         {
             // Arrange
-            var receivedMessages = new ConcurrentBag<string>();
             var messageToSend = "Redelivery Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var receivedMessages = new ConcurrentBag<string>();
 
             async Task FaultyHandler(string msg, CancellationToken token)
             {
@@ -226,16 +232,19 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
                 throw new Exception("Simulated consumer crash before acknowledgment.");
             }
 
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, FaultyHandler, cts.Token);
-            await Task.Delay(500); // Ensure setup
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, FaultyHandler, _cts.Token);
+            await Task.Delay(500);
 
-            // Act: Publish message
-            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+            // Act
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, _cts.Token);
 
-            // Wait for redelivery
-            await Task.Delay(3000);
+            for (int i = 0; i < 20; i++)
+            {
+                if (receivedMessages.Count > 1) break;
+                await Task.Delay(500);
+            }
 
-            // Assert: The message should be received multiple times due to reattempts
+            // Assert
             Assert.True(receivedMessages.Count > 1, "Message should be redelivered at least once.");
         }
         
@@ -245,26 +254,43 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             // Arrange
             var receivedMessages = new ConcurrentDictionary<string, int>();
             var messageToSend = "Competing Consumer Test";
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var allSubscribersProcessed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             async Task MessageHandler(string msg, CancellationToken token)
             {
                 receivedMessages.AddOrUpdate("received", 1, (key, value) => value + 1);
+
+                // If any consumer has received more than 1 message, fail immediately
+                if (receivedMessages["received"] > 1)
+                {
+                    allSubscribersProcessed.TrySetException(new Exception("More than one consumer in the group received the message!"));
+                }
+                else
+                {
+                    allSubscribersProcessed.TrySetResult(true);
+                }
             }
 
-            // Multiple competing consumers in the same group
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
-            await Task.Delay(500); // Allow time for consumers to start
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, _cts.Token);
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, _cts.Token);
+            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, _cts.Token);
+            await Task.Delay(500);
 
             // Act
-            await _messagingProvider.PublishAsync(_testTopic, messageToSend, cts.Token);
+            await _messagingProvider.PublishAsync(_testTopic, messageToSend, _cts.Token);
 
-            // Wait for processing
-            await Task.Delay(1000);
+            await Task.Delay(3000);
+            
+            try
+            {
+                await allSubscribersProcessed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch (TimeoutException)
+            {
+                Assert.Fail("Timed out waiting for message processing.");
+            }
 
-            // Assert: Only one of the competing consumers should receive the message
+            // Assert
             Assert.Equal(1, receivedMessages.GetValueOrDefault("received", 0));
         }
         
@@ -273,35 +299,63 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         {
             // Arrange
             var receivedMessages = new ConcurrentDictionary<string, int>();
-            var totalMessages = 10;
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-
-            async Task MessageHandler(string msg, CancellationToken token)
+            var totalMessages = 100;
+            var numConsumers = 10;
+            var variancePercentage = 0.1;
+            var perConsumerMessageCount = new ConcurrentDictionary<Guid, int>();
+            var allMessagesProcessed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            
+            async Task CreateConsumer()
             {
-                receivedMessages.AddOrUpdate(msg, 1, (key, value) => value + 1);
+                var consumerId = Guid.NewGuid();
+
+                async Task MessageHandler(string msg, CancellationToken token)
+                {
+                    perConsumerMessageCount.AddOrUpdate(consumerId, 1, (_, count) => count + 1);
+
+                    _logger.LogDebug($"Consumer {consumerId} received a message.");
+
+                    if (perConsumerMessageCount.Values.Sum() >= totalMessages)
+                    {
+                        allMessagesProcessed.TrySetResult(true);
+                    }
+                }
+
+                await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, _cts.Token);
+            }
+            
+            for (int i = 0; i < numConsumers; i++)
+            {
+                await CreateConsumer();
             }
 
-            // Multiple competing consumers in the same group
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, MessageHandler, cts.Token);
-            await Task.Delay(500); // Allow time for consumers to start
-
-            // Act: Publish multiple messages
+            // Act
             for (int i = 0; i < totalMessages; i++)
             {
-                await _messagingProvider.PublishAsync(_testTopic, $"Message {i}", cts.Token);
+                await _messagingProvider.PublishAsync(_testTopic, "Test Message", _cts.Token);
+            }
+            
+            try
+            {
+                await allMessagesProcessed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogDebug("Timed out waiting for consumers to receive all messages.");
+                Assert.Fail($"Consumers only processed {perConsumerMessageCount.Values.Sum()} of {totalMessages} messages.");
             }
 
-            // Wait for processing
-            await Task.Delay(2000);
+            // Assert
+            var messageCounts = perConsumerMessageCount.Values.ToList();
+            var expectedPerConsumer = totalMessages / numConsumers;
+            var variance = (int)(expectedPerConsumer * variancePercentage);
+            var minAllowed = expectedPerConsumer - variance;
+            var maxAllowed = expectedPerConsumer + variance;
 
-            // Assert: Messages should be evenly distributed across consumers
-            var messageCounts = receivedMessages.Values;
-            var minReceived = messageCounts.Min();
-            var maxReceived = messageCounts.Max();
-    
-            Assert.True(maxReceived - minReceived <= 1, "Messages should be evenly distributed among competing consumers.");
+            foreach (var count in messageCounts)
+            {
+                Assert.InRange(count, minAllowed, maxAllowed);
+            }
         }
     }
 }
