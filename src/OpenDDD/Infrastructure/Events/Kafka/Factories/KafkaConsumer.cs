@@ -1,5 +1,5 @@
-﻿using Confluent.Kafka;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Confluent.Kafka;
 
 namespace OpenDDD.Infrastructure.Events.Kafka.Factories
 {
@@ -28,7 +28,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
             _consumer.Subscribe(topic);
             SubscribedTopics.Add(topic);
         }
-
+        
         public void StartProcessing(Func<string, CancellationToken, Task> messageHandler, CancellationToken globalToken)
         {
             if (_consumerTask != null) return;
@@ -85,6 +85,9 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
                 await _consumerTask;
                 _consumerTask = null;
             }
+            
+            _consumer.Close();
+            _consumer.Dispose();
         }
 
         public void Dispose()
@@ -92,7 +95,15 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
             if (_disposed) return;
             _disposed = true;
 
-            _consumer.Close();
+            try
+            {
+                _consumer.Close();
+            }
+            catch (ObjectDisposedException)
+            {
+                _logger.LogWarning("Attempted to close a disposed Kafka consumer.");
+            }
+
             _consumer.Dispose();
             _cts.Dispose();
         }

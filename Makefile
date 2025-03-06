@@ -431,6 +431,24 @@ kafka-broker-status: ##@Kafka	 Show Kafka broker status
 kafka-list-consumer-groups: ##@Kafka	 List active Kafka consumer groups
 	@docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
 
+.PHONY: kafka-describe-consumer-groups
+kafka-describe-consumer-groups: ##@Kafka	 List detailed info for all consumer groups
+	@docker exec -it $(KAFKA_CONTAINER) kafka-consumer-groups.sh --bootstrap-server $(KAFKA_BROKER) --all-groups --describe
+
+.PHONY: kafka-describe-consumer-group
+kafka-describe-consumer-group: ##@Kafka	 Describe Kafka consumer group (requires GROUP=<group>)
+ifndef GROUP
+	$(error Consumer group not specified. Usage: make kafka-describe-consumer-group GROUP=<GroupName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-consumer-groups.sh --bootstrap-server $(KAFKA_BROKER) --group $(GROUP) --describe
+
+.PHONY: kafka-check-lag
+kafka-check-lag: ##@Kafka	 Check Kafka consumer lag for a group (requires GROUP=<group>)
+ifndef GROUP
+	$(error Consumer group not specified. Usage: make kafka-check-lag GROUP=<GroupName>)
+endif
+	@docker exec -it $(KAFKA_CONTAINER) kafka-consumer-groups.sh --bootstrap-server $(KAFKA_BROKER) --group $(GROUP) --describe | grep -E 'TOPIC|LAG'
+
 .PHONY: kafka-consume
 kafka-consume: ##@Kafka	 Consume messages from a Kafka topic (uses NAME)
 ifndef NAME

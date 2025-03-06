@@ -22,8 +22,9 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = _bootstrapServers,
-                ClientId = "OpenDDD",
+                ClientId = $"OpenDDD-{Guid.NewGuid()}",
                 GroupId = consumerGroup,
+                PartitionAssignmentStrategy = PartitionAssignmentStrategy.RoundRobin,
                 EnableAutoCommit = false,
                 AutoOffsetReset = AutoOffsetReset.Latest,
                 MaxPollIntervalMs = 300000, // Max time consumer can take to process a message before kafka removes it from group

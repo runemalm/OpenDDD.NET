@@ -303,14 +303,14 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
                 $"Expected only one consumer to receive the message, but {receivedMessages.Count} consumers received it.");
         }
         
-        [Fact(Skip = "Skipping this test temporarily due to not working with > 1 partitions.")]
+        [Fact]
         public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
         {
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";
             var consumerGroup = "test-consumer-group";
-            var totalMessages = 10;
-            var numConsumers = 10;
+            var totalMessages = 100;
+            var numConsumers = 2;
             var variancePercentage = 0.1; // Allow 10% variance
             var perConsumerMessageCount = new ConcurrentDictionary<Guid, int>(); // Track messages per consumer
             var allMessagesProcessed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -318,6 +318,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             async Task CreateConsumer()
             {
                 var consumerId = Guid.NewGuid();
+                _logger.LogDebug($"Creating consumer with unique ID: {consumerId}");
 
                 async Task MessageHandler(string msg, CancellationToken token)
                 {
@@ -340,8 +341,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             }
 
             await WaitForKafkaConsumerGroupStable(consumerGroup, _cts.Token);
-            
-            await Task.Delay(2000);
 
             // Act
             for (int i = 0; i < totalMessages; i++)

@@ -14,7 +14,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
         private readonly bool _autoCreateTopics;
         private readonly IKafkaConsumerFactory _consumerFactory;
         private readonly ILogger<KafkaMessagingProvider> _logger;
-        private readonly ConcurrentDictionary<string, KafkaConsumer> _consumers = new();
+        private readonly ConcurrentDictionary<string, ConcurrentBag<KafkaConsumer>> _consumers = new();
         private readonly CancellationTokenSource _cts = new();
         private bool _disposed;
 
@@ -73,31 +73,36 @@ namespace OpenDDD.Infrastructure.Events.Kafka
                 }
             }
 
-            var kafkaConsumer = _consumers.GetOrAdd(groupKey, _ =>
-            {
-                var newConsumer = _consumerFactory.Create(consumerGroup);
-                newConsumer.Subscribe(topic);
-                return newConsumer;
-            });
+            var consumers = _consumers.GetOrAdd(groupKey, _ => new ConcurrentBag<KafkaConsumer>());
 
-            _logger.LogDebug("Subscribed to Kafka topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+            var newConsumer = _consumerFactory.Create(consumerGroup);
+            newConsumer.Subscribe(topic);
+            consumers.Add(newConsumer);
 
-            kafkaConsumer.StartProcessing(messageHandler, _cts.Token);
+            _logger.LogDebug("Subscribed a new consumer to Kafka topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+
+            newConsumer.StartProcessing(messageHandler, _cts.Token);
         }
         
         public async Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken)
         {
             var groupKey = GetGroupKey(topic, consumerGroup);
 
-            if (!_consumers.TryRemove(groupKey, out var kafkaConsumer))
+            if (!_consumers.TryGetValue(groupKey, out var consumers) || !consumers.Any())
             {
-                _logger.LogWarning("No active consumer found for consumer group '{ConsumerGroup}' on topic '{Topic}'. It may have already stopped.", consumerGroup, topic);
+                _logger.LogWarning("No active consumers found for consumer group '{ConsumerGroup}' on topic '{Topic}'.", consumerGroup, topic);
                 return;
             }
 
-            _logger.LogDebug("Stopping consumer for topic '{Topic}' and consumer group '{ConsumerGroup}'...", topic, consumerGroup);
-            await kafkaConsumer.StopProcessingAsync();
-            kafkaConsumer.Dispose();
+            _logger.LogDebug("Stopping all consumers for topic '{Topic}' and consumer group '{ConsumerGroup}'...", topic, consumerGroup);
+
+            foreach (var consumer in consumers)
+            {
+                await consumer.StopProcessingAsync();
+                consumer.Dispose();
+            }
+
+            _consumers.TryRemove(groupKey, out _);
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken)
@@ -132,7 +137,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
                 _logger.LogDebug("Creating Kafka topic: {Topic}", topic);
                 await _adminClient.CreateTopicsAsync(new[]
                 {
-                    new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 }
+                    new TopicSpecification { Name = topic, NumPartitions = 2, ReplicationFactor = 1 }
                 }, null);
 
                 for (int i = 0; i < 30; i++)
@@ -169,14 +174,23 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             _logger.LogDebug("Disposing KafkaMessagingProvider...");
 
             _cts.Cancel();
-            
-            var tasks = _consumers.Values.Select(c => c.StopProcessingAsync()).ToList();
+
+            var tasks = _consumers.Values
+                .SelectMany(consumers => consumers)
+                .Select(c => c.StopProcessingAsync())
+                .ToList();
+
             await Task.WhenAll(tasks);
 
-            foreach (var consumer in _consumers.Values)
+            foreach (var consumerList in _consumers.Values)
             {
-                consumer.Dispose();
+                foreach (var consumer in consumerList)
+                {
+                    consumer.Dispose();
+                }
             }
+
+            _consumers.Clear();
 
             _producer.Dispose();
             _adminClient.Dispose();
