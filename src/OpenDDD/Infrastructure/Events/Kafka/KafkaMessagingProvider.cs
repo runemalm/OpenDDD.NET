@@ -137,7 +137,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
                 _logger.LogDebug("Creating Kafka topic: {Topic}", topic);
                 await _adminClient.CreateTopicsAsync(new[]
                 {
-                    new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 }
+                    new TopicSpecification { Name = topic, NumPartitions = 2, ReplicationFactor = 1 }
                 }, null);
 
                 for (int i = 0; i < 30; i++)
