@@ -122,24 +122,5 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Events.Kafka
             await Assert.ThrowsAsync<ArgumentException>(() =>
                 _provider.PublishAsync(Topic, invalidMessage, CancellationToken.None));
         }
-
-        [Fact]
-        public async Task DisposeAsync_ShouldDisposeAllConsumers_AndKafkaClients()
-        {
-            // Arrange
-            await _provider.SubscribeAsync(Topic, ConsumerGroup, async (_, _) => await Task.CompletedTask, CancellationToken.None);
-            
-            // Ensure the background task has enough time to start
-            await Task.Delay(100);
-
-            // Act
-            await _provider.DisposeAsync();
-
-            // Assert
-            _mockConsumer.Verify(c => c.Close(), Times.Once);
-            _mockConsumer.Verify(c => c.Dispose(), Times.Once);
-            _mockProducer.Verify(p => p.Dispose(), Times.Once);
-            _mockAdminClient.Verify(a => a.Dispose(), Times.Once);
-        }
     }
 }

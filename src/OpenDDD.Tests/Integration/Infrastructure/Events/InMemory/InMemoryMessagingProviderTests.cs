@@ -171,7 +171,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
         }
 
         [Fact]
-        public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
+        public async Task CompetingConsumers_ShouldDistributeMessages_WhenMultipleConsumersInGroup()
         {
             // Arrange
             var topicName = "test-topic-even-distribution";

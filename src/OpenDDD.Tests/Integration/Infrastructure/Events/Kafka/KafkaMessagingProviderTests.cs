@@ -304,7 +304,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         }
         
         [Fact]
-        public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
+        public async Task CompetingConsumers_ShouldDistributeMessages_WhenMultipleConsumersInGroup()
         {
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";

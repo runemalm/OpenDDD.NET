@@ -295,7 +295,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         }
         
         [Fact]
-        public async Task CompetingConsumers_ShouldDistributeEvenly_WhenMultipleConsumersInGroup()
+        public async Task CompetingConsumers_ShouldDistributeMessages_WhenMultipleConsumersInGroup()
         {
             // Arrange
             var receivedMessages = new ConcurrentDictionary<string, int>();
