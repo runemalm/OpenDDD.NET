@@ -160,13 +160,13 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             
             var lateSubscriberReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
+            var firstSubscription = await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, async (msg, token) =>
             {
                 Assert.Fail("First subscription should not receive the message.");
             }, _cts.Token);
             await Task.Delay(500);
 
-            await _messagingProvider.UnsubscribeAsync(_testTopic, _testConsumerGroup, _cts.Token);
+            await _messagingProvider.UnsubscribeAsync(firstSubscription, _cts.Token);
             await Task.Delay(500);
 
             // Act

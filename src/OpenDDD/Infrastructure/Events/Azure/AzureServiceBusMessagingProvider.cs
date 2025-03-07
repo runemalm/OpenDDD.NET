@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
+using OpenDDD.Infrastructure.Events.Base;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 
@@ -10,7 +12,7 @@ namespace OpenDDD.Infrastructure.Events.Azure
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly bool _autoCreateTopics;
         private readonly ILogger<AzureServiceBusMessagingProvider> _logger;
-        private readonly List<ServiceBusProcessor> _processors = new();
+        private readonly ConcurrentDictionary<string, AzureServiceBusSubscription> _subscriptions = new();
         private bool _disposed;
 
         public AzureServiceBusMessagingProvider(
@@ -25,7 +27,7 @@ namespace OpenDDD.Infrastructure.Events.Azure
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
+        public async Task<ISubscription> SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
@@ -59,7 +61,6 @@ namespace OpenDDD.Infrastructure.Events.Azure
             await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
 
             var processor = _client.CreateProcessor(topic, subscriptionName);
-            _processors.Add(processor);
 
             processor.ProcessMessageAsync += async args =>
             {
@@ -73,41 +74,30 @@ namespace OpenDDD.Infrastructure.Events.Azure
                 return Task.CompletedTask;
             };
 
-            _logger.LogInformation("Starting message processor for topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
+            var subscription = new AzureServiceBusSubscription(topic, consumerGroup, processor);
+            _subscriptions[subscription.Id] = subscription;
+
+            _logger.LogInformation("Starting message processor for topic '{Topic}' and subscription '{Subscription}', Subscription ID: {SubscriptionId}", topic, subscriptionName, subscription.Id);
             await processor.StartProcessingAsync(cancellationToken);
+
+            return subscription;
         }
 
-        public async Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
+        public async Task UnsubscribeAsync(ISubscription subscription, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(topic))
+            if (subscription == null)
+                throw new ArgumentNullException(nameof(subscription));
+
+            if (subscription is not AzureServiceBusSubscription serviceBusSubscription || !_subscriptions.TryRemove(serviceBusSubscription.Id, out _))
             {
-                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+                _logger.LogWarning("No active subscription found with ID {SubscriptionId}", subscription.Id);
+                return;
             }
 
-            if (string.IsNullOrWhiteSpace(consumerGroup))
-            {
-                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
-            }
+            _logger.LogInformation("Unsubscribing from Azure Service Bus topic '{Topic}' and subscription '{Subscription}', Subscription ID: {SubscriptionId}", serviceBusSubscription.Topic, serviceBusSubscription.ConsumerGroup, serviceBusSubscription.Id);
 
-            var subscriptionName = consumerGroup;
-
-            _logger.LogInformation("Unsubscribing from topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
-
-            var processor = _processors.FirstOrDefault(p => 
-                p.EntityPath.Equals($"{topic}/Subscriptions/{subscriptionName}", StringComparison.OrdinalIgnoreCase));
-
-            if (processor != null)
-            {
-                _processors.Remove(processor);
-                _logger.LogInformation("Stopping and disposing message processor for topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
-
-                await processor.StopProcessingAsync(cancellationToken);
-                await processor.DisposeAsync();
-            }
-            else
-            {
-                _logger.LogWarning("No active subscription found for topic '{Topic}' and subscription '{Subscription}'", topic, subscriptionName);
-            }
+            await serviceBusSubscription.Consumer.StopProcessingAsync(cancellationToken);
+            await serviceBusSubscription.DisposeAsync();
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
@@ -157,14 +147,16 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
             _logger.LogDebug("Disposing AzureServiceBusMessagingProvider...");
 
-            foreach (var processor in _processors)
+            foreach (var subscription in _subscriptions.Values)
             {
-                _logger.LogDebug("Stopping message processor...");
-                await processor.StopProcessingAsync();
-                await processor.DisposeAsync();
+                if (subscription.Consumer.IsProcessing)
+                {
+                    await subscription.Consumer.StopProcessingAsync(CancellationToken.None);
+                }
+                await subscription.DisposeAsync();
             }
 
-            _logger.LogDebug("Disposing ServiceBusClient...");
+            _subscriptions.Clear();
             await _client.DisposeAsync();
         }
     }

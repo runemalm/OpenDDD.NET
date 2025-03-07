@@ -3,7 +3,7 @@ using Confluent.Kafka;
 
 namespace OpenDDD.Infrastructure.Events.Kafka.Factories
 {
-    public class KafkaConsumer : IDisposable
+    public class KafkaConsumer : IAsyncDisposable
     {
         private readonly IConsumer<Ignore, string> _consumer;
         private readonly ILogger<KafkaConsumer> _logger;
@@ -90,9 +90,9 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
             _consumer.Dispose();
         }
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed) return ValueTask.CompletedTask;
             _disposed = true;
 
             try
@@ -106,6 +106,8 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
 
             _consumer.Dispose();
             _cts.Dispose();
+            
+            return ValueTask.CompletedTask;
         }
     }
 }

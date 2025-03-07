@@ -1,13 +1,14 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using OpenDDD.Infrastructure.Events.Base;
 
 namespace OpenDDD.Infrastructure.Events.InMemory
 {
     public class InMemoryMessagingProvider : IMessagingProvider, IAsyncDisposable
     {
         private readonly ConcurrentDictionary<string, List<string>> _messageLog = new();
-        private readonly ConcurrentDictionary<string, int> _consumerOffsets = new();
-        private readonly ConcurrentDictionary<string, ConcurrentBag<Func<string, CancellationToken, Task>>> _subscribers = new();
+        private readonly ConcurrentDictionary<string, int> _consumerGroupOffsets = new();
+        private readonly ConcurrentDictionary<string, InMemorySubscription> _subscriptions = new();
         private readonly ConcurrentQueue<(string Topic, string Message, string ConsumerGroup, int RetryCount)> _retryQueue = new();
         private readonly ILogger<InMemoryMessagingProvider> _logger;
         private readonly TimeSpan _initialRetryDelay = TimeSpan.FromSeconds(1);
@@ -21,65 +22,57 @@ namespace OpenDDD.Infrastructure.Events.InMemory
             _retryTask = Task.Run(ProcessRetries, _cts.Token);  // Start retry processing loop
         }
 
-        private static string GetGroupKey(string topic, string consumerGroup)
-        {
-            if (string.IsNullOrWhiteSpace(topic))
-                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
-
-            if (string.IsNullOrWhiteSpace(consumerGroup))
-                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
-
-            return $"{topic}:{consumerGroup}";
-        }
-
-        public Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken ct)
+        public async Task<ISubscription> SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken ct = default)
         {
             if (messageHandler is null)
-                throw new ArgumentNullException(nameof(messageHandler));
+                throw new ArgumentException(nameof(messageHandler));
+            
+            var subscription = new InMemorySubscription(topic, consumerGroup, messageHandler);
+            _subscriptions[subscription.Id] = subscription;
 
-            var groupKey = GetGroupKey(topic, consumerGroup);
-            var handlers = _subscribers.GetOrAdd(groupKey, _ => new ConcurrentBag<Func<string, CancellationToken, Task>>());
+            _logger.LogDebug("Subscribed to topic: {Topic} in listener group: {ConsumerGroup}, Subscription ID: {SubscriptionId}", 
+                topic, consumerGroup, subscription.Id);
 
-            handlers.Add(messageHandler);
-            _logger.LogDebug("Subscribed to topic: {Topic} in listener group: {ConsumerGroup}", topic, consumerGroup);
+            var groupKey = $"{topic}:{consumerGroup}";
 
-            if (!_consumerOffsets.ContainsKey(groupKey))
+            if (!_consumerGroupOffsets.ContainsKey(groupKey))
             {
-                var messageCount = _messageLog.TryGetValue(topic, out var messages) ? messages.Count : 0;
-                _consumerOffsets[groupKey] = messageCount;
-                _logger.LogDebug("Consumer group '{ConsumerGroup}' is subscribing for the first time, starting at offset {Offset}.", consumerGroup, messageCount);
-                return Task.CompletedTask;
-            }
-
-            if (_messageLog.TryGetValue(topic, out var storedMessages))
-            {
-                var offset = _consumerOffsets[groupKey];
-                var unseenMessages = storedMessages.Skip(offset).ToList();
-
-                foreach (var msg in unseenMessages)
-                {
-                    _ = Task.Run(async () => await messageHandler(msg, ct), ct);
-                    _consumerOffsets[groupKey]++;
-                }
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken = default)
-        {
-            var groupKey = GetGroupKey(topic, consumerGroup);
-
-            if (_subscribers.TryRemove(groupKey, out _))
-            {
-                _logger.LogDebug("Unsubscribed from topic: {Topic} in listener group: {ConsumerGroup}", topic, consumerGroup);
+                _consumerGroupOffsets[groupKey] = _messageLog.TryGetValue(topic, out var messages) ? messages.Count : 0;
+                _logger.LogDebug("First subscription in consumer group '{ConsumerGroup}', starting at offset {Offset}.", 
+                    consumerGroup, _consumerGroupOffsets[groupKey]);
             }
             else
             {
-                _logger.LogWarning("No active subscriptions found for topic: {Topic} in listener group: {ConsumerGroup}", topic, consumerGroup);
+                var offset = _consumerGroupOffsets[groupKey];
+                if (_messageLog.TryGetValue(topic, out var storedMessages))
+                {
+                    var unseenMessages = storedMessages.Skip(offset).ToList();
+                    foreach (var msg in unseenMessages)
+                    {
+                        _ = Task.Run(async () => await messageHandler(msg, ct), ct);
+                        _consumerGroupOffsets[groupKey]++;
+                    }
+                }
             }
 
-            return Task.CompletedTask;
+            return subscription;
+        }
+
+        public async Task UnsubscribeAsync(ISubscription subscription, CancellationToken cancellationToken = default)
+        {
+            if (subscription == null)
+                throw new ArgumentNullException(nameof(subscription));
+
+            if (!_subscriptions.TryRemove(subscription.Id, out _))
+            {
+                _logger.LogWarning("No active subscription found with ID {SubscriptionId}", subscription.Id);
+                return;
+            }
+
+            _logger.LogDebug("Unsubscribed from topic: {Topic} in listener group: {ConsumerGroup}, Subscription ID: {SubscriptionId}", 
+                subscription.Topic, subscription.ConsumerGroup, subscription.Id);
+
+            await subscription.DisposeAsync();
         }
 
         public Task PublishAsync(string topic, string message, CancellationToken ct)
@@ -96,28 +89,28 @@ namespace OpenDDD.Infrastructure.Events.InMemory
                 messages.Add(message);
             }
 
-            var matchingGroups = _subscribers.Keys.Where(key => key.StartsWith($"{topic}:")).ToList();
+            var groupSubscriptions = _subscriptions.Values
+                .Where(s => s.Topic == topic)
+                .GroupBy(s => s.ConsumerGroup);
 
-            foreach (var groupKey in matchingGroups)
+            foreach (var group in groupSubscriptions)
             {
-                if (_subscribers.TryGetValue(groupKey, out var handlers) && handlers.Any())
-                {
-                    var handler = handlers.OrderBy(_ => Guid.NewGuid()).First();
+                var subscription = group.OrderBy(_ => Guid.NewGuid()).FirstOrDefault();
+                if (subscription == null) continue;
 
-                    _ = Task.Run(async () =>
+                _ = Task.Run(async () =>
+                {
+                    try
                     {
-                        try
-                        {
-                            await handler(message, ct);
-                            _consumerOffsets.AddOrUpdate(groupKey, 0, (_, currentOffset) => currentOffset + 1); // Update offset
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"Error in handler for topic '{topic}': {ex.Message}");
-                            _retryQueue.Enqueue((topic, message, groupKey.Split(':')[1], 1));
-                        }
-                    }, ct);
-                }
+                        await subscription.MessageHandler(message, ct);
+                        _consumerGroupOffsets.AddOrUpdate($"{topic}:{subscription.ConsumerGroup}", 0, (_, currentOffset) => currentOffset + 1);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error in handler for topic '{topic}' in consumer group '{subscription.ConsumerGroup}': {ex.Message}");
+                        _retryQueue.Enqueue((topic, message, subscription.ConsumerGroup, 1));
+                    }
+                }, ct);
             }
 
             return Task.CompletedTask;
@@ -137,16 +130,14 @@ namespace OpenDDD.Infrastructure.Events.InMemory
                         continue;
                     }
 
-                    var groupKey = GetGroupKey(topic, consumerGroup);
-                    if (_subscribers.TryGetValue(groupKey, out var handlers) && handlers.Any())
+                    var subscription = _subscriptions.Values.FirstOrDefault(s => s.Topic == topic && s.ConsumerGroup == consumerGroup);
+                    if (subscription != null)
                     {
-                        var handler = handlers.OrderBy(_ => Guid.NewGuid()).First();
-
-                        await Task.Delay(ComputeBackoff(retryCount), _cts.Token); // Exponential backoff
+                        await Task.Delay(ComputeBackoff(retryCount), _cts.Token);
 
                         try
                         {
-                            await handler(message, _cts.Token);
+                            await subscription.MessageHandler(message, _cts.Token);
                         }
                         catch (Exception ex)
                         {
@@ -170,6 +161,14 @@ namespace OpenDDD.Infrastructure.Events.InMemory
         public async ValueTask DisposeAsync()
         {
             _cts.Cancel();
+            
+            foreach (var subscription in _subscriptions.Values)
+            {
+                await subscription.DisposeAsync();
+            }
+
+            _subscriptions.Clear();
+
             try
             {
                 await _retryTask;

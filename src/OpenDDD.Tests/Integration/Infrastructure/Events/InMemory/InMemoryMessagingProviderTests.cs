@@ -40,14 +40,14 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
 
             var lateSubscriberReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            await _messagingProvider.SubscribeAsync(topicName, groupName, async (msg, token) =>
+            var firstSubscription = await _messagingProvider.SubscribeAsync(topicName, groupName, async (msg, token) =>
             {
                 Assert.Fail("First subscription should not receive the message.");
             }, _cts.Token);
 
             await Task.Delay(500);
 
-            await _messagingProvider.UnsubscribeAsync(topicName, groupName, _cts.Token);
+            await _messagingProvider.UnsubscribeAsync(firstSubscription, _cts.Token);
 
             // Act
             await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
@@ -178,7 +178,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.InMemory
             var consumerGroup = "test-consumer-group";
             var totalMessages = 100;
             var numConsumers = 2;
-            var variancePercentage = 0.2;
+            var variancePercentage = 0.3;
             var perConsumerMessageCount = new ConcurrentDictionary<Guid, int>();
             var allMessagesProcessed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 

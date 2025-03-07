@@ -52,7 +52,7 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Events.InMemory
         [Fact]
         public async Task SubscribeAsync_ShouldThrowException_WhenHandlerIsNull()
         {
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 _messagingProvider.SubscribeAsync(Topic, ConsumerGroup, null!, CancellationToken.None));
         }
 

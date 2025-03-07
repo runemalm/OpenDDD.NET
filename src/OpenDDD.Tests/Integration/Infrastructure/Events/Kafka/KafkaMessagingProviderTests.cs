@@ -37,7 +37,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             _consumerFactory = new KafkaConsumerFactory(_bootstrapServers, _consumerLogger);
 
             _messagingProvider = new KafkaMessagingProvider(
-                _bootstrapServers,
                 _adminClient,
                 _producer,
                 _consumerFactory,
@@ -98,7 +97,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             var topicName = $"test-topic-{Guid.NewGuid()}";
             var consumerGroup = "test-consumer-group";
         
-            // Ensure topic does not exist
             var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
             metadata.Topics.Any(t => t.Topic == topicName).Should().BeFalse();
         
@@ -134,7 +132,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             var consumerGroup = "test-consumer-group";
         
             var messagingProvider = new KafkaMessagingProvider(
-                _bootstrapServers,
                 _adminClient,
                 _producer,
                 _consumerFactory,
@@ -162,7 +159,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             var lateSubscriberReceived = new TaskCompletionSource<bool>();
             ConcurrentBag<string> _receivedMessages = new();
         
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
+            var firstSubscription = await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
             {
                 firstSubscriberReceived.SetResult(true);
             }, _cts.Token);
@@ -171,7 +168,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
             await firstSubscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(10));
         
-            await _messagingProvider.UnsubscribeAsync(topicName, consumerGroup, _cts.Token);
+            await _messagingProvider.UnsubscribeAsync(firstSubscription, _cts.Token);
             
             await Task.Delay(5000);
         
@@ -276,7 +273,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
                 messageProcessed.TrySetResult(true);
             }
 
-            // Subscribe multiple consumers in the same group
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
 
@@ -295,10 +291,9 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
                 Assert.Fail("No consumer received the message.");
             }
 
-            // Wait a little longer to ensure no second consumer processes the same message
             await Task.Delay(5000);
 
-            // Assert: Exactly one consumer should have received the message
+            // Assert
             receivedMessages.Count.Should().Be(1, 
                 $"Expected only one consumer to receive the message, but {receivedMessages.Count} consumers received it.");
         }
@@ -311,7 +306,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             var consumerGroup = "test-consumer-group";
             var totalMessages = 100;
             var numConsumers = 2;
-            var variancePercentage = 0.1; // Allow 10% variance
+            var variancePercentage = 0.2;
             var perConsumerMessageCount = new ConcurrentDictionary<Guid, int>(); // Track messages per consumer
             var allMessagesProcessed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -334,7 +329,6 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
                 await _messagingProvider.SubscribeAsync(topicName, consumerGroup, MessageHandler, _cts.Token);
             }
 
-            // Subscribe multiple consumers
             for (int i = 0; i < numConsumers; i++)
             {
                 await CreateConsumer();

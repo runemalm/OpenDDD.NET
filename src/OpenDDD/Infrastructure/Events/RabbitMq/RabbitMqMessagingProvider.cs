@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using RabbitMQ.Client;
 
@@ -13,8 +14,7 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         private readonly ILogger<RabbitMqMessagingProvider> _logger;
         private IConnection? _connection;
         private IChannel? _channel;
-        private readonly ConcurrentBag<IAsyncBasicConsumer> _consumers = new();
-        private readonly ConcurrentDictionary<string, string> _consumerTags = new();
+        private readonly ConcurrentDictionary<string, RabbitMqSubscription> _subscriptions = new();
         
         public RabbitMqMessagingProvider(
             IConnectionFactory factory,
@@ -26,7 +26,7 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
+        public async Task<ISubscription> SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(topic))
                 throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
@@ -47,34 +47,32 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
             await _channel.QueueBindAsync(queueName, topic, "", cancellationToken: cancellationToken);
 
             var consumer = _consumerFactory.CreateConsumer(_channel, messageHandler);
-            _consumers.Add(consumer);
+            await consumer.StartConsumingAsync(queueName, cancellationToken);
 
-            var consumerTag = await _channel.BasicConsumeAsync(queueName, autoAck: false, consumer, cancellationToken);
+            var subscription = new RabbitMqSubscription(topic, consumerGroup, consumer);
+            _subscriptions[subscription.Id] = subscription;
 
-            _consumerTags[queueName] = consumerTag;
+            _logger.LogDebug("Subscribed to RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}', Subscription ID: {SubscriptionId}", topic, consumerGroup, subscription.Id);
 
-            _logger.LogDebug("Subscribed to RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+            return subscription;
         }
         
-        public async Task UnsubscribeAsync(string topic, string consumerGroup, CancellationToken cancellationToken)
+        public async Task UnsubscribeAsync(ISubscription subscription, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(topic))
-                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+            if (subscription == null)
+                throw new ArgumentNullException(nameof(subscription));
 
-            if (string.IsNullOrWhiteSpace(consumerGroup))
-                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
-
-            var queueName = $"{consumerGroup}.{topic}";
-
-            if (_consumerTags.TryRemove(queueName, out var consumerTag))
+            if (subscription is not RabbitMqSubscription rabbitSubscription || !_subscriptions.TryRemove(rabbitSubscription.Id, out _))
             {
-                await _channel.BasicCancelAsync(consumerTag, false, cancellationToken);
-                _logger.LogDebug("Unsubscribed from RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
+                _logger.LogWarning("No active subscription found with ID {SubscriptionId}", subscription.Id);
+                return;
             }
-            else
-            {
-                throw new InvalidOperationException($"No active subscription found for queue '{queueName}' in consumer group '{consumerGroup}'");
-            }
+
+            _logger.LogDebug("Unsubscribing from RabbitMQ topic '{Topic}' with consumer group '{ConsumerGroup}', Subscription ID: {SubscriptionId}", 
+                rabbitSubscription.Topic, rabbitSubscription.ConsumerGroup, rabbitSubscription.Id);
+
+            await rabbitSubscription.Consumer.StopConsumingAsync(cancellationToken);
+            await rabbitSubscription.DisposeAsync();
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
@@ -108,6 +106,13 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         public async ValueTask DisposeAsync()
         {
             _logger.LogDebug("Disposing RabbitMqMessagingProvider...");
+
+            foreach (var subscription in _subscriptions.Values)
+            {
+                await UnsubscribeAsync(subscription);
+            }
+
+            _subscriptions.Clear();
 
             if (_channel is not null)
             {

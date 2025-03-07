@@ -31,7 +31,6 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Events.Kafka
             _mockConsumerLogger = new Mock<ILogger<KafkaConsumer>>();
             
             _provider = new KafkaMessagingProvider(
-                BootstrapServers,
                 _mockAdminClient.Object,
                 _mockProducer.Object,
                 _mockConsumerFactory.Object,
@@ -58,22 +57,20 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Events.Kafka
         }
         
         [Theory]
-        [InlineData(null, "adminClient", "producer", "consumerFactory", "logger")]
-        [InlineData("bootstrapServers", null, "producer", "consumerFactory", "logger")]
-        [InlineData("bootstrapServers", "adminClient", null, "consumerFactory", "logger")]
-        [InlineData("bootstrapServers", "adminClient", "producer", null, "logger")]
-        [InlineData("bootstrapServers", "adminClient", "producer", "consumerFactory", null)]
+        [InlineData(null, "producer", "consumerFactory", "logger")]
+        [InlineData("adminClient", null, "consumerFactory", "logger")]
+        [InlineData("adminClient", "producer", null, "logger")]
+        [InlineData("adminClient", "producer", "consumerFactory", null)]
         public void Constructor_ShouldThrowException_WhenDependenciesAreNull(
-            string? bootstrapServers, string? adminClient, string? producer, string? consumerFactory, string? logger)
+            string? adminClient, string? producer, string? consumerFactory, string? logger)
         {
-            var bs = bootstrapServers is null ? null! : BootstrapServers;
             var mockAdmin = adminClient is null ? null! : _mockAdminClient.Object;
             var mockProducer = producer is null ? null! : _mockProducer.Object;
             var mockConsumerFactory = consumerFactory is null ? null! : _mockConsumerFactory.Object;
             var mockLogger = logger is null ? null! : _mockLogger.Object;
 
             Assert.Throws<ArgumentNullException>(() =>
-                new KafkaMessagingProvider(bs, mockAdmin, mockProducer, mockConsumerFactory, true, mockLogger));
+                new KafkaMessagingProvider(mockAdmin, mockProducer, mockConsumerFactory, true, mockLogger));
         }
         
         [Theory]

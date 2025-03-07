@@ -340,7 +340,6 @@ namespace OpenDDD.API.Extensions
                 var logger = provider.GetRequiredService<ILogger<KafkaMessagingProvider>>();
                 var consumerLogger = provider.GetRequiredService<ILogger<KafkaConsumer>>();
                 return new KafkaMessagingProvider(
-                    kafkaOptions.BootstrapServers,
                     new AdminClientBuilder(new AdminClientConfig { BootstrapServers = kafkaOptions.BootstrapServers, ClientId = "OpenDDD" }).Build(),
                     new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = kafkaOptions.BootstrapServers, ClientId = "OpenDDD" }).Build(),
                     new KafkaConsumerFactory(kafkaOptions.BootstrapServers, consumerLogger),

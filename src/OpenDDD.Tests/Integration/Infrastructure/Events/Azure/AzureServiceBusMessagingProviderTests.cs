@@ -121,14 +121,14 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             var messageToSend = "Persistent Message Test";
             var messageReceivedTcs = new TaskCompletionSource<bool>();
 
-            await _messagingProvider.SubscribeAsync(topicName, subscriptionName, async (msg, token) =>
+            var firstSubscription = await _messagingProvider.SubscribeAsync(topicName, subscriptionName, async (msg, token) =>
             {
                 Assert.Fail("First subscription should not receive the message.");
             }, _cts.Token);
             
             await Task.Delay(500);
 
-            await _messagingProvider.UnsubscribeAsync(topicName, subscriptionName, _cts.Token);
+            await _messagingProvider.UnsubscribeAsync(firstSubscription, _cts.Token);
             
             await Task.Delay(500);
 

@@ -5,10 +5,12 @@ using RabbitMQ.Client.Events;
 
 namespace OpenDDD.Infrastructure.Events.RabbitMq
 {
-    public class RabbitMqCustomAsyncConsumer : IAsyncBasicConsumer
+    public class RabbitMqCustomAsyncConsumer : IAsyncBasicConsumer, IAsyncDisposable
     {
         private readonly Func<string, CancellationToken, Task> _messageHandler;
         private readonly ILogger<RabbitMqMessagingProvider> _logger;
+        private readonly IChannel _channel;
+        private string? _consumerTag;
         private bool _disposed;
 
         public RabbitMqCustomAsyncConsumer(
@@ -16,12 +18,26 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
             Func<string, CancellationToken, Task> messageHandler, 
             ILogger<RabbitMqMessagingProvider> logger)
         {
-            Channel = channel ?? throw new ArgumentNullException(nameof(channel));
+            _channel = channel ?? throw new ArgumentNullException(nameof(channel));
             _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public IChannel? Channel { get; }
+        public IChannel Channel => _channel;
+
+        public async Task StartConsumingAsync(string queueName, CancellationToken cancellationToken)
+        {
+            _consumerTag = await _channel.BasicConsumeAsync(queueName, autoAck: false, this, cancellationToken);
+            _logger.LogInformation("Started consuming messages from queue '{QueueName}' with consumer tag '{ConsumerTag}'", queueName, _consumerTag);
+        }
+
+        public async Task StopConsumingAsync(CancellationToken cancellationToken)
+        {
+            if (_consumerTag is null || _disposed) return;
+
+            await _channel.BasicCancelAsync(_consumerTag, false, cancellationToken);
+            _logger.LogInformation("Stopped consuming messages for consumer tag '{ConsumerTag}'", _consumerTag);
+        }
 
         public async Task HandleBasicDeliverAsync(
             string consumerTag,
@@ -70,6 +86,15 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         {
             _logger.LogWarning("Channel was shut down. Reason: {Reason}", reason.ReplyText);
             return Task.CompletedTask;
+        }
+        
+        public async ValueTask DisposeAsync()
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            await StopConsumingAsync(CancellationToken.None);
         }
     }
 }
