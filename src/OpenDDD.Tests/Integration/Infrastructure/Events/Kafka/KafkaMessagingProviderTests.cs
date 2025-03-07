@@ -170,12 +170,12 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         
             await _messagingProvider.UnsubscribeAsync(firstSubscription, _cts.Token);
             
-            await Task.Delay(5000);
+            await Task.Delay(10000, _cts.Token);
         
             // Late subscriber
             await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
             
-            await Task.Delay(5000);
+            await Task.Delay(10000, _cts.Token);
             
             await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
             {
