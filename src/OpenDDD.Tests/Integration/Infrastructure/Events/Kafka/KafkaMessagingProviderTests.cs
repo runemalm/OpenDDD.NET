@@ -19,7 +19,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         private readonly ILogger<KafkaMessagingProvider> _logger;
         private readonly ILogger<KafkaConsumer> _consumerLogger;
         private readonly KafkaMessagingProvider _messagingProvider;
-        private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(60));
+        private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(120));
 
         public KafkaMessagingProviderTests(ITestOutputHelper testOutputHelper) 
             : base(testOutputHelper, enableLogging: true)
@@ -163,27 +163,36 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             {
                 firstSubscriberReceived.SetResult(true);
             }, _cts.Token);
+            
             await WaitForKafkaConsumerGroupStable(consumerGroup, _cts.Token);
             
+            await Task.Delay(10000, _cts.Token);
+            
             await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
-            await firstSubscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            
+            await firstSubscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            
+            await Task.Delay(10000, _cts.Token);
         
             await _messagingProvider.UnsubscribeAsync(firstSubscription, _cts.Token);
             
             await Task.Delay(10000, _cts.Token);
-        
-            // Late subscriber
-            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
             
+            await _messagingProvider.PublishAsync(topicName, messageToSend, _cts.Token);
             await Task.Delay(10000, _cts.Token);
             
-            await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
+            // Late subscriber
+            var lateSubscription = await _messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
             {
                 _receivedMessages.Add(msg);
                 lateSubscriberReceived.TrySetResult(true);
             }, _cts.Token);
             
             await WaitForKafkaConsumerGroupStable(consumerGroup, _cts.Token);
+            
+            await Task.Delay(10000, _cts.Token);
+            
+            (lateSubscription as KafkaSubscription).PrintDebugInfo();
             
             await lateSubscriberReceived.Task.WaitAsync(TimeSpan.FromSeconds(30));
         

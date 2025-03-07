@@ -12,5 +12,11 @@ namespace OpenDDD.Infrastructure.Events.Kafka
         {
             await Consumer.DisposeAsync();
         }
+
+        public void PrintDebugInfo()
+        {
+            var assignments = Consumer._consumer.Assignment;
+            Console.WriteLine($"Consumer assigned partitions: {string.Join(", ", assignments.Select(a => a.Partition.Value))}");
+        }
     }
 }

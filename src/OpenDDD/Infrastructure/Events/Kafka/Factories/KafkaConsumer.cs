@@ -5,7 +5,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
 {
     public class KafkaConsumer : IAsyncDisposable
     {
-        private readonly IConsumer<Ignore, string> _consumer;
+        public readonly IConsumer<Ignore, string> _consumer;
         private readonly ILogger<KafkaConsumer> _logger;
         private readonly CancellationTokenSource _cts = new();
         private Task? _consumerTask;
