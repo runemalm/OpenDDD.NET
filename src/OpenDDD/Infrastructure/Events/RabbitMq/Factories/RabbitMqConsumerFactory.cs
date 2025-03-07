@@ -12,12 +12,12 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq.Factories
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public RabbitMqCustomAsyncConsumer CreateConsumer(IChannel channel, Func<string, CancellationToken, Task> messageHandler)
+        public RabbitMqConsumer CreateConsumer(IChannel channel, Func<string, CancellationToken, Task> messageHandler)
         {
             if (channel == null) throw new ArgumentNullException(nameof(channel));
             if (messageHandler == null) throw new ArgumentNullException(nameof(messageHandler));
 
-            return new RabbitMqCustomAsyncConsumer(channel, messageHandler, _logger);
+            return new RabbitMqConsumer(channel, messageHandler, _logger);
         }
     }
 }

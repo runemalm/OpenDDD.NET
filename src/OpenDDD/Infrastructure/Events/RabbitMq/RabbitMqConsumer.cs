@@ -5,7 +5,7 @@ using RabbitMQ.Client.Events;
 
 namespace OpenDDD.Infrastructure.Events.RabbitMq
 {
-    public class RabbitMqCustomAsyncConsumer : IAsyncBasicConsumer, IAsyncDisposable
+    public class RabbitMqConsumer : IAsyncBasicConsumer, IAsyncDisposable
     {
         private readonly Func<string, CancellationToken, Task> _messageHandler;
         private readonly ILogger<RabbitMqMessagingProvider> _logger;
@@ -13,7 +13,7 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         private string? _consumerTag;
         private bool _disposed;
 
-        public RabbitMqCustomAsyncConsumer(
+        public RabbitMqConsumer(
             IChannel channel, 
             Func<string, CancellationToken, Task> messageHandler, 
             ILogger<RabbitMqMessagingProvider> logger)

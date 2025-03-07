@@ -4,6 +4,6 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq.Factories
 {
     public interface IRabbitMqConsumerFactory
     {
-        RabbitMqCustomAsyncConsumer CreateConsumer(IChannel channel, Func<string, CancellationToken, Task> messageHandler);
+        RabbitMqConsumer CreateConsumer(IChannel channel, Func<string, CancellationToken, Task> messageHandler);
     }
 }

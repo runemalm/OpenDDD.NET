@@ -2,9 +2,9 @@
 
 namespace OpenDDD.Infrastructure.Events.RabbitMq
 {
-    public class RabbitMqSubscription : Subscription<RabbitMqCustomAsyncConsumer>
+    public class RabbitMqSubscription : Subscription<RabbitMqConsumer>
     {
-        public RabbitMqSubscription(string topic, string consumerGroup, RabbitMqCustomAsyncConsumer consumer) 
+        public RabbitMqSubscription(string topic, string consumerGroup, RabbitMqConsumer consumer) 
             : base(topic, consumerGroup, consumer) { }
 
         public override async ValueTask DisposeAsync()
