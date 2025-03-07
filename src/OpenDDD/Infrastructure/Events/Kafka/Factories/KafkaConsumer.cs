@@ -5,7 +5,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
 {
     public class KafkaConsumer : IAsyncDisposable
     {
-        public readonly IConsumer<Ignore, string> _consumer;
+        private readonly IConsumer<Ignore, string> _consumer;
         private readonly ILogger<KafkaConsumer> _logger;
         private readonly CancellationTokenSource _cts = new();
         private Task? _consumerTask;
@@ -86,8 +86,71 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
                 _consumerTask = null;
             }
             
+            // Make sure all partitions have initial commit offset
+            await CommitInitialOffsetsAsync();
+            
             _consumer.Close();
             _consumer.Dispose();
+        }
+
+        private async Task CommitInitialOffsetsAsync()
+        {
+            foreach (var partition in _consumer.Assignment)
+            {
+                // Check if an offset is already committed
+                var committedOffsets = _consumer.Committed(new[] { partition }, TimeSpan.FromSeconds(5));
+                var currentOffset = committedOffsets?.FirstOrDefault()?.Offset;
+
+                if (currentOffset == null || currentOffset == Offset.Unset)
+                {
+                    // Query watermark offsets (LOW = earliest, HIGH = next available offset)
+                    var watermarkOffsets = _consumer.QueryWatermarkOffsets(partition, TimeSpan.FromSeconds(5));
+
+                    if (watermarkOffsets.High == 0) // No messages ever written
+                    {
+                        _logger.LogDebug("Partition {Partition} has no messages. Sending placeholder message.", partition);
+
+                        // Publish a placeholder message to the **specific partition**
+                        using var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = "localhost:9092" }).Build();
+                        var deliveryResult = await producer.ProduceAsync(
+                            new TopicPartition(partition.Topic, partition.Partition), // Ensure correct partition
+                            new Message<Null, string> { Value = "__init__" });
+
+                        producer.Flush(TimeSpan.FromSeconds(5));
+
+                        _logger.LogDebug("Sent __init__ message to partition {Partition}. Offset: {Offset}", partition, deliveryResult.Offset);
+
+                        // Poll Kafka until watermark updates or timeout occurs
+                        var timeout = TimeSpan.FromSeconds(5);
+                        var startTime = DateTime.UtcNow;
+
+                        while (DateTime.UtcNow - startTime < timeout)
+                        {
+                            await Task.Delay(100); // Small delay to avoid excessive polling
+                            watermarkOffsets = _consumer.QueryWatermarkOffsets(partition, TimeSpan.FromSeconds(5));
+
+                            if (watermarkOffsets.High > 0) // Message registered
+                                break;
+                        }
+
+                        if (watermarkOffsets.High == 0)
+                        {
+                            throw new TimeoutException($"Kafka did not register the __init__ message for partition {partition} within 5 seconds.");
+                        }
+
+                        // Ensure the new high watermark is exactly 1
+                        var initialOffset = watermarkOffsets.High;
+                        if (initialOffset.Value != 1)
+                        {
+                            throw new Exception($"Expected initial offset to be 1, but got {initialOffset.Value}");
+                        }
+
+                        _consumer.Commit(new[] { new TopicPartitionOffset(partition, initialOffset) });
+
+                        _logger.LogDebug("Committed initial offset {Offset} for partition {Partition}", initialOffset, partition);
+                    }
+                }
+            }
         }
 
         public ValueTask DisposeAsync()
