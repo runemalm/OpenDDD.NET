@@ -189,7 +189,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
                     await Task.CompletedTask, _cts.Token);
             });
 
-            exception.Message.Should().Contain($"Topic '{topicName}' does not exist.");
+            exception.Message.Should().Be($"Topic '{topicName}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
         }
         
         [Fact]
@@ -399,6 +399,14 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             }
         }
         
+        private async Task EnsureConnectedAsync(CancellationToken cancellationToken)
+        {
+            if (_connection is { IsOpen: true } && _channel is { IsOpen: true }) return;
+
+            _connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
+            _channel = await _connection.CreateChannelAsync(null, cancellationToken);
+        }
+        
         private async Task<bool> ExchangeExistsAsync(string exchange, CancellationToken cancellationToken)
         {
             try
@@ -412,6 +420,9 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             catch (OperationInterruptedException ex) when (ex.ShutdownReason?.ReplyCode == 404)
             {
                 _logger.LogDebug("Exchange '{Exchange}' does not exist yet.", exchange);
+                
+                await EnsureConnectedAsync(cancellationToken);
+                
                 return false;
             }
             catch (Exception ex)

@@ -139,13 +139,13 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
                 _logger);
         
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KafkaException>(async () =>
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
                 await messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) => 
                     await Task.CompletedTask, _cts.Token);
             });
         
-            exception.Message.Should().Contain($"Topic '{topicName}' does not exist.");
+            exception.Message.Should().Be($"Topic '{topicName}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
         }
         
         [Fact]

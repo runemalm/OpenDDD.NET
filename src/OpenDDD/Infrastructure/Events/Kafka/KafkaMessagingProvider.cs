@@ -47,19 +47,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             if (messageHandler is null)
                 throw new ArgumentNullException(nameof(messageHandler));
 
-            if (_autoCreateTopics)
-            {
-                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
-            }
-            else
-            {
-                var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
-                if (!metadata.Topics.Any(t => t.Topic == topic))
-                {
-                    _logger.LogError("Cannot subscribe to non-existent topic: {Topic}", topic);
-                    throw new KafkaException(new Error(ErrorCode.UnknownTopicOrPart, $"Topic '{topic}' does not exist."));
-                }
-            }
+            await EnsureTopicExistsAsync(topic, cancellationToken);
 
             var consumer = _consumerFactory.Create(consumerGroup);
             consumer.Subscribe(topic);
@@ -97,57 +85,45 @@ namespace OpenDDD.Infrastructure.Events.Kafka
             if (string.IsNullOrWhiteSpace(message))
                 throw new ArgumentException("Message cannot be null or empty.", nameof(message));
 
-            if (_autoCreateTopics)
-            {
-                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
-            }
+            await EnsureTopicExistsAsync(topic, cancellationToken);
 
             await _producer.ProduceAsync(topic, new Message<Null, string> { Value = message }, cancellationToken);
             _logger.LogDebug("Published message to Kafka topic '{Topic}'", topic);
         }
 
-        private async Task CreateTopicIfNotExistsAsync(string topic, CancellationToken cancellationToken)
+        private async Task EnsureTopicExistsAsync(string topic, CancellationToken cancellationToken)
         {
-            try
+            var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+
+            if (metadata.Topics.Any(t => t.Topic == topic))
             {
-                var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+                _logger.LogDebug("Topic '{Topic}' already exists.", topic);
+                return;
+            }
 
-                if (metadata.Topics.Any(t => t.Topic == topic))
-                {
-                    _logger.LogDebug("Topic '{Topic}' already exists. Skipping creation.", topic);
-                    return;
-                }
-
+            if (_autoCreateTopics)
+            {
                 _logger.LogDebug("Creating Kafka topic: {Topic}", topic);
                 await _adminClient.CreateTopicsAsync(new[]
                 {
                     new TopicSpecification { Name = topic, NumPartitions = 2, ReplicationFactor = 1 }
                 }, null);
 
+                // Wait for the topic to be available
                 for (int i = 0; i < 30; i++)
                 {
                     await Task.Delay(500, cancellationToken);
                     metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(1));
-
                     if (metadata.Topics.Any(t => t.Topic == topic))
                     {
                         _logger.LogDebug("Kafka topic '{Topic}' is now available.", topic);
                         return;
                     }
                 }
-
                 throw new KafkaException(new Error(ErrorCode.UnknownTopicOrPart, $"Failed to create topic '{topic}' within timeout."));
             }
-            catch (KafkaException ex)
-            {
-                _logger.LogError(ex, "Kafka error while creating topic {Topic}: {Message}", topic, ex.Message);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while creating Kafka topic {Topic}", topic);
-                throw new InvalidOperationException($"Failed to create topic '{topic}'", ex);
-            }
+
+            throw new InvalidOperationException($"Topic '{topic}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
         }
 
         public async ValueTask DisposeAsync()

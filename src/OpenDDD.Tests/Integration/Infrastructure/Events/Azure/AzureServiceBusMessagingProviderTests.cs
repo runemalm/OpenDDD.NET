@@ -5,6 +5,7 @@ using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Tests.Base;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using FluentAssertions;
 
 namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
 {
@@ -108,7 +109,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             
             Assert.False(await _adminClient.TopicExistsAsync(topicName), "Topic should not have been created.");
         
-            Assert.Equal($"Cannot subscribe to topic '{topicName}' because it does not exist and auto-creation is disabled.", exception.Message);
+            exception.Message.Should().Be($"Topic '{topicName}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
         }
         
         [Fact]

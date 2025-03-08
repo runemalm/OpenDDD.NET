@@ -44,23 +44,11 @@ namespace OpenDDD.Infrastructure.Events.Azure
                 throw new ArgumentNullException(nameof(messageHandler));
             }
 
-            var subscriptionName = consumerGroup;
+            await EnsureTopicExistsAsync(topic, cancellationToken);
 
-            if (_autoCreateTopics)
-            {
-                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
-            }
-            
-            if (!await _adminClient.TopicExistsAsync(topic, cancellationToken))
-            {
-                var errorMessage = $"Cannot subscribe to topic '{topic}' because it does not exist and auto-creation is disabled.";
-                _logger.LogError(errorMessage);
-                throw new InvalidOperationException(errorMessage);
-            }
+            await CreateSubscriptionIfNotExistsAsync(topic, consumerGroup, cancellationToken);
 
-            await CreateSubscriptionIfNotExistsAsync(topic, subscriptionName, cancellationToken);
-
-            var processor = _client.CreateProcessor(topic, subscriptionName);
+            var processor = _client.CreateProcessor(topic, consumerGroup);
 
             processor.ProcessMessageAsync += async args =>
             {
@@ -70,14 +58,14 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
             processor.ProcessErrorAsync += args =>
             {
-                _logger.LogError(args.Exception, "Error processing message in subscription {SubscriptionName}", subscriptionName);
+                _logger.LogError(args.Exception, "Error processing message in subscription {SubscriptionName}", consumerGroup);
                 return Task.CompletedTask;
             };
 
             var subscription = new AzureServiceBusSubscription(topic, consumerGroup, processor);
             _subscriptions[subscription.Id] = subscription;
 
-            _logger.LogInformation("Starting message processor for topic '{Topic}' and subscription '{Subscription}', Subscription ID: {SubscriptionId}", topic, subscriptionName, subscription.Id);
+            _logger.LogInformation("Starting message processor for topic '{Topic}' and subscription '{Subscription}', Subscription ID: {SubscriptionId}", topic, consumerGroup, subscription.Id);
             await processor.StartProcessingAsync(cancellationToken);
 
             return subscription;
@@ -103,31 +91,31 @@ namespace OpenDDD.Infrastructure.Events.Azure
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(topic))
-            {
                 throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
-            }
 
             if (string.IsNullOrWhiteSpace(message))
-            {
                 throw new ArgumentException("Message cannot be null or empty.", nameof(message));
-            }
 
-            if (_autoCreateTopics)
-            {
-                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
-            }
+            await EnsureTopicExistsAsync(topic, cancellationToken);
 
             var sender = _client.CreateSender(topic);
             await sender.SendMessageAsync(new ServiceBusMessage(message), cancellationToken);
             _logger.LogInformation("Published message to topic '{Topic}'", topic);
         }
 
-        private async Task CreateTopicIfNotExistsAsync(string topic, CancellationToken cancellationToken)
+        private async Task EnsureTopicExistsAsync(string topic, CancellationToken cancellationToken)
         {
             if (!await _adminClient.TopicExistsAsync(topic, cancellationToken))
             {
-                await _adminClient.CreateTopicAsync(topic, cancellationToken);
-                _logger.LogInformation("Created topic: {Topic}", topic);
+                if (_autoCreateTopics)
+                {
+                    await _adminClient.CreateTopicAsync(topic, cancellationToken);
+                    _logger.LogInformation("Created topic: {Topic}", topic);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Topic '{topic}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
+                }
             }
         }
 
