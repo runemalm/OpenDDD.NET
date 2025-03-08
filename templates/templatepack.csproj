@@ -13,7 +13,7 @@
 
   <PropertyGroup>
     <PackageId>OpenDDD.NET-Templates</PackageId>
-    <Version>3.0.0-alpha.1</Version>
+    <Version>3.0.0-beta.2</Version>
     <Authors>David Runemalm</Authors>
     <Description>Project templates for OpenDDD.NET</Description>
     <PackageTags>dotnet-new;templates;openddd.net;ddd;hexagonal</PackageTags>
