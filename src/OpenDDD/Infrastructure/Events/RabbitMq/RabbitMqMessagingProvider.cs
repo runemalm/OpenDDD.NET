@@ -17,6 +17,9 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         private IConnection? _connection;
         private IChannel? _channel;
         private readonly ConcurrentDictionary<string, RabbitMqSubscription> _subscriptions = new();
+        private readonly ConcurrentDictionary<string, DateTime> _topicCache = new();
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromSeconds(600);
+        private bool _disposed;
         
         public RabbitMqMessagingProvider(
             IConnectionFactory factory,
@@ -104,11 +107,17 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         
         private async Task EnsureTopicExistsAsync(string topic, CancellationToken cancellationToken)
         {
-            bool exchangeExists = await ExchangeExistsAsync(topic, cancellationToken);
+            if (_topicCache.TryGetValue(topic, out var lastChecked) && DateTime.UtcNow - lastChecked < _cacheExpiration)
+            {
+                _logger.LogDebug("Skipping exchange check for '{Topic}' (cached result).", topic);
+                return;
+            }
 
+            bool exchangeExists = await ExchangeExistsAsync(topic, cancellationToken);
+    
             if (exchangeExists)
             {
-                _logger.LogDebug("Exchange '{Topic}' already exists.", topic);
+                _topicCache[topic] = DateTime.UtcNow;
                 return;
             }
 
@@ -116,11 +125,11 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
             {
                 await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
                 _logger.LogInformation("Auto-created exchange (topic): {Topic}", topic);
+                _topicCache[topic] = DateTime.UtcNow;
+                return;
             }
-            else
-            {
-                throw new InvalidOperationException($"Topic '{topic}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
-            }
+            
+            throw new InvalidOperationException($"Topic '{topic}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
         }
         
         private async Task<bool> ExchangeExistsAsync(string exchange, CancellationToken cancellationToken)
@@ -147,6 +156,9 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
         public async ValueTask DisposeAsync()
         {
+            if (_disposed) return;
+            _disposed = true;
+
             _logger.LogDebug("Disposing RabbitMqMessagingProvider...");
 
             foreach (var subscription in _subscriptions.Values)

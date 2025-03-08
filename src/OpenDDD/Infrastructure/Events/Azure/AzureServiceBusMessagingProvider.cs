@@ -13,6 +13,8 @@ namespace OpenDDD.Infrastructure.Events.Azure
         private readonly bool _autoCreateTopics;
         private readonly ILogger<AzureServiceBusMessagingProvider> _logger;
         private readonly ConcurrentDictionary<string, AzureServiceBusSubscription> _subscriptions = new();
+        private readonly ConcurrentDictionary<string, DateTime> _topicCache = new();
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromSeconds(600);
         private bool _disposed;
 
         public AzureServiceBusMessagingProvider(
@@ -105,18 +107,29 @@ namespace OpenDDD.Infrastructure.Events.Azure
 
         private async Task EnsureTopicExistsAsync(string topic, CancellationToken cancellationToken)
         {
-            if (!await _adminClient.TopicExistsAsync(topic, cancellationToken))
+            if (_topicCache.TryGetValue(topic, out var lastChecked) && DateTime.UtcNow - lastChecked < _cacheExpiration)
             {
-                if (_autoCreateTopics)
-                {
-                    await _adminClient.CreateTopicAsync(topic, cancellationToken);
-                    _logger.LogInformation("Created topic: {Topic}", topic);
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Topic '{topic}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
-                }
+                _logger.LogDebug("Skipping topic check for '{Topic}' (cached result).", topic);
+                return;
             }
+
+            var topicExists = await _adminClient.TopicExistsAsync(topic, cancellationToken);
+    
+            if (topicExists)
+            {
+                _topicCache[topic] = DateTime.UtcNow;
+                return;
+            }
+
+            if (_autoCreateTopics)
+            {
+                await _adminClient.CreateTopicAsync(topic, cancellationToken);
+                _logger.LogInformation("Created topic: {Topic}", topic);
+                _topicCache[topic] = DateTime.UtcNow;
+                return;
+            }
+            
+            throw new InvalidOperationException($"Topic '{topic}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
         }
 
         private async Task CreateSubscriptionIfNotExistsAsync(string topic, string subscriptionName, CancellationToken cancellationToken)

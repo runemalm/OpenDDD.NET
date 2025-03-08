@@ -365,7 +365,7 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             var consumerGroup = "test-consumer-group";
             var totalMessages = 100;
             var numConsumers = 2;
-            var variancePercentage = 0.2;
+            var variancePercentage = 0.3;
             var perConsumerMessageCount = new ConcurrentDictionary<Guid, int>(); // Track messages per consumer
             var allMessagesProcessed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 

@@ -15,6 +15,8 @@ namespace OpenDDD.Infrastructure.Events.Kafka
         private readonly IKafkaConsumerFactory _consumerFactory;
         private readonly ILogger<KafkaMessagingProvider> _logger;
         private readonly ConcurrentDictionary<string, KafkaSubscription> _subscriptions = new();
+        private readonly ConcurrentDictionary<string, DateTime> _topicCache = new();
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromSeconds(600);
         private readonly CancellationTokenSource _cts = new();
         private bool _disposed;
 
@@ -93,11 +95,18 @@ namespace OpenDDD.Infrastructure.Events.Kafka
 
         private async Task EnsureTopicExistsAsync(string topic, CancellationToken cancellationToken)
         {
+            if (_topicCache.TryGetValue(topic, out var lastChecked) && DateTime.UtcNow - lastChecked < _cacheExpiration)
+            {
+                _logger.LogDebug("Skipping topic check for '{Topic}' (cached result).", topic);
+                return;
+            }
+
             var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
 
             if (metadata.Topics.Any(t => t.Topic == topic))
             {
                 _logger.LogDebug("Topic '{Topic}' already exists.", topic);
+                _topicCache[topic] = DateTime.UtcNow;
                 return;
             }
 
@@ -109,6 +118,8 @@ namespace OpenDDD.Infrastructure.Events.Kafka
                     new TopicSpecification { Name = topic, NumPartitions = 2, ReplicationFactor = 1 }
                 }, null);
 
+                _topicCache[topic] = DateTime.UtcNow;
+                
                 // Wait for the topic to be available
                 for (int i = 0; i < 30; i++)
                 {
