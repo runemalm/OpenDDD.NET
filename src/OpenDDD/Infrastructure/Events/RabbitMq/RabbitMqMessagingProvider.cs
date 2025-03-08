@@ -45,22 +45,11 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
             if (_channel is null) throw new InvalidOperationException("RabbitMQ channel is not available.");
 
-            bool exchangeExists = await ExchangeExistsAsync(topic, cancellationToken);
-
-            if (!exchangeExists)
+            if (_autoCreateTopics)
             {
-                if (_autoCreateTopics)
-                {
-                    await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
-                    _logger.LogInformation("Auto-created exchange (topic): {Topic}", topic);
-                }
-                else
-                {
-                    _logger.LogError("Cannot subscribe to non-existent topic: {Topic}", topic);
-                    throw new InvalidOperationException($"Topic '{topic}' does not exist.");
-                }
+                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
             }
-
+            
             await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
             var queueName = $"{consumerGroup}.{topic}";
             await _channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: cancellationToken);
@@ -76,7 +65,7 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
             return subscription;
         }
-        
+
         public async Task UnsubscribeAsync(ISubscription subscription, CancellationToken cancellationToken = default)
         {
             if (subscription == null)
@@ -107,20 +96,9 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
             if (_channel is null) throw new InvalidOperationException("RabbitMQ channel is not available.");
 
-            bool exchangeExists = await ExchangeExistsAsync(topic, cancellationToken);
-
-            if (!exchangeExists)
+            if (_autoCreateTopics)
             {
-                if (_autoCreateTopics)
-                {
-                    await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
-                    _logger.LogInformation("Auto-created exchange (topic): {Topic}", topic);
-                }
-                else
-                {
-                    _logger.LogError("Cannot publish to non-existent topic: {Topic}", topic);
-                    throw new InvalidOperationException($"Topic '{topic}' does not exist.");
-                }
+                await CreateTopicIfNotExistsAsync(topic, cancellationToken);
             }
 
             var body = Encoding.UTF8.GetBytes(message);
@@ -135,6 +113,25 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
             _connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
             _channel = await _connection.CreateChannelAsync(null, cancellationToken);
+        }
+        
+        private async Task CreateTopicIfNotExistsAsync(string topic, CancellationToken cancellationToken)
+        {
+            bool exchangeExists = await ExchangeExistsAsync(topic, cancellationToken);
+
+            if (!exchangeExists)
+            {
+                if (_autoCreateTopics)
+                {
+                    await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
+                    _logger.LogInformation("Auto-created exchange (topic): {Topic}", topic);
+                }
+                else
+                {
+                    _logger.LogError("Cannot subscribe to non-existent topic: {Topic}", topic);
+                    throw new InvalidOperationException($"Topic '{topic}' does not exist.");
+                }
+            }
         }
         
         private async Task<bool> ExchangeExistsAsync(string exchange, CancellationToken cancellationToken)
