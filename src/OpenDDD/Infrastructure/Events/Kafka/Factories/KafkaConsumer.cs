@@ -86,7 +86,6 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
                 _consumerTask = null;
             }
             
-            // Make sure all partitions have initial commit offset
             await CommitInitialOffsetsAsync();
             
             _consumer.Close();
@@ -97,20 +96,17 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
         {
             foreach (var partition in _consumer.Assignment)
             {
-                // Check if an offset is already committed
                 var committedOffsets = _consumer.Committed(new[] { partition }, TimeSpan.FromSeconds(5));
                 var currentOffset = committedOffsets?.FirstOrDefault()?.Offset;
 
                 if (currentOffset == null || currentOffset == Offset.Unset)
                 {
-                    // Query watermark offsets (LOW = earliest, HIGH = next available offset)
                     var watermarkOffsets = _consumer.QueryWatermarkOffsets(partition, TimeSpan.FromSeconds(5));
 
                     if (watermarkOffsets.High == 0) // No messages ever written
                     {
                         _logger.LogDebug("Partition {Partition} has no messages. Sending placeholder message.", partition);
 
-                        // Publish a placeholder message to the **specific partition**
                         using var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = "localhost:9092" }).Build();
                         var deliveryResult = await producer.ProduceAsync(
                             new TopicPartition(partition.Topic, partition.Partition), // Ensure correct partition
@@ -120,16 +116,15 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
 
                         _logger.LogDebug("Sent __init__ message to partition {Partition}. Offset: {Offset}", partition, deliveryResult.Offset);
 
-                        // Poll Kafka until watermark updates or timeout occurs
                         var timeout = TimeSpan.FromSeconds(5);
                         var startTime = DateTime.UtcNow;
 
                         while (DateTime.UtcNow - startTime < timeout)
                         {
-                            await Task.Delay(100); // Small delay to avoid excessive polling
+                            await Task.Delay(100);
                             watermarkOffsets = _consumer.QueryWatermarkOffsets(partition, TimeSpan.FromSeconds(5));
 
-                            if (watermarkOffsets.High > 0) // Message registered
+                            if (watermarkOffsets.High > 0)
                                 break;
                         }
 
@@ -138,7 +133,7 @@ namespace OpenDDD.Infrastructure.Events.Kafka.Factories
                             throw new TimeoutException($"Kafka did not register the __init__ message for partition {partition} within 5 seconds.");
                         }
 
-                        // Ensure the new high watermark is exactly 1
+                        // Ensure the new offset for the partition is exactly 1
                         var initialOffset = watermarkOffsets.High;
                         if (initialOffset.Value != 1)
                         {
