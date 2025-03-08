@@ -18,7 +18,7 @@ export $(shell sed 's/=.*//' env.make)
 HOME := $(shell echo ~)
 PWD := $(shell pwd)
 NETWORK := openddd-net
-BUILD_VERSION := 3.0.0-beta.1
+BUILD_VERSION := 3.0.0-beta.2
 
 NUGET_NAME := OpenDDD.NET
 ROOT_NAMESPACE := OpenDDD
@@ -215,7 +215,7 @@ TEMPLATES_DIR := $(PWD)/templates
 TEMPLATES_CSPROJ := $(TEMPLATES_DIR)/templatepack.csproj
 TEMPLATES_OUT := $(TEMPLATES_DIR)/bin/templates
 TEMPLATES_NAME := OpenDDD.NET-Templates
-TEMPLATES_VERSION := 3.0.0-alpha.1
+TEMPLATES_VERSION := 3.0.0-beta.2
 TEMPLATES_NUPKG := $(TEMPLATES_OUT)/$(TEMPLATES_NAME).$(TEMPLATES_VERSION).nupkg
 
 .PHONY: templates-install
