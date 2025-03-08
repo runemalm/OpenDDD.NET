@@ -72,10 +72,8 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             var topicName = $"test-topic-{Guid.NewGuid()}";
             var subscriptionName = "test-subscription";
 
-            if (await _adminClient.TopicExistsAsync(topicName))
-            {
-                await _adminClient.DeleteTopicAsync(topicName);
-            }
+            var topicExistsBefore = (await _adminClient.TopicExistsAsync(topicName)).Value;
+            topicExistsBefore.Should().BeFalse("The topic should not exist before subscribing.");
 
             // Act
             await _messagingProvider.SubscribeAsync(topicName, subscriptionName, (msg, token) => Task.CompletedTask);
@@ -90,10 +88,8 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Azure
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";
 
-            if (await _adminClient.TopicExistsAsync(topicName))
-            {
-                await _adminClient.DeleteTopicAsync(topicName);
-            }
+            var topicExistsBefore = (await _adminClient.TopicExistsAsync(topicName)).Value;
+            topicExistsBefore.Should().BeFalse("The topic should not exist before subscribing.");
         
             var messagingProvider = new AzureServiceBusMessagingProvider(
                 _serviceBusClient, 

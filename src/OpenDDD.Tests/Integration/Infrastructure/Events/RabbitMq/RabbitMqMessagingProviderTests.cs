@@ -172,15 +172,15 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             // Arrange
             var topicName = $"test-topic-{Guid.NewGuid()}";
             var consumerGroup = "test-consumer-group";
+            
+            var exchangeExistsBefore = await ExchangeExistsAsync(topicName, _cts.Token);
+            exchangeExistsBefore.Should().BeFalse("The exchange should not exist before subscribing.");
 
             var messagingProvider = new RabbitMqMessagingProvider(
                 _connectionFactory,
                 _consumerFactory,
                 autoCreateTopics: false, // Auto-create disabled
                 _logger);
-            
-            var exchangeExistsBefore = await ExchangeExistsAsync(topicName, _cts.Token);
-            exchangeExistsBefore.Should().BeFalse("The exchange should not exist before subscribing.");
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>

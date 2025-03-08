@@ -131,6 +131,9 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
             var topicName = $"test-topic-{Guid.NewGuid()}";
             var consumerGroup = "test-consumer-group";
         
+            var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+            metadata.Topics.Any(t => t.Topic == topicName).Should().BeFalse("The topic should not exist before subscribing.");
+            
             var messagingProvider = new KafkaMessagingProvider(
                 _adminClient,
                 _producer,
