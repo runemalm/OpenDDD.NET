@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
 
 namespace OpenDDD.Infrastructure.Events.RabbitMq
 {
@@ -12,6 +13,7 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         private readonly IConnectionFactory _connectionFactory;
         private readonly IRabbitMqConsumerFactory _consumerFactory;
         private readonly ILogger<RabbitMqMessagingProvider> _logger;
+        private readonly bool _autoCreateTopics;
         private IConnection? _connection;
         private IChannel? _channel;
         private readonly ConcurrentDictionary<string, RabbitMqSubscription> _subscriptions = new();
@@ -19,10 +21,12 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         public RabbitMqMessagingProvider(
             IConnectionFactory factory,
             IRabbitMqConsumerFactory consumerFactory,
+            bool autoCreateTopics,
             ILogger<RabbitMqMessagingProvider> logger)
         {
             _connectionFactory = factory ?? throw new ArgumentNullException(nameof(factory));
             _consumerFactory = consumerFactory ?? throw new ArgumentNullException(nameof(consumerFactory));
+            _autoCreateTopics = autoCreateTopics;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -40,6 +44,22 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
             await EnsureConnectedAsync(cancellationToken);
 
             if (_channel is null) throw new InvalidOperationException("RabbitMQ channel is not available.");
+
+            bool exchangeExists = await ExchangeExistsAsync(topic, cancellationToken);
+
+            if (!exchangeExists)
+            {
+                if (_autoCreateTopics)
+                {
+                    await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
+                    _logger.LogInformation("Auto-created exchange (topic): {Topic}", topic);
+                }
+                else
+                {
+                    _logger.LogError("Cannot subscribe to non-existent topic: {Topic}", topic);
+                    throw new InvalidOperationException($"Topic '{topic}' does not exist.");
+                }
+            }
 
             await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
             var queueName = $"{consumerGroup}.{topic}";
@@ -87,7 +107,21 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
             if (_channel is null) throw new InvalidOperationException("RabbitMQ channel is not available.");
 
-            await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
+            bool exchangeExists = await ExchangeExistsAsync(topic, cancellationToken);
+
+            if (!exchangeExists)
+            {
+                if (_autoCreateTopics)
+                {
+                    await _channel.ExchangeDeclareAsync(topic, ExchangeType.Fanout, durable: true, autoDelete: false, cancellationToken: cancellationToken);
+                    _logger.LogInformation("Auto-created exchange (topic): {Topic}", topic);
+                }
+                else
+                {
+                    _logger.LogError("Cannot publish to non-existent topic: {Topic}", topic);
+                    throw new InvalidOperationException($"Topic '{topic}' does not exist.");
+                }
+            }
 
             var body = Encoding.UTF8.GetBytes(message);
             await _channel.BasicPublishAsync(topic, "", body, cancellationToken: cancellationToken);
@@ -101,6 +135,29 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
 
             _connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
             _channel = await _connection.CreateChannelAsync(null, cancellationToken);
+        }
+        
+        private async Task<bool> ExchangeExistsAsync(string exchange, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _channel!.ExchangeDeclarePassiveAsync(exchange, cancellationToken);
+                return true;
+            }
+            catch (OperationInterruptedException ex) when (ex.ShutdownReason?.ReplyCode == 404)
+            {
+                _logger.LogDebug("Exchange '{Exchange}' does not exist.", exchange);
+
+                // Since the channel was closed, reopen it before returning
+                await EnsureConnectedAsync(cancellationToken);
+        
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while checking if exchange '{Exchange}' exists.", exchange);
+                throw;
+            }
         }
 
         public async ValueTask DisposeAsync()

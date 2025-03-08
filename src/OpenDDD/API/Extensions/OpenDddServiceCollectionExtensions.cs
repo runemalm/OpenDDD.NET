@@ -323,7 +323,11 @@ namespace OpenDDD.API.Extensions
                 
                 var consumerFactory = new RabbitMqConsumerFactory(logger);
 
-                return new RabbitMqMessagingProvider(connectionFactory, consumerFactory, logger);
+                return new RabbitMqMessagingProvider(
+                    connectionFactory, 
+                    consumerFactory,
+                    rabbitMqOptions.AutoCreateTopics,
+                    logger);
             });
         }
         

@@ -599,7 +599,8 @@ Add the following configuration to your `appsettings.json` file to customize Ope
         "Port": 5672,
         "Username": "guest",
         "Password": "guest",
-        "VirtualHost": "/"
+        "VirtualHost": "/",
+        "AutoCreateTopics": true
       },
       "Kafka": {
         "BootstrapServers": "localhost:9092",

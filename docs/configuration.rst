@@ -49,7 +49,8 @@ An example configuration in `appsettings.json`:
          "Port": 5672,
          "Username": "guest",
          "Password": "guest",
-         "VirtualHost": "/"
+         "VirtualHost": "/",
+         "AutoCreateTopics": true
        },
        "Kafka": {
          "BootstrapServers": "localhost:9092",
@@ -141,14 +142,18 @@ OpenDDD.NET supports multiple messaging providers:
        port: 5672,
        username: "guest",
        password: "guest",
-       virtualHost: "/"
+       virtualHost: "/",
+       autoCreateTopics: true
    );
 
 **Kafka**:
 
 .. code-block:: csharp
 
-   options.UseKafka("localhost:9092");
+   options.UseKafka(
+       "localhost:9092",
+       autoCreateTopics: true
+   );
 
 **Azure Service Bus**:
 

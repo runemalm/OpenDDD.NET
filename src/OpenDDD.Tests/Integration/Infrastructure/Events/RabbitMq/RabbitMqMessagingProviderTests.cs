@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 using OpenDDD.Infrastructure.Events.RabbitMq;
@@ -38,7 +39,11 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             };
 
             _consumerFactory = new RabbitMqConsumerFactory(_logger);
-            _messagingProvider = new RabbitMqMessagingProvider(_connectionFactory, _consumerFactory, _logger);
+            _messagingProvider = new RabbitMqMessagingProvider(
+                _connectionFactory, 
+                _consumerFactory, 
+                autoCreateTopics: true,
+                _logger);
         }
 
         public async Task InitializeAsync()
@@ -126,29 +131,65 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         public async Task AutoCreateTopic_ShouldCreateTopicOnSubscribe_WhenSettingEnabled()
         {
             // Arrange
-            await VerifyExchangeAndQueueDoNotExist();
+            var topicName = $"test-topic-{Guid.NewGuid()}";
+            var consumerGroup = "test-consumer-group";
+
+            var messagingProvider = new RabbitMqMessagingProvider(
+                _connectionFactory,
+                _consumerFactory,
+                autoCreateTopics: true, // Auto-create enabled
+                _logger);
+
+            var exchangeExistsBefore = await ExchangeExistsAsync(topicName, _cts.Token);
+            exchangeExistsBefore.Should().BeFalse("The exchange should not exist before subscribing.");
 
             // Act
-            await _messagingProvider.SubscribeAsync(_testTopic, _testConsumerGroup, (msg, token) => Task.CompletedTask);
+            await messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
+                await Task.CompletedTask, _cts.Token);
+            
+            var timeout = TimeSpan.FromSeconds(30);
+            var pollingInterval = TimeSpan.FromMilliseconds(500);
+            var startTime = DateTime.UtcNow;
+
+            bool exchangeExists = false;
+            while (DateTime.UtcNow - startTime < timeout)
+            {
+                if (await ExchangeExistsAsync(topicName, _cts.Token))
+                {
+                    exchangeExists = true;
+                    break;
+                }
+                await Task.Delay(pollingInterval, _cts.Token);
+            }
 
             // Assert
-            try
-            {
-                await _channel!.ExchangeDeclarePassiveAsync(_testTopic, CancellationToken.None);
-            }
-            catch (OperationInterruptedException)
-            {
-                Assert.Fail($"Exchange '{_testTopic}' does not exist.");
-            }
+            exchangeExists.Should().BeTrue("RabbitMQ should create the exchange automatically when subscribing.");
+        }
 
-            try
+        [Fact]
+        public async Task AutoCreateTopic_ShouldNotCreateTopicOnSubscribe_WhenSettingDisabled()
+        {
+            // Arrange
+            var topicName = $"test-topic-{Guid.NewGuid()}";
+            var consumerGroup = "test-consumer-group";
+
+            var messagingProvider = new RabbitMqMessagingProvider(
+                _connectionFactory,
+                _consumerFactory,
+                autoCreateTopics: false, // Auto-create disabled
+                _logger);
+            
+            var exchangeExistsBefore = await ExchangeExistsAsync(topicName, _cts.Token);
+            exchangeExistsBefore.Should().BeFalse("The exchange should not exist before subscribing.");
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
-                await _channel!.QueueDeclarePassiveAsync($"{_testConsumerGroup}.{_testTopic}", CancellationToken.None);
-            }
-            catch (OperationInterruptedException)
-            {
-                Assert.Fail($"Queue '{_testConsumerGroup}.{_testTopic}' does not exist.");
-            }
+                await messagingProvider.SubscribeAsync(topicName, consumerGroup, async (msg, token) =>
+                    await Task.CompletedTask, _cts.Token);
+            });
+
+            exception.Message.Should().Contain($"Topic '{topicName}' does not exist.");
         }
         
         [Fact]
@@ -355,6 +396,28 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
             foreach (var count in messageCounts)
             {
                 Assert.InRange(count, minAllowed, maxAllowed);
+            }
+        }
+        
+        private async Task<bool> ExchangeExistsAsync(string exchange, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Use a temporary channel to check exchange existence, since old one might have stale topic data
+                using var tempChannel = await _connection!.CreateChannelAsync(null, cancellationToken);
+                await tempChannel.ExchangeDeclarePassiveAsync(exchange, cancellationToken);
+
+                return true;
+            }
+            catch (OperationInterruptedException ex) when (ex.ShutdownReason?.ReplyCode == 404)
+            {
+                _logger.LogDebug("Exchange '{Exchange}' does not exist yet.", exchange);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while checking if exchange '{Exchange}' exists.");
+                throw;
             }
         }
     }

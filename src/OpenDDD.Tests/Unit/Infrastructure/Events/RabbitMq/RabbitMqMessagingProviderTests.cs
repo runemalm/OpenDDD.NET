@@ -26,6 +26,7 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Events.RabbitMq
             _provider = new RabbitMqMessagingProvider(
                 _mockConnectionFactory.Object,
                 _mockConsumerFactory.Object,
+                autoCreateTopics: true,
                 _mockLogger.Object
             );
         }
@@ -42,7 +43,7 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Events.RabbitMq
             var mockLogger = logger is null ? null! : _mockLogger.Object;
 
             Assert.Throws<ArgumentNullException>(() =>
-                new RabbitMqMessagingProvider(mockConnectionFactory, mockConsumerFactory, mockLogger));
+                new RabbitMqMessagingProvider(mockConnectionFactory, mockConsumerFactory, autoCreateTopics: true, mockLogger));
         }
 
         [Theory]
