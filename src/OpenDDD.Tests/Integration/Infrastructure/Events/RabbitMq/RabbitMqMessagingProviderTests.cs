@@ -193,6 +193,53 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.RabbitMq
         }
         
         [Fact]
+        public async Task AutoCreateTopic_ShouldCreateTopicOnPublish_WhenSettingEnabled()
+        {
+            // Arrange
+            var topicName = $"test-topic-{Guid.NewGuid()}";
+
+            var exchangeExistsBefore = await ExchangeExistsAsync(topicName, _cts.Token);
+            exchangeExistsBefore.Should().BeFalse("The exchange should not exist before publishing.");
+
+            var messagingProvider = new RabbitMqMessagingProvider(
+                _connectionFactory,
+                _consumerFactory,
+                autoCreateTopics: true, // Auto-create enabled
+                _logger);
+
+            // Act
+            await messagingProvider.PublishAsync(topicName, "Test message", _cts.Token);
+
+            // Assert
+            var exchangeExistsAfter = await ExchangeExistsAsync(topicName, _cts.Token);
+            exchangeExistsAfter.Should().BeTrue("RabbitMQ should create the exchange automatically when publishing.");
+        }
+
+        [Fact]
+        public async Task AutoCreateTopic_ShouldNotCreateTopicOnPublish_WhenSettingDisabled()
+        {
+            // Arrange
+            var topicName = $"test-topic-{Guid.NewGuid()}";
+
+            var exchangeExistsBefore = await ExchangeExistsAsync(topicName, _cts.Token);
+            exchangeExistsBefore.Should().BeFalse("The exchange should not exist before publishing.");
+
+            var messagingProvider = new RabbitMqMessagingProvider(
+                _connectionFactory,
+                _consumerFactory,
+                autoCreateTopics: false, // Auto-create disabled
+                _logger);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await messagingProvider.PublishAsync(topicName, "Test message", _cts.Token);
+            });
+
+            exception.Message.Should().Contain($"Topic '{topicName}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
+        }
+        
+        [Fact]
         public async Task AtLeastOnceGurantee_ShouldDeliverToLateSubscriber_WhenSubscribedBefore()
         {
             // Arrange

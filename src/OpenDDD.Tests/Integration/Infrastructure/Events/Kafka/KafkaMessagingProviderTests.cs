@@ -152,6 +152,55 @@ namespace OpenDDD.Tests.Integration.Infrastructure.Events.Kafka
         }
         
         [Fact]
+        public async Task AutoCreateTopic_ShouldCreateTopicOnPublish_WhenSettingEnabled()
+        {
+            // Arrange
+            var topicName = $"test-topic-{Guid.NewGuid()}";
+
+            var metadataBefore = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+            metadataBefore.Topics.Any(t => t.Topic == topicName).Should().BeFalse("The topic should not exist before publishing.");
+
+            var messagingProvider = new KafkaMessagingProvider(
+                _adminClient,
+                _producer,
+                _consumerFactory,
+                autoCreateTopics: true, // Auto-create enabled
+                _logger);
+
+            // Act
+            await messagingProvider.PublishAsync(topicName, "Test message", _cts.Token);
+
+            // Assert
+            var metadataAfter = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+            metadataAfter.Topics.Any(t => t.Topic == topicName).Should().BeTrue("Kafka should create the topic automatically when publishing.");
+        }
+
+        [Fact]
+        public async Task AutoCreateTopic_ShouldNotCreateTopicOnPublish_WhenSettingDisabled()
+        {
+            // Arrange
+            var topicName = $"test-topic-{Guid.NewGuid()}";
+
+            var metadataBefore = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+            metadataBefore.Topics.Any(t => t.Topic == topicName).Should().BeFalse("The topic should not exist before publishing.");
+
+            var messagingProvider = new KafkaMessagingProvider(
+                _adminClient,
+                _producer,
+                _consumerFactory,
+                autoCreateTopics: false, // Auto-create disabled
+                _logger);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await messagingProvider.PublishAsync(topicName, "Test message", _cts.Token);
+            });
+
+            exception.Message.Should().Contain($"Topic '{topicName}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
+        }
+        
+        [Fact]
         public async Task AtLeastOnceGurantee_ShouldDeliverToLateSubscriber_WhenSubscribedBefore()
         {
             // Arrange
