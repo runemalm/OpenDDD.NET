@@ -62,7 +62,13 @@ namespace OpenDDD.API.Options
             return this;
         }
 
-        public OpenDddOptions UseRabbitMq(string hostName, int port, string username, string password, string virtualHost = "/")
+        public OpenDddOptions UseRabbitMq(
+            string hostName, 
+            int port, 
+            string username, 
+            string password, 
+            string virtualHost = "/", 
+            bool autoCreateTopics = true)
         {
             MessagingProvider = "RabbitMq";
             RabbitMq = new OpenDddRabbitMqOptions
@@ -71,12 +77,13 @@ namespace OpenDDD.API.Options
                 Port = port,
                 Username = username,
                 Password = password,
-                VirtualHost = virtualHost
+                VirtualHost = virtualHost,
+                AutoCreateTopics = autoCreateTopics
             };
             return this;
         }
 
-        public OpenDddOptions UseKafka(string bootstrapServers)
+        public OpenDddOptions UseKafka(string bootstrapServers, bool autoCreateTopics = true)
         {
             MessagingProvider = "Kafka";
             Kafka = new OpenDddKafkaOptions { BootstrapServers = bootstrapServers };
@@ -103,8 +110,8 @@ namespace OpenDDD.API.Options
 
         public OpenDddOptions SetEventTopics(string domainEventTemplate, string integrationEventTemplate)
         {
-            Events.DomainEventTopicTemplate = domainEventTemplate;
-            Events.IntegrationEventTopicTemplate = integrationEventTemplate;
+            Events.DomainEventTopic = domainEventTemplate;
+            Events.IntegrationEventTopic = integrationEventTemplate;
             return this;
         }
 

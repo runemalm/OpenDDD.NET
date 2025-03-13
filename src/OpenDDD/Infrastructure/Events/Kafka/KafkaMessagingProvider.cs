@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OpenDDD.API.Options;
-using OpenDDD.Infrastructure.Events.Kafka.Options;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
+using OpenDDD.Infrastructure.Events.Base;
+using OpenDDD.Infrastructure.Events.Kafka.Factories;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 
@@ -11,116 +11,152 @@ namespace OpenDDD.Infrastructure.Events.Kafka
     {
         private readonly IProducer<Null, string> _producer;
         private readonly IAdminClient _adminClient;
-        private readonly OpenDddKafkaOptions _options;
+        private readonly bool _autoCreateTopics;
+        private readonly IKafkaConsumerFactory _consumerFactory;
         private readonly ILogger<KafkaMessagingProvider> _logger;
+        private readonly ConcurrentDictionary<string, KafkaSubscription> _subscriptions = new();
+        private readonly ConcurrentDictionary<string, DateTime> _topicCache = new();
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromSeconds(600);
+        private readonly CancellationTokenSource _cts = new();
+        private bool _disposed;
 
-        public KafkaMessagingProvider(IOptions<OpenDddOptions> options, ILogger<KafkaMessagingProvider> logger)
+        public KafkaMessagingProvider(
+            IAdminClient adminClient,
+            IProducer<Null, string> producer,
+            IKafkaConsumerFactory consumerFactory,
+            bool autoCreateTopics,
+            ILogger<KafkaMessagingProvider> logger)
         {
-            var openDddOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
-            _options = openDddOptions.Kafka ?? throw new InvalidOperationException("Kafka settings are missing in OpenDddOptions.");
-
-            if (string.IsNullOrWhiteSpace(_options.BootstrapServers))
-                throw new InvalidOperationException("Kafka bootstrap servers must be configured.");
-
-            var producerConfig = new ProducerConfig
-            {
-                BootstrapServers = _options.BootstrapServers,
-                ClientId = "OpenDDD"
-            };
-
-            var adminConfig = new AdminClientConfig
-            {
-                BootstrapServers = _options.BootstrapServers,
-                ClientId = "OpenDDD"
-            };
-
-            _producer = new ProducerBuilder<Null, string>(producerConfig).Build();
-            _adminClient = new AdminClientBuilder(adminConfig).Build();
-
+            _adminClient = adminClient ?? throw new ArgumentNullException(nameof(adminClient));
+            _producer = producer ?? throw new ArgumentNullException(nameof(producer));
+            _consumerFactory = consumerFactory ?? throw new ArgumentNullException(nameof(consumerFactory));
+            _autoCreateTopics = autoCreateTopics;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        private async Task EnsureTopicExistsAsync(string topic, CancellationToken cancellationToken)
+        public async Task<ISubscription> SubscribeAsync(
+            string topic,
+            string consumerGroup,
+            Func<string, CancellationToken, Task> messageHandler,
+            CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var metadata = _adminClient.GetMetadata(topic, TimeSpan.FromSeconds(5));
-                if (metadata.Topics.Any(t => t.Topic == topic)) return; // Topic already exists
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
 
-                _logger.LogInformation("Creating Kafka topic: {Topic}", topic);
-                await _adminClient.CreateTopicsAsync(new[]
-                {
-                    new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 }
-                });
-            }
-            catch (Exception ex)
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+                throw new ArgumentException("Consumer group cannot be null or empty.", nameof(consumerGroup));
+
+            if (messageHandler is null)
+                throw new ArgumentNullException(nameof(messageHandler));
+
+            await EnsureTopicExistsAsync(topic, cancellationToken);
+
+            var consumer = _consumerFactory.Create(consumerGroup);
+            consumer.Subscribe(topic);
+            consumer.StartProcessing(messageHandler, _cts.Token);
+
+            var subscription = new KafkaSubscription(topic, consumerGroup, consumer);
+            _subscriptions[subscription.Id] = subscription;
+
+            _logger.LogDebug("Subscribed a new consumer to Kafka topic '{Topic}' with consumer group '{ConsumerGroup}', Subscription ID: {SubscriptionId}", topic, consumerGroup, subscription.Id);
+            return subscription;
+        }
+
+        public async Task UnsubscribeAsync(ISubscription subscription, CancellationToken cancellationToken = default)
+        {
+            if (subscription == null)
+                throw new ArgumentNullException(nameof(subscription));
+
+            if (!_subscriptions.TryRemove(subscription.Id, out var removedSubscription))
             {
-                _logger.LogWarning("Could not check or create Kafka topic {Topic}: {Message}", topic, ex.Message);
+                _logger.LogWarning("No active subscription found with ID {SubscriptionId}", subscription.Id);
+                return;
             }
+
+            _logger.LogDebug("Unsubscribing from Kafka topic '{Topic}' with consumer group '{ConsumerGroup}', Subscription ID: {SubscriptionId}", removedSubscription.Topic, removedSubscription.ConsumerGroup, removedSubscription.Id);
+
+            await removedSubscription.Consumer.StopProcessingAsync();
+            await removedSubscription.DisposeAsync();
         }
 
         public async Task PublishAsync(string topic, string message, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+                throw new ArgumentException("Topic cannot be null or empty.", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+
             await EnsureTopicExistsAsync(topic, cancellationToken);
 
             await _producer.ProduceAsync(topic, new Message<Null, string> { Value = message }, cancellationToken);
-            _logger.LogInformation("Published message to Kafka topic '{Topic}'", topic);
+            _logger.LogDebug("Published message to Kafka topic '{Topic}'", topic);
         }
 
-        public async Task SubscribeAsync(string topic, string consumerGroup, Func<string, CancellationToken, Task> messageHandler, CancellationToken cancellationToken = default)
+        private async Task EnsureTopicExistsAsync(string topic, CancellationToken cancellationToken)
         {
-            await EnsureTopicExistsAsync(topic, cancellationToken);
-
-            var consumerConfig = new ConsumerConfig
+            if (_topicCache.TryGetValue(topic, out var lastChecked) && DateTime.UtcNow - lastChecked < _cacheExpiration)
             {
-                BootstrapServers = _options.BootstrapServers,
-                ClientId = "OpenDDD",
-                GroupId = consumerGroup,
-                EnableAutoCommit = false,
-                AutoOffsetReset = AutoOffsetReset.Earliest
-            };
+                _logger.LogDebug("Skipping topic check for '{Topic}' (cached result).", topic);
+                return;
+            }
 
-            var consumer = new ConsumerBuilder<Ignore, string>(consumerConfig)
-                .SetValueDeserializer(Deserializers.Utf8)
-                .Build();
+            var metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(5));
 
-            consumer.Subscribe(topic);
-
-            _logger.LogInformation("Subscribed to Kafka topic '{Topic}' with consumer group '{ConsumerGroup}'", topic, consumerGroup);
-
-            _ = Task.Run(async () =>
+            if (metadata.Topics.Any(t => t.Topic == topic))
             {
-                try
+                _logger.LogDebug("Topic '{Topic}' already exists.", topic);
+                _topicCache[topic] = DateTime.UtcNow;
+                return;
+            }
+
+            if (_autoCreateTopics)
+            {
+                _logger.LogDebug("Creating Kafka topic: {Topic}", topic);
+                await _adminClient.CreateTopicsAsync(new[]
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    new TopicSpecification { Name = topic, NumPartitions = 2, ReplicationFactor = 1 }
+                }, null);
+
+                _topicCache[topic] = DateTime.UtcNow;
+                
+                // Wait for the topic to be available
+                for (int i = 0; i < 30; i++)
+                {
+                    await Task.Delay(500, cancellationToken);
+                    metadata = _adminClient.GetMetadata(TimeSpan.FromSeconds(1));
+                    if (metadata.Topics.Any(t => t.Topic == topic))
                     {
-                        // Seems like consume don't respect cancellation token.
-                        // See: https://github.com/confluentinc/confluent-kafka-dotnet/issues/1085
-                        var result = consumer.Consume(cancellationToken);
-                        if (result.Message != null)
-                        {
-                            _logger.LogInformation("Received message from Kafka: {Message}", result.Message.Value);
-                            await messageHandler(result.Message.Value, cancellationToken);
-                            consumer.Commit(result);
-                            _logger.LogInformation("Message processed and offset committed: {Offset}", result.Offset);
-                        }
+                        _logger.LogDebug("Kafka topic '{Topic}' is now available.", topic);
+                        return;
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                    // Handle cancellation gracefully
-                }
-                finally
-                {
-                    consumer.Close();
-                }
-            }, cancellationToken);
+                throw new KafkaException(new Error(ErrorCode.UnknownTopicOrPart, $"Failed to create topic '{topic}' within timeout."));
+            }
+
+            throw new InvalidOperationException($"Topic '{topic}' does not exist. Enable 'autoCreateTopics' to create topics automatically.");
         }
 
         public async ValueTask DisposeAsync()
         {
-            _producer?.Dispose();
-            _adminClient?.Dispose();
+            if (_disposed) return;
+            _disposed = true;
+
+            _logger.LogDebug("Disposing KafkaMessagingProvider...");
+
+            _cts.Cancel();
+
+            var disposeTasks = _subscriptions.Values.Select(async sub =>
+            {
+                await sub.Consumer.StopProcessingAsync();
+                await sub.DisposeAsync();
+            }).ToList();
+
+            await Task.WhenAll(disposeTasks);
+
+            _subscriptions.Clear();
+            _producer.Dispose();
+            _adminClient.Dispose();
         }
     }
 }

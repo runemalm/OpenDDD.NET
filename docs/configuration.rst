@@ -30,8 +30,8 @@ An example configuration in `appsettings.json`:
        "DatabaseProvider": "InMemory",
        "MessagingProvider": "InMemory",
        "Events": {
-         "DomainEventTopicTemplate": "Bookstore.Domain.{EventName}",
-         "IntegrationEventTopicTemplate": "Bookstore.Interchange.{EventName}",
+         "DomainEventTopic": "Bookstore.Domain.{EventName}",
+         "IntegrationEventTopic": "Bookstore.Interchange.{EventName}",
          "ListenerGroup": "Default"
        },
        "SQLite": {
@@ -49,10 +49,12 @@ An example configuration in `appsettings.json`:
          "Port": 5672,
          "Username": "guest",
          "Password": "guest",
-         "VirtualHost": "/"
+         "VirtualHost": "/",
+         "AutoCreateTopics": true
        },
        "Kafka": {
-         "BootstrapServers": "localhost:9092"
+         "BootstrapServers": "localhost:9092",
+         "AutoCreateTopics": true
        },
        "AutoRegister": {
          "Actions": true,
@@ -79,7 +81,7 @@ Instead of using `appsettings.json`, OpenDDD.NET can be configured **dynamically
         {  
             options.UseInMemoryDatabase()
                    .UseInMemoryMessaging()
-                   .SetEventTopicTemplates(
+                   .SetEventTopics(
                        "Bookstore.Domain.{EventName}",
                        "Bookstore.Interchange.{EventName}"
                     )
@@ -140,14 +142,18 @@ OpenDDD.NET supports multiple messaging providers:
        port: 5672,
        username: "guest",
        password: "guest",
-       virtualHost: "/"
+       virtualHost: "/",
+       autoCreateTopics: true
    );
 
 **Kafka**:
 
 .. code-block:: csharp
 
-   options.UseKafka("localhost:9092");
+   options.UseKafka(
+       "localhost:9092",
+       autoCreateTopics: true
+   );
 
 **Azure Service Bus**:
 
@@ -168,7 +174,7 @@ Event settings define how domain and integration events are published:
 
 .. code-block:: csharp
 
-   options.SetEventTopicTemplates(
+   options.SetEventTopics(
              "Bookstore.Domain.{EventName}", 
              "Bookstore.Interchange.{EventName}"
           )

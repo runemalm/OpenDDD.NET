@@ -184,12 +184,10 @@ Repositories are **auto-registered** with `IRepository<TAggregateRoot, TId>`. If
 **Example: Default Auto-Registered Repositories**
 
 - `IRepository<Guid, Customer>` → `PostgresOpenDddRepository<Guid, Customer>`
-- `IRepository<Guid, Customer>` → `EfCoreRepository<Guid, Customer>`
 
 **Example: Custom Auto-Registered Repositories**
 
 - `ICustomerRepository` → `PostgresOpenDddCustomerRepository`
-- `ICustomerRepository` → `EfCoreCustomerRepository`
 
 **NOTE:** If you have more than one implementation of a repository the framework won't know which of them to auto-register. In this case you need to delete one of the implementations or disable auto-registration and register the implementation you want manually.
 

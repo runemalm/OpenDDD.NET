@@ -5,7 +5,7 @@
 OpenDDD.NET
 ===========
 
-OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and .NET. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
+OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and ASP.NET Core. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
 
 Purpose
 -------

@@ -1,0 +1,207 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  unit-tests:
+    name: Unit Tests (.NET ${{ matrix.dotnet-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [8.0.x]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Restore Dependencies
+        working-directory: src/OpenDDD.Tests
+        run: dotnet restore
+
+      - name: Build Project
+        working-directory: src/OpenDDD.Tests
+        run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=false
+
+      - name: Run Unit Tests
+        working-directory: src/OpenDDD.Tests
+        run: dotnet test --no-build --configuration Release --filter "Category=Unit" --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults
+
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: UnitTestResults
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
+
+      - name: Publish Unit Test Report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Tests Report
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
+          reporter: dotnet-trx
+
+  integration-tests:
+    name: Integration Tests (.NET ${{ matrix.dotnet-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [8.0.x]
+
+    services:
+      zookeeper:
+        image: confluentinc/cp-zookeeper:latest
+        env:
+          ZOOKEEPER_CLIENT_PORT: 2181
+        ports:
+          - 2181:2181
+
+      kafka:
+        image: confluentinc/cp-kafka:latest
+        env:
+          KAFKA_BROKER_ID: 1
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        ports:
+          - 9092:9092
+        options: --network-alias kafka
+
+      rabbitmq:
+        image: rabbitmq:3-management
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: --health-cmd "rabbitmq-diagnostics check_port_connectivity" --health-interval 10s --health-timeout 5s --health-retries 5
+
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: --health-cmd "pg_isready -U testuser" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Restore Dependencies
+        working-directory: src/OpenDDD.Tests
+        run: dotnet restore
+
+      - name: Build Project
+        working-directory: src/OpenDDD.Tests
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Azure Service Bus namespace for Testing
+        run: |
+          NAMESPACE_NAME="test-servicebus-${{ github.run_id }}-${{ github.run_attempt }}"
+          echo "NAMESPACE_NAME=${NAMESPACE_NAME}" >> $GITHUB_ENV
+          az servicebus namespace create \
+            --resource-group opendddnet \
+            --name $NAMESPACE_NAME \
+            --location northeurope
+          CONNECTION_STRING=$(az servicebus namespace authorization-rule keys list \
+            --resource-group opendddnet \
+            --namespace-name $NAMESPACE_NAME \
+            --name RootManageSharedAccessKey \
+            --query primaryConnectionString \
+            -o tsv)
+          echo "AZURE_SERVICE_BUS_CONNECTION_STRING=${CONNECTION_STRING}" >> $GITHUB_ENV
+
+      - name: Wait for RabbitMQ to be Ready
+        run: |
+          for i in {1..10}; do
+            if curl -s -f http://localhost:15672 || nc -z localhost 5672; then
+              echo "RabbitMQ is up!"
+              exit 0
+            fi
+            echo "Waiting for RabbitMQ..."
+            sleep 5
+          done
+          echo "RabbitMQ did not start in time!" && exit 1
+
+      - name: Wait for Kafka to be Ready
+        run: |
+          for i in {1..10}; do
+            if nc -z localhost 9092; then
+              echo "Kafka is up!"
+              exit 0
+            fi
+            echo "Waiting for Kafka..."
+            sleep 5
+          done
+          echo "Kafka did not start in time!" && exit 1
+
+      - name: Wait for PostgreSQL to be Ready
+        run: |
+          for i in {1..10}; do
+            if PGPASSWORD=testpassword psql -h localhost -U testuser -d testdb -c "SELECT 1" &> /dev/null; then
+              echo "PostgreSQL is up!"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+          echo "PostgreSQL did not start in time!" && exit 1
+
+      - name: Run Integration Tests
+        working-directory: src/OpenDDD.Tests
+        env:
+          KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+          RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
+          AZURE_SERVICE_BUS_CONNECTION_STRING: ${{ env.AZURE_SERVICE_BUS_CONNECTION_STRING }}
+          POSTGRES_TEST_CONNECTION_STRING: "Host=localhost;Port=5432;Database=testdb;Username=testuser;Password=testpassword"
+        run: dotnet test --no-build --configuration Release --filter "Category=Integration" --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults
+
+      - name: Delete Azure Service Bus namespace After Tests
+        if: always()
+        run: |
+          if [[ -n "${NAMESPACE_NAME}" ]]; then
+            echo "Deleting namespace: $NAMESPACE_NAME"
+            az servicebus namespace delete --resource-group opendddnet --name $NAMESPACE_NAME
+          else
+            echo "No namespace found, skipping deletion."
+          fi
+
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IntegrationTestResults
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
+
+      - name: Publish Integration Test Report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Integration Tests Report
+          path: src/OpenDDD.Tests/TestResults/TestResults.trx
+          reporter: dotnet-trx

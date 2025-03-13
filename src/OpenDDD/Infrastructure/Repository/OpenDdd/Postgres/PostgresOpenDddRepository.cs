@@ -4,8 +4,8 @@ using OpenDDD.Infrastructure.Persistence.Serializers;
 using OpenDDD.Infrastructure.Repository.OpenDdd.Base;
 using OpenDDD.API.Extensions;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres;
-using Npgsql;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions;
+using Npgsql;
 
 namespace OpenDDD.Infrastructure.Repository.OpenDdd.Postgres
 {
@@ -22,7 +22,7 @@ namespace OpenDDD.Infrastructure.Repository.OpenDdd.Postgres
             Session = session ?? throw new ArgumentNullException(nameof(session));
             _tableName = typeof(TAggregateRoot).Name.ToLower().Pluralize();
         }
-        
+
         public override async Task<TAggregateRoot> GetAsync(TId id, CancellationToken ct)
         {
             var entity = await FindAsync(id, ct);

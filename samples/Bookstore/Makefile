@@ -152,8 +152,22 @@ apply-migrations: ##@Migrations	 Apply all pending migrations to the database
 		--project $(SRC)/Bookstore
 
 ##########################################################################
-# AZURE
+# AZURE SERVICE BUS
 ##########################################################################
+
+.PHONY: azure-create-resource-group
+azure-create-resource-group: ##@Azure	 Create the Azure Resource Group
+	az group create --name $(AZURE_RESOURCE_GROUP) --location $(AZURE_REGION)
+
+.PHONY: azure-create-service-principal
+azure-create-service-principal: ##@Azure	 Create an Azure Service Principal for GitHub Actions
+	@echo "Creating Azure Service Principal..."
+	az ad sp create-for-rbac \
+		--name "github-actions-opendddnet" \
+		--role "Contributor" \
+		--scopes /subscriptions/$(AZURE_SUBSCRIPTION_ID)/resourceGroups/$(AZURE_RESOURCE_GROUP) \
+		--sdk-auth
+	@echo "✅ Copy the output above and add it as 'AZURE_CREDENTIALS' in GitHub Secrets."
 
 .PHONY: azure-create-servicebus-namespace
 azure-create-servicebus-namespace: ##@Azure	 Create the Azure Service Bus namespace
@@ -168,13 +182,23 @@ azure-get-servicebus-connection: ##@Azure	 Get the Service Bus connection string
 	    --query primaryConnectionString \
 	    --output tsv
 
+.PHONY: azure-delete-servicebus-namespace
+azure-delete-servicebus-namespace: ##@Azure	 Delete the Azure Service Bus namespace
+	az servicebus namespace delete --resource-group $(AZURE_RESOURCE_GROUP) --name $(AZURE_SERVICEBUS_NAMESPACE)
+
+##########################################################################
+# AZURE SQL SERVER
+##########################################################################
+
+
+
 ##########################################################################
 # RABBITMQ
 ##########################################################################
 
 .PHONY: rabbitmq-start
 rabbitmq-start: ##@@RabbitMQ	 Start a RabbitMQ container
-	docker run -d --name rabbitmq --hostname rabbitmq \
+	docker run --rm -d --name rabbitmq --hostname rabbitmq \
 		-e RABBITMQ_DEFAULT_USER=$(RABBITMQ_DEFAULT_USER) \
 		-e RABBITMQ_DEFAULT_PASS=$(RABBITMQ_DEFAULT_PASS) \
 		-p 5672:$(RABBITMQ_PORT) -p 15672:15672 rabbitmq:management
@@ -192,11 +216,6 @@ rabbitmq-status: ##@RabbitMQ	 Check RabbitMQ container status
 .PHONY: rabbitmq-get-connection
 rabbitmq-get-connection: ##@RabbitMQ	 Get the RabbitMQ connection string
 	@echo "amqp://$(RABBITMQ_DEFAULT_USER):$(RABBITMQ_DEFAULT_PASS)@localhost:$(RABBITMQ_PORT)/"
-
-.PHONY: rabbitmq-clean
-rabbitmq-clean: ##@RabbitMQ	 Remove RabbitMQ container and its volumes
-	docker rm -f rabbitmq || true
-	@echo "RabbitMQ container removed."
 
 .PHONY: rabbitmq-logs
 rabbitmq-logs: ##@RabbitMQ	 Show RabbitMQ logs
@@ -241,7 +260,7 @@ endif
 
 .PHONY: kafka-list-brokers
 kafka-list-brokers: ##@Kafka	 List Kafka broker configurations
-	docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type brokers
+	@docker exec -it $(KAFKA_CONTAINER) /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type brokers
 
 .PHONY: kafka-list-topics
 kafka-list-topics: ##@Kafka	 List all Kafka topics
@@ -249,11 +268,11 @@ kafka-list-topics: ##@Kafka	 List all Kafka topics
 
 .PHONY: kafka-broker-status
 kafka-broker-status: ##@Kafka	 Show Kafka broker status
-	docker exec -it bookstore-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+	@docker exec -it bookstore-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
 
 .PHONY: kafka-list-consumers
 kafka-list-consumers: ##@Kafka	 List active Kafka consumer groups
-	docker exec -it bookstore-kafka /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+	@docker exec -it bookstore-kafka /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
 
 .PHONY: kafka-consume
 kafka-consume: ##@Kafka	 Consume messages from a Kafka topic (uses NAME)
@@ -270,7 +289,7 @@ endif
 	@docker exec -it $(KAFKA_CONTAINER) kafka-console-producer.sh --broker-list $(KAFKA_BROKER) --topic $(NAME)
 
 ##########################################################################
-# POSTGRESQL
+# POSTGRES
 ##########################################################################
 
 .PHONY: postgres-start

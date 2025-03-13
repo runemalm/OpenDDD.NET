@@ -43,5 +43,12 @@ namespace OpenDDD.Infrastructure.Persistence.Storage.InMemory
             _logger.LogDebug("Removed value with key '{Key}'", key);
             return Task.CompletedTask;
         }
+        
+        public Task ClearAsync(CancellationToken ct = default)
+        {
+            _storage.Clear();
+            _logger.LogDebug("Cleared all in-memory storage.");
+            return Task.CompletedTask;
+        }
     }
 }

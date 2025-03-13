@@ -46,7 +46,7 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
 
         public void ApplyConfigurations(ModelBuilder modelBuilder)
         {
-            var configurationTypes = TypeScanner.GetRelevantTypes()
+            var configurationTypes = TypeScanner.GetRelevantTypes(excludeTestNamespaces: false)
                 .Where(t => t.IsClass && !t.IsAbstract &&
                        t.BaseType != null &&
                        (t.BaseType.IsGenericType &&

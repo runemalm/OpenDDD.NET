@@ -7,7 +7,7 @@ namespace OpenDDD.Infrastructure.Utils
         private static readonly object _assemblyCacheLock = new();
         private static IEnumerable<Assembly>? _cachedAssemblies;
 
-        public static IEnumerable<Assembly> GetRelevantAssemblies(bool includeDynamic = false)
+        public static IEnumerable<Assembly> GetRelevantAssemblies(bool includeDynamic = false, bool excludeTestNamespaces = true)
         {
             if (_cachedAssemblies == null)
             {
@@ -20,7 +20,7 @@ namespace OpenDDD.Infrastructure.Utils
                             .Where(a =>
                                 !a.FullName.StartsWith("System", StringComparison.OrdinalIgnoreCase) &&
                                 !a.FullName.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase) &&
-                                !a.FullName.Contains("Tests", StringComparison.OrdinalIgnoreCase)) // Exclude test assemblies
+                                (excludeTestNamespaces ? !a.FullName.Contains("Tests", StringComparison.OrdinalIgnoreCase) : true))
                             .ToList();
                     }
                 }
@@ -34,7 +34,7 @@ namespace OpenDDD.Infrastructure.Utils
             bool onlyConcreteClasses = false,
             bool excludeTestNamespaces = true)
         {
-            var types = GetRelevantAssemblies(includeDynamic)
+            var types = GetRelevantAssemblies(includeDynamic, excludeTestNamespaces)
                 .SelectMany(assembly => assembly.GetTypes());
 
             if (excludeTestNamespaces)

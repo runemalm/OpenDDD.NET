@@ -1,10 +1,15 @@
 ﻿using System.Reflection;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Confluent.Kafka;
+using RabbitMQ.Client;
 using OpenDDD.API.Attributes;
 using OpenDDD.API.HostedServices;
 using OpenDDD.API.Options;
@@ -18,7 +23,9 @@ using OpenDDD.Infrastructure.Events.Azure;
 using OpenDDD.Infrastructure.Events.Base;
 using OpenDDD.Infrastructure.Events.InMemory;
 using OpenDDD.Infrastructure.Events.Kafka;
+using OpenDDD.Infrastructure.Events.Kafka.Factories;
 using OpenDDD.Infrastructure.Events.RabbitMq;
+using OpenDDD.Infrastructure.Events.RabbitMq.Factories;
 using OpenDDD.Infrastructure.Persistence.DatabaseSession;
 using OpenDDD.Infrastructure.Persistence.EfCore.Base;
 using OpenDDD.Infrastructure.Persistence.EfCore.DatabaseSession;
@@ -256,17 +263,94 @@ namespace OpenDDD.API.Extensions
 
         private static void AddAzureServiceBus(this IServiceCollection services)
         {
-            services.AddSingleton<IMessagingProvider, AzureServiceBusMessagingProvider>();
+            services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var azureOptions = options.AzureServiceBus ?? throw new InvalidOperationException("Azure Service Bus options are missing.");
+
+                if (string.IsNullOrWhiteSpace(azureOptions.ConnectionString))
+                {
+                    throw new InvalidOperationException("Azure Service Bus connection string is missing.");
+                }
+
+                return new ServiceBusClient(azureOptions.ConnectionString);
+            });
+
+            services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var azureOptions = options.AzureServiceBus ?? throw new InvalidOperationException("Azure Service Bus options are missing.");
+
+                return new ServiceBusAdministrationClient(azureOptions.ConnectionString);
+            });
+
+            services.AddSingleton<IMessagingProvider>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var azureOptions = options.AzureServiceBus ?? throw new InvalidOperationException("Azure Service Bus options are missing.");
+
+                return new AzureServiceBusMessagingProvider(
+                    provider.GetRequiredService<ServiceBusClient>(),
+                    provider.GetRequiredService<ServiceBusAdministrationClient>(),
+                    azureOptions.AutoCreateTopics,
+                    provider.GetRequiredService<ILogger<AzureServiceBusMessagingProvider>>()
+                );
+            });
         }
         
         private static void AddRabbitMq(this IServiceCollection services)
         {
-            services.AddSingleton<IMessagingProvider, RabbitMqMessagingProvider>();
+            services.AddSingleton<IMessagingProvider>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var rabbitMqOptions = options.RabbitMq ?? throw new InvalidOperationException("RabbitMQ options are missing.");
+
+                if (string.IsNullOrWhiteSpace(rabbitMqOptions.HostName))
+                {
+                    throw new InvalidOperationException("RabbitMQ host is missing.");
+                }
+
+                var connectionFactory = new ConnectionFactory
+                {
+                    HostName = rabbitMqOptions.HostName,
+                    Port = rabbitMqOptions.Port,
+                    UserName = rabbitMqOptions.Username,
+                    Password = rabbitMqOptions.Password,
+                    VirtualHost = rabbitMqOptions.VirtualHost
+                };
+
+                var logger = provider.GetRequiredService<ILogger<RabbitMqMessagingProvider>>();
+                
+                var consumerFactory = new RabbitMqConsumerFactory(logger);
+
+                return new RabbitMqMessagingProvider(
+                    connectionFactory, 
+                    consumerFactory,
+                    rabbitMqOptions.AutoCreateTopics,
+                    logger);
+            });
         }
         
         private static void AddKafka(this IServiceCollection services)
         {
-            services.AddSingleton<IMessagingProvider, KafkaMessagingProvider>();
+            services.AddSingleton<IMessagingProvider>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<OpenDddOptions>>().Value;
+                var kafkaOptions = options.Kafka ?? throw new InvalidOperationException("Kafka options are missing.");
+            
+                if (string.IsNullOrWhiteSpace(kafkaOptions.BootstrapServers))
+                    throw new InvalidOperationException("Kafka bootstrap servers must be configured.");
+
+                var logger = provider.GetRequiredService<ILogger<KafkaMessagingProvider>>();
+                var consumerLogger = provider.GetRequiredService<ILogger<KafkaConsumer>>();
+                return new KafkaMessagingProvider(
+                    new AdminClientBuilder(new AdminClientConfig { BootstrapServers = kafkaOptions.BootstrapServers, ClientId = "OpenDDD" }).Build(),
+                    new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = kafkaOptions.BootstrapServers, ClientId = "OpenDDD" }).Build(),
+                    new KafkaConsumerFactory(kafkaOptions.BootstrapServers, consumerLogger),
+                    kafkaOptions.AutoCreateTopics,
+                    logger
+                );
+            });
         }
         
         private static void AddInMemoryMessaging(this IServiceCollection services)
