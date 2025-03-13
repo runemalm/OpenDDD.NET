@@ -152,12 +152,22 @@ apply-migrations: ##@Migrations	 Apply all pending migrations to the database
 		--project $(SRC)/Bookstore
 
 ##########################################################################
-# AZURE
+# AZURE SERVICE BUS
 ##########################################################################
 
 .PHONY: azure-create-resource-group
-azure-create-resource-group: ##@Azure  Create the Azure Resource Group
+azure-create-resource-group: ##@Azure	 Create the Azure Resource Group
 	az group create --name $(AZURE_RESOURCE_GROUP) --location $(AZURE_REGION)
+
+.PHONY: azure-create-service-principal
+azure-create-service-principal: ##@Azure	 Create an Azure Service Principal for GitHub Actions
+	@echo "Creating Azure Service Principal..."
+	az ad sp create-for-rbac \
+		--name "github-actions-opendddnet" \
+		--role "Contributor" \
+		--scopes /subscriptions/$(AZURE_SUBSCRIPTION_ID)/resourceGroups/$(AZURE_RESOURCE_GROUP) \
+		--sdk-auth
+	@echo "✅ Copy the output above and add it as 'AZURE_CREDENTIALS' in GitHub Secrets."
 
 .PHONY: azure-create-servicebus-namespace
 azure-create-servicebus-namespace: ##@Azure	 Create the Azure Service Bus namespace
@@ -171,6 +181,16 @@ azure-get-servicebus-connection: ##@Azure	 Get the Service Bus connection string
 	    --name RootManageSharedAccessKey \
 	    --query primaryConnectionString \
 	    --output tsv
+
+.PHONY: azure-delete-servicebus-namespace
+azure-delete-servicebus-namespace: ##@Azure	 Delete the Azure Service Bus namespace
+	az servicebus namespace delete --resource-group $(AZURE_RESOURCE_GROUP) --name $(AZURE_SERVICEBUS_NAMESPACE)
+
+##########################################################################
+# AZURE SQL SERVER
+##########################################################################
+
+
 
 ##########################################################################
 # RABBITMQ
@@ -269,7 +289,7 @@ endif
 	@docker exec -it $(KAFKA_CONTAINER) kafka-console-producer.sh --broker-list $(KAFKA_BROKER) --topic $(NAME)
 
 ##########################################################################
-# POSTGRESQL
+# POSTGRES
 ##########################################################################
 
 .PHONY: postgres-start

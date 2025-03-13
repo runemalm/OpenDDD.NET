@@ -91,6 +91,11 @@ Explore the project in the repository: [Bookstore Sample Project](https://github
 
 ## Release History
 
+**3.0.0-beta.2 (2025-03-13)**
+
+- **Integration Test Coverage**: Added full integration tests for repositories and messaging providers.
+- **Reliability Improvements**: Fixed issues discovered through test coverage.
+
 **3.0.0-beta.1 (2025-02-17)**
 
 - **Beta Release**: OpenDDD.NET has moved from alpha to `beta`, indicating improved stability.
