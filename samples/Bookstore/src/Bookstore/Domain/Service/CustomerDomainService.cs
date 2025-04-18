@@ -25,8 +25,6 @@ namespace Bookstore.Domain.Service
 
             var newCustomer = Customer.Create(name, email);
 
-            await _customerRepository.SaveAsync(newCustomer, ct);
-
             var domainEvent = new CustomerRegistered(newCustomer.Id, newCustomer.Name, newCustomer.Email, DateTime.UtcNow);
             await _domainPublisher.PublishAsync(domainEvent, ct);
 
