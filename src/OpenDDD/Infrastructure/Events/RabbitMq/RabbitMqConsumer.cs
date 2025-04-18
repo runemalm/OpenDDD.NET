@@ -28,7 +28,8 @@ namespace OpenDDD.Infrastructure.Events.RabbitMq
         public async Task StartConsumingAsync(string queueName, CancellationToken cancellationToken)
         {
             _consumerTag = await _channel.BasicConsumeAsync(queueName, autoAck: false, this, cancellationToken);
-            _logger.LogInformation("Started consuming messages from queue '{QueueName}' with consumer tag '{ConsumerTag}'", queueName, _consumerTag);
+            _logger.LogInformation("Started consuming messages from queue '{QueueName}' with " +
+                                   "consumer tag '{ConsumerTag}'", queueName, _consumerTag);
         }
 
         public async Task StopConsumingAsync(CancellationToken cancellationToken)
