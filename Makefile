@@ -33,6 +33,32 @@ FEED_DIR := $(HOME)/Projects/LocalFeed
 USER_NUGET_CONFIG_DIR=$(HOME)/.config/NuGet/NuGet.Config
 SPHINXDOC_IMG := openddd.net/sphinxdoc
 
+POSTGRES_CONTAINER := opendddnet-testspostgres
+POSTGRES_PORT := 5432
+POSTGRES_DB := testdb
+
+ZOOKEEPER_CONTAINER := opendddnet-zookeeper
+
+KAFKA_NETWORK := $(NETWORK)
+KAFKA_CONTAINER := opendddnet-kafka
+KAFKA_BROKER := localhost:9092
+KAFKA_ZOOKEEPER := localhost:2181
+
+RABBITMQ_PORT := 5672
+
+ACT_IMAGE := ghcr.io/catthehacker/ubuntu:act-latest
+
+TEMPLATES_DIR := $(PWD)/templates
+TEMPLATES_CSPROJ := $(TEMPLATES_DIR)/templatepack.csproj
+TEMPLATES_OUT := $(TEMPLATES_DIR)/bin/templates
+TEMPLATES_NAME := OpenDDD.NET-Templates
+TEMPLATES_VERSION := 3.0.0-beta.2
+TEMPLATES_NUPKG := $(TEMPLATES_OUT)/$(TEMPLATES_NAME).$(TEMPLATES_VERSION).nupkg
+
+DOCSAUTOBUILD_HOST_NAME := docsautobuild-openddd.net
+DOCSAUTOBUILD_CONTAINER_NAME := docsautobuild-openddd.net
+DOCSAUTOBUILD_PORT := 10001
+
 NETWORK := opendddnet
 
 BLUE      := $(shell tput -Txterm setaf 4)
@@ -170,10 +196,6 @@ push: ##@Build	 Push the nuget to the global feed
 # DOCS
 ##########################################################################
 
-DOCSAUTOBUILD_HOST_NAME := docsautobuild-openddd.net
-DOCSAUTOBUILD_CONTAINER_NAME := docsautobuild-openddd.net
-DOCSAUTOBUILD_PORT := 10001
-
 .PHONY: sphinx-buildimage
 sphinx-buildimage: ##@Docs	 Build the custom sphinxdoc image
 	docker build -t $(SPHINXDOC_IMG) $(DOCS_DIR)
@@ -211,13 +233,6 @@ sphinx-opendocs: ##@Docs	 Open the docs in browser
 # TEMPLATES
 ##########################################################################
 
-TEMPLATES_DIR := $(PWD)/templates
-TEMPLATES_CSPROJ := $(TEMPLATES_DIR)/templatepack.csproj
-TEMPLATES_OUT := $(TEMPLATES_DIR)/bin/templates
-TEMPLATES_NAME := OpenDDD.NET-Templates
-TEMPLATES_VERSION := 3.0.0-beta.2
-TEMPLATES_NUPKG := $(TEMPLATES_OUT)/$(TEMPLATES_NAME).$(TEMPLATES_VERSION).nupkg
-
 .PHONY: templates-install
 templates-install: ##@Template	 Install the OpenDDD.NET project template locally
 	dotnet new install $(TEMPLATES_NUPKG)
@@ -240,8 +255,6 @@ templates-rebuild: templates-uninstall templates-pack templates-install ##@Templ
 ##########################################################################
 # ACT
 ##########################################################################
-
-ACT_IMAGE := ghcr.io/catthehacker/ubuntu:act-latest
 
 .PHONY: act-install
 act-install: ##@Act	 Install act CLI
@@ -344,8 +357,6 @@ azure-list-servicebus-authorization-rules: ##@Azure	 List all authorization rule
 # RABBITMQ
 ##########################################################################
 
-RABBITMQ_PORT := 5672
-
 .PHONY: rabbitmq-start
 rabbitmq-start: ##@@RabbitMQ	 Start a RabbitMQ container
 	docker run --rm -d --name rabbitmq --hostname rabbitmq \
@@ -374,13 +385,6 @@ rabbitmq-logs: ##@RabbitMQ	 Show RabbitMQ logs
 ##########################################################################
 # KAFKA
 ##########################################################################
-
-ZOOKEEPER_CONTAINER := opendddnet-zookeeper
-
-KAFKA_NETWORK := $(NETWORK)
-KAFKA_CONTAINER := opendddnet-kafka
-KAFKA_BROKER := localhost:9092
-KAFKA_ZOOKEEPER := localhost:2181
 
 .PHONY: kafka-start
 kafka-start: ##@Kafka	 Start Kafka and Zookeeper using Docker
@@ -466,10 +470,6 @@ endif
 ##########################################################################
 # POSTGRES
 ##########################################################################
-
-POSTGRES_CONTAINER := opendddnet-testspostgres
-POSTGRES_PORT := 5432
-POSTGRES_DB := testdb
 
 .PHONY: postgres-start
 postgres-start: ##@Postgres	 Start a PostgreSQL container
