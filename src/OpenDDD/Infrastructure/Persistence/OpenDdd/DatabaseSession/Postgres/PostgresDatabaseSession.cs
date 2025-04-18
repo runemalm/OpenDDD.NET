@@ -4,7 +4,7 @@ using Npgsql;
 
 namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres
 {
-    public class PostgresDatabaseSession : IDatabaseSession
+    public class PostgresDatabaseSession : IDatabaseSession, IDisposable, IAsyncDisposable
     {
         public NpgsqlConnection Connection { get; }
         public NpgsqlTransaction? Transaction { get; private set; }
@@ -43,6 +43,32 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres
                 await Transaction.RollbackAsync(ct);
                 await Transaction.DisposeAsync();
                 Transaction = null;
+            }
+        }
+        
+        public async ValueTask DisposeAsync()
+        {
+            if (Transaction != null)
+            {
+                await Transaction.DisposeAsync();
+                Transaction = null;
+            }
+            if (Connection != null)
+            {
+                await Connection.DisposeAsync();
+            }
+        }
+        
+        public void Dispose()
+        {
+            if (Transaction != null)
+            {
+                Transaction.Dispose();
+                Transaction = null;
+            }
+            if (Connection != null)
+            {
+                Connection.Dispose();
             }
         }
     }

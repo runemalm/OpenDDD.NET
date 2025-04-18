@@ -41,6 +41,7 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.UoW.Postgres
         protected override void DisposeInternal()
         {
             _session.RollbackTransactionAsync().GetAwaiter().GetResult();
+            _session.Dispose();
         }
     }
 }
