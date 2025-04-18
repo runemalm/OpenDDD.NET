@@ -16,7 +16,7 @@ namespace OpenDDD.Infrastructure.Events.Base
         private readonly OpenDddOptions _options;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly StartupHostedService _startupService;
-        private readonly ILogger<EventListenerBase<TEvent, TAction>> _logger;
+        protected readonly ILogger<EventListenerBase<TEvent, TAction>> Logger;
 
         protected EventListenerBase(
             IMessagingProvider messagingProvider,
@@ -29,19 +29,19 @@ namespace OpenDDD.Infrastructure.Events.Base
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _startupService = startupService ?? throw new ArgumentNullException(nameof(startupService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task StartAsync(CancellationToken ct)
         {
-            var topic = EventTopicHelper.DetermineTopic(typeof(TEvent), _options.Events, _logger);
+            var topic = EventTopicHelper.DetermineTopic(typeof(TEvent), _options.Events, Logger);
             var consumerGroup = _options.Events.ListenerGroup;
             
-            _logger.LogInformation("Waiting for startup service to finish before subscribing to events...");
+            Logger.LogInformation("Waiting for startup service to finish before subscribing to events...");
             await _startupService.StartupCompleted;
-            _logger.LogInformation("Startup service finished. Subscribing to events...");
+            Logger.LogInformation("Startup service finished. Subscribing to events...");
 
-            _logger.LogInformation("Subscribing to topic '{Topic}' in consumer group '{ConsumerGroup}'.", topic, consumerGroup);
+            Logger.LogInformation("Subscribing to topic '{Topic}' in consumer group '{ConsumerGroup}'.", topic, consumerGroup);
 
             await _messagingProvider.SubscribeAsync(topic, consumerGroup, async (message, token) =>
             {
@@ -52,21 +52,21 @@ namespace OpenDDD.Infrastructure.Events.Base
                 try
                 {
                     var @event = EventSerializer.Deserialize<TEvent>(message);
-                    _logger.LogInformation("Received event '{EventType}' from topic '{Topic}'.", typeof(TEvent).Name, topic);
+                    Logger.LogInformation("Received event '{EventType}' from topic '{Topic}'.", typeof(TEvent).Name, topic);
 
                     await unitOfWork.StartAsync(token);
 
-                    _logger.LogInformation("Executing action '{ActionType}' for event '{EventType}'.", typeof(TAction).Name, typeof(TEvent).Name);
+                    Logger.LogInformation("Executing action '{ActionType}' for event '{EventType}'.", typeof(TAction).Name, typeof(TEvent).Name);
                     
                     await HandleAsync(@event, action, token);
 
                     await unitOfWork.CommitAsync(token);
 
-                    _logger.LogInformation("Successfully processed event '{EventType}'.", typeof(TEvent).Name);
+                    Logger.LogInformation("Successfully processed event '{EventType}'.", typeof(TEvent).Name);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing event '{EventType}', rolling back transaction.", typeof(TEvent).Name);
+                    Logger.LogError(ex, "Error processing event '{EventType}', rolling back transaction.", typeof(TEvent).Name);
                     await unitOfWork.RollbackAsync(token);
                 }
             }, ct);
