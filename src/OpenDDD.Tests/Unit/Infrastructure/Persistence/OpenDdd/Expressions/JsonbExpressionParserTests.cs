@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Linq.Expressions;
+using Xunit;
 using FluentAssertions;
 using OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions;
 using OpenDDD.Tests.Base;
@@ -102,7 +104,7 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Persistence.OpenDdd.Expressions
             Expression<Func<Customer, bool>> expression = c => c.MiddleName != null;
             var result = JsonbExpressionParser.Parse(expression);
             
-            result.Should().Be("data ? 'middlename'");
+            result.Should().Be("data ? 'middleName'");
         }
 
         [Fact]
@@ -111,7 +113,7 @@ namespace OpenDDD.Tests.Unit.Infrastructure.Persistence.OpenDdd.Expressions
             Expression<Func<Customer, bool>> expression = c => c.IsActive;
             var result = JsonbExpressionParser.Parse(expression);
             
-            result.Should().Be("(data->>'isactive')::boolean = TRUE");
+            result.Should().Be("(data->>'isActive')::boolean = TRUE");
         }
 
         [Fact]

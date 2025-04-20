@@ -180,7 +180,7 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.Expressions
 
             while (current is MemberExpression member)
             {
-                properties.Insert(0, member.Member.Name.ToLower()); // Insert at start to preserve order
+                properties.Insert(0, char.ToLowerInvariant(member.Member.Name[0]) + member.Member.Name[1..]);
                 current = member.Expression;
             }
 
