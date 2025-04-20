@@ -8,6 +8,8 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres
     {
         public NpgsqlConnection Connection { get; }
         public NpgsqlTransaction? Transaction { get; private set; }
+        
+        private bool _disposed = false;
 
         public PostgresDatabaseSession(NpgsqlConnection connection)
         {
@@ -48,6 +50,9 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres
         
         public async ValueTask DisposeAsync()
         {
+            if (_disposed) return;
+            _disposed = true;
+
             if (Transaction != null)
             {
                 await Transaction.DisposeAsync();
@@ -61,6 +66,9 @@ namespace OpenDDD.Infrastructure.Persistence.OpenDdd.DatabaseSession.Postgres
         
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
+            
             if (Transaction != null)
             {
                 Transaction.Dispose();
