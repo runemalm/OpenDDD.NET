@@ -37,32 +37,36 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
             _logger.LogInformation("Waiting for database setup to complete before starting outbox processing...");
             await _startupService.StartupCompleted;
             _logger.LogInformation("Database setup completed. Starting outbox processing...");
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
-            var messagingProvider = scope.ServiceProvider.GetRequiredService<IMessagingProvider>();
-
-            var databaseSession = scope.ServiceProvider.GetService<IDatabaseSession>();
-            if (databaseSession == null)
-            {
-                _logger.LogError("No valid database session found for persistence provider: {PersistenceProvider}", _options.PersistenceProvider);
-                return;
-            }
-
-            await databaseSession.OpenConnectionAsync(stoppingToken);
-
+            
             while (!stoppingToken.IsCancellationRequested)
             {
+                using var scope = _serviceScopeFactory.CreateScope();
+
                 try
                 {
+                    var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
+                    var messagingProvider = scope.ServiceProvider.GetRequiredService<IMessagingProvider>();
+                    var databaseSession = scope.ServiceProvider.GetService<IDatabaseSession>();
+
+                    if (databaseSession == null)
+                    {
+                        _logger.LogError("No valid database session found for persistence provider: {PersistenceProvider}", _options.PersistenceProvider);
+                        return;
+                    }
+
+                    await databaseSession.OpenConnectionAsync(stoppingToken);
+
                     var pendingEvents = await outboxRepository.GetPendingEventsAsync(stoppingToken);
 
                     foreach (var outboxEntry in pendingEvents)
                     {
                         try
                         {
-                            var topic = EventTopicHelper.DetermineTopic(outboxEntry.EventType, 
-                                outboxEntry.EventName, _options.Events, _logger);
+                            var topic = EventTopicHelper.DetermineTopic(
+                                outboxEntry.EventType,
+                                outboxEntry.EventName,
+                                _options.Events,
+                                _logger);
 
                             _logger.LogDebug("Publishing outbox event {EventId} to topic {Topic}", outboxEntry.Id, topic);
 
