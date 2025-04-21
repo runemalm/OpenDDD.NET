@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using OpenDDD.Domain.Model;
 using OpenDDD.Infrastructure.Events;
 using OpenDDD.Infrastructure.Persistence.DatabaseSession;
@@ -39,19 +40,72 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.EfCore
             await _session.DbContext.Set<OutboxEntry>().AddAsync(outboxEntry, ct);
             await _session.DbContext.SaveChangesAsync(ct);
         }
-
+        
         public async Task<List<OutboxEntry>> GetPendingEventsAsync(int? maxCount = null, CancellationToken ct = default)
         {
             await _session.OpenConnectionAsync(ct);
-            
-            IQueryable<OutboxEntry> query = _session.DbContext.Set<OutboxEntry>()
-                .Where(e => e.ProcessedAt == null)
-                .OrderBy(e => e.CreatedAt);
+
+            var lockDuration = TimeSpan.FromMinutes(1);
+            var lockUntil = DateTime.UtcNow.Add(lockDuration);
+
+            var table = _session.DbContext.Model.FindEntityType(typeof(OutboxEntry))!.GetTableName();
+
+            var sql = $@"
+                UPDATE {table}
+                SET locked_until = @lockUntil
+                WHERE id IN (
+                    SELECT id
+                    FROM {table}
+                    WHERE processed_at IS NULL
+                      AND (locked_until IS NULL OR locked_until < @now)
+                    ORDER BY created_at
+                    {(maxCount.HasValue ? "LIMIT @maxCount" : "")}
+                    FOR UPDATE SKIP LOCKED
+                )
+                RETURNING id, event_type, event_name, payload, created_at, processed_at, locked_until;";
+
+            var conn = _session.DbContext.Database.GetDbConnection();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.Transaction = _session.DbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+            var nowParam = cmd.CreateParameter();
+            nowParam.ParameterName = "now";
+            nowParam.Value = DateTime.UtcNow;
+            cmd.Parameters.Add(nowParam);
+
+            var lockUntilParam = cmd.CreateParameter();
+            lockUntilParam.ParameterName = "lockUntil";
+            lockUntilParam.Value = lockUntil;
+            cmd.Parameters.Add(lockUntilParam);
 
             if (maxCount.HasValue)
-                query = query.Take(maxCount.Value);
+            {
+                var maxCountParam = cmd.CreateParameter();
+                maxCountParam.ParameterName = "maxCount";
+                maxCountParam.Value = maxCount.Value;
+                cmd.Parameters.Add(maxCountParam);
+            }
 
-            return await query.ToListAsync(ct);
+            await conn.OpenAsync(ct);
+            var reader = await cmd.ExecuteReaderAsync(ct);
+
+            var result = new List<OutboxEntry>();
+            while (await reader.ReadAsync(ct))
+            {
+                result.Add(new OutboxEntry
+                {
+                    Id = reader.GetGuid(0),
+                    EventType = reader.GetString(1),
+                    EventName = reader.GetString(2),
+                    Payload = reader.GetString(3),
+                    CreatedAt = reader.GetDateTime(4),
+                    ProcessedAt = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                    LockedUntil = reader.IsDBNull(6) ? null : reader.GetDateTime(6)
+                });
+            }
+
+            return result;
         }
 
         public async Task MarkEventAsProcessedAsync(Guid eventId, CancellationToken ct)

@@ -34,6 +34,7 @@ namespace OpenDDD.Infrastructure.Persistence.EfCore.Base
                 entity.Property(e => e.Payload).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.Property(e => e.ProcessedAt).IsRequired(false);
+                entity.Property<DateTime?>("LockedUntil").IsRequired(false);
             });
 
             if (_openDddOptions.AutoRegister.EfCoreConfigurations)

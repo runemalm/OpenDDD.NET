@@ -175,9 +175,11 @@ namespace OpenDDD.API.HostedServices
                         event_name TEXT NOT NULL,
                         payload JSONB NOT NULL,
                         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                        processed_at TIMESTAMP NULL
+                        processed_at TIMESTAMP NULL,
+                        locked_until TIMESTAMP NULL
                     );
-                    CREATE INDEX idx_{outboxTable}_processed ON {outboxTable} (processed_at);";
+                    CREATE INDEX idx_{outboxTable}_processed ON {outboxTable} (processed_at);
+                    CREATE INDEX idx_{outboxTable}_locked_until ON {outboxTable} (locked_until);";
 
                 await using var createOutboxCmd = new NpgsqlCommand(createOutboxTableQuery, connection, transaction);
                 await createOutboxCmd.ExecuteNonQueryAsync(ct);

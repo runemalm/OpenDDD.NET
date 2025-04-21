@@ -47,22 +47,32 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.Postgres
         {
             await _session.OpenConnectionAsync(ct);
             
-            var query = @"
-                SELECT id, event_type, event_name, payload, created_at, processed_at
-                FROM outbox_entries
-                WHERE processed_at IS NULL
-                ORDER BY created_at";
-
-            query = maxCount.HasValue ? query + " LIMIT @maxCount;" : query + ";";
+            var now = DateTime.UtcNow;
+            var lockUntil = now.AddMinutes(1);
+            
+            var query = $@"
+                UPDATE outbox_entries
+                SET locked_until = @lock_until
+                WHERE id IN (
+                    SELECT id
+                    FROM outbox_entries
+                    WHERE processed_at IS NULL
+                      AND (locked_until IS NULL OR locked_until < @now)
+                    ORDER BY created_at
+                    {(maxCount.HasValue ? "LIMIT @maxCount" : "")}
+                    FOR UPDATE SKIP LOCKED
+                )
+                RETURNING id, event_type, event_name, payload, created_at, processed_at, locked_until;";
 
             await using var cmd = new NpgsqlCommand(query, _session.Connection, _session.Transaction);
-            
+            cmd.Parameters.AddWithValue("now", now);
+            cmd.Parameters.AddWithValue("lock_until", lockUntil);
             if (maxCount.HasValue)
                 cmd.Parameters.AddWithValue("maxCount", maxCount.Value);
 
-            await using var reader = await cmd.ExecuteReaderAsync(ct);
-
             var events = new List<OutboxEntry>();
+
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
             while (await reader.ReadAsync(ct))
             {
                 events.Add(new OutboxEntry
@@ -72,7 +82,8 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.Postgres
                     EventName = reader.GetString(2),
                     Payload = reader.GetString(3),
                     CreatedAt = reader.GetDateTime(4),
-                    ProcessedAt = reader.IsDBNull(5) ? null : reader.GetDateTime(5)
+                    ProcessedAt = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                    LockedUntil = reader.GetDateTime(6),
                 });
             }
 
