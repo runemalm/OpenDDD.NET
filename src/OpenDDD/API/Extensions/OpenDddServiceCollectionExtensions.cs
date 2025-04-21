@@ -50,6 +50,7 @@ using OpenDDD.Infrastructure.TransactionalOutbox;
 using OpenDDD.Infrastructure.TransactionalOutbox.EfCore;
 using OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.InMemory;
 using OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.Postgres;
+using OpenDDD.Infrastructure.TransactionalOutbox.Options;
 using OpenDDD.Infrastructure.Utils;
 
 namespace OpenDDD.API.Extensions
@@ -183,6 +184,11 @@ namespace OpenDDD.API.Extensions
         
         private static void AddTransactionalOutbox(this IServiceCollection services)
         {
+            services.Configure<OpenDddOutboxProcessorOptions>(options =>
+            {
+                var config = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
+                config.GetSection("OpenDDD:OutboxProcessor").Bind(options);
+            });
             services.AddHostedService<OutboxProcessor>();
         }
         

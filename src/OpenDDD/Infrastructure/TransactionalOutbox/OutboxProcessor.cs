@@ -7,6 +7,7 @@ using OpenDDD.API.Options;
 using OpenDDD.Domain.Model.Helpers;
 using OpenDDD.Infrastructure.Events;
 using OpenDDD.Infrastructure.Persistence.DatabaseSession;
+using OpenDDD.Infrastructure.TransactionalOutbox.Options;
 
 namespace OpenDDD.Infrastructure.TransactionalOutbox
 {
@@ -16,24 +17,29 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
         private readonly StartupHostedService _startupService;
         private readonly ILogger<OutboxProcessor> _logger;
         private readonly OpenDddOptions _options;
+        private readonly OpenDddOutboxProcessorOptions _processorOptions;
 
         public OutboxProcessor(
             IServiceScopeFactory serviceScopeFactory,
             StartupHostedService startupService,
             ILogger<OutboxProcessor> logger,
-            IOptions<OpenDddOptions> options)
+            IOptions<OpenDddOptions> options,
+            IOptions<OpenDddOutboxProcessorOptions> processorOptions)
         {
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _startupService = startupService;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _options = options.Value ?? throw new ArgumentNullException(nameof(options));
+            _processorOptions = processorOptions.Value ?? throw new ArgumentNullException(nameof(processorOptions));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Outbox Processor started.");
+            _logger.LogDebug("Polling interval: {PollingIntervalSeconds}s, Max events per cycle: {MaxEventsPerCycle}",
+                _processorOptions.PollingIntervalSeconds,
+                _processorOptions.MaxEventsPerCycle);
 
-            // Ensure database setup is complete
             _logger.LogInformation("Waiting for database setup to complete before starting outbox processing...");
             await _startupService.StartupCompleted;
             _logger.LogInformation("Database setup completed. Starting outbox processing...");
@@ -56,7 +62,12 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
 
                     await databaseSession.OpenConnectionAsync(stoppingToken);
 
-                    var pendingEvents = await outboxRepository.GetPendingEventsAsync(stoppingToken);
+                    var pendingEvents = await outboxRepository
+                        .GetPendingEventsAsync(_processorOptions.MaxEventsPerCycle, stoppingToken);
+
+                    _logger.Log(
+                        pendingEvents.Any() ? LogLevel.Debug : LogLevel.Trace,
+                        "Fetched {EventCount} pending events.", pendingEvents.Count);
 
                     foreach (var outboxEntry in pendingEvents)
                     {
@@ -72,6 +83,8 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
 
                             await messagingProvider.PublishAsync(topic, outboxEntry.Payload, stoppingToken);
                             await outboxRepository.MarkEventAsProcessedAsync(outboxEntry.Id, stoppingToken);
+                            
+                            _logger.LogDebug("Successfully published and marked event {EventId} as processed.", outboxEntry.Id);
                         }
                         catch (Exception ex)
                         {
@@ -84,7 +97,7 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox
                     _logger.LogError(ex, "Unexpected error in Outbox Processor.");
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(_processorOptions.PollingIntervalSeconds), stoppingToken);
             }
 
             _logger.LogInformation("Outbox Processor stopping.");

@@ -42,10 +42,16 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.InMemory
             _logger.LogDebug("Added event to in-memory outbox: {EventName}", outboxEntry.EventName);
         }
 
-        public async Task<List<OutboxEntry>> GetPendingEventsAsync(CancellationToken ct)
+        public async Task<List<OutboxEntry>> GetPendingEventsAsync(int? maxCount = null, CancellationToken ct = default)
         {
             var entries = await _session.SelectAllAsync<OutboxEntry>(OutboxTable, ct);
-            return entries.Where(entry => entry.ProcessedAt == null).ToList();
+            var pending = entries
+                .Where(entry => entry.ProcessedAt == null)
+                .OrderBy(entry => entry.CreatedAt);
+
+            return maxCount.HasValue
+                ? pending.Take(maxCount.Value).ToList()
+                : pending.ToList();
         }
 
         public async Task MarkEventAsProcessedAsync(Guid eventId, CancellationToken ct)

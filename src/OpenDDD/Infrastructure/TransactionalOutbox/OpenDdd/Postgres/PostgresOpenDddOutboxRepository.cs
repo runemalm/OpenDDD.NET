@@ -43,13 +43,23 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.OpenDdd.Postgres
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
-        public async Task<List<OutboxEntry>> GetPendingEventsAsync(CancellationToken ct)
+        public async Task<List<OutboxEntry>> GetPendingEventsAsync(int? maxCount = null, CancellationToken ct = default)
         {
             await _session.OpenConnectionAsync(ct);
+            
+            var query = @"
+                SELECT id, event_type, event_name, payload, created_at, processed_at
+                FROM outbox_entries
+                WHERE processed_at IS NULL
+                ORDER BY created_at";
 
-            const string query = "SELECT id, event_type, event_name, payload, created_at, processed_at FROM outbox_entries WHERE processed_at IS NULL ORDER BY created_at;";
+            query = maxCount.HasValue ? query + " LIMIT @maxCount;" : query + ";";
 
             await using var cmd = new NpgsqlCommand(query, _session.Connection, _session.Transaction);
+            
+            if (maxCount.HasValue)
+                cmd.Parameters.AddWithValue("maxCount", maxCount.Value);
+
             await using var reader = await cmd.ExecuteReaderAsync(ct);
 
             var events = new List<OutboxEntry>();

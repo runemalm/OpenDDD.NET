@@ -40,14 +40,18 @@ namespace OpenDDD.Infrastructure.TransactionalOutbox.EfCore
             await _session.DbContext.SaveChangesAsync(ct);
         }
 
-        public async Task<List<OutboxEntry>> GetPendingEventsAsync(CancellationToken ct)
+        public async Task<List<OutboxEntry>> GetPendingEventsAsync(int? maxCount = null, CancellationToken ct = default)
         {
             await _session.OpenConnectionAsync(ct);
-
-            return await _session.DbContext.Set<OutboxEntry>()
+            
+            IQueryable<OutboxEntry> query = _session.DbContext.Set<OutboxEntry>()
                 .Where(e => e.ProcessedAt == null)
-                .OrderBy(e => e.CreatedAt)
-                .ToListAsync(ct);
+                .OrderBy(e => e.CreatedAt);
+
+            if (maxCount.HasValue)
+                query = query.Take(maxCount.Value);
+
+            return await query.ToListAsync(ct);
         }
 
         public async Task MarkEventAsProcessedAsync(Guid eventId, CancellationToken ct)
