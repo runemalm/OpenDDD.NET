@@ -1,156 +1,117 @@
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html) [![NuGet](https://img.shields.io/nuget/v/OpenDDD.NET.svg)](https://www.nuget.org/packages/OpenDDD.NET/) [![Documentation](https://img.shields.io/badge/docs-Read%20the%20Docs-blue.svg)](https://openddd.net) [![Downloads](https://img.shields.io/nuget/dt/OpenDDD.NET.svg)](https://www.nuget.org/packages/OpenDDD/) [![Tests](https://github.com/runemalm/OpenDDD.NET/actions/workflows/tests.yml/badge.svg?branch=develop)](https://github.com/runemalm/OpenDDD.NET/actions/workflows/tests.yml)
+
+
 # OpenDDD.NET
 
-[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html) [![NuGet](https://img.shields.io/nuget/v/OpenDDD.NET.svg)](https://www.nuget.org/packages/OpenDDD.NET/) [![Tests](https://github.com/runemalm/OpenDDD.NET/actions/workflows/tests.yml/badge.svg?branch=develop)](https://github.com/runemalm/OpenDDD.NET/actions/workflows/tests.yml)
+**OpenDDD.NET** is an opinionated framework for building **Domain-Driven Design (DDD)** applications on ASP.NET Core.
 
-OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and ASP.NET Core. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
+It lets you focus on modeling your aggregates, repositories, domain services, and domain events — while the framework handles persistence, messaging, and transactional consistency.
 
-> **Note:** OpenDDD.NET is currently in a beta state as part of new major version 3. Use with caution in production environments.
+> **Focus on your domain model. Forget the plumbing.**
 
-⭐ Consider **starring** and/or **following** the project to stay updated with the latest developments.
+---
 
 ## Key Features
 
-- **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
-- **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
-- **Repositories**: Abstract away data access and enable persistence of domain objects.
-- **Domain Events**: Facilitate communication between domain objects while maintaining loose coupling.
-- **Integration Events**: Enable communication between bounded contexts in distributed systems.
-- **Event Listeners**: Manage event listeners to handle domain and integration events for scalable, event-driven architectures.
-- **Domain Services**: Encapsulate domain-specific operations that do not naturally belong to an entity or value object.
-- **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
-- **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
-- **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
+- **Aggregate Roots, Entities, Value Objects** — Built-in base classes for modeling your domain.
+- **Domain Services** — For domain logic that doesn’t naturally fit inside an aggregate.
+- **Domain Events & Integration Events** — Publish events inside and outside the boundary of your service.
+- **Repository Abstractions** — Works with PostgreSQL, SQL Server, SQLite, EF Core, and InMemory.
+- **Messaging Abstraction** — Supports RabbitMQ, Azure Service Bus, Kafka, and InMemory.
+- **Transactional Outbox** — Guarantees reliable and atomic event publishing.
+- **Automatic Registration** — The framework automatically registers repositories, domain services, actions, event listeners, and infrastructure services based on conventions.
+- **Drop-in Setup** — Configure once in `Program.cs` and `appsettings.json`, and you're ready to go.
+- **Opinionated but Flexible** — Use convention-over-configuration or break out and compose manually.
 
-We're adhering to the key principles and building blocks of Domain-Driven Design.
+---
 
-<img src="https://github.com/runemalm/OpenDDD.NET/blob/master/ddd-graph.png" width="636" alt="DDD Concepts Graph" />
+## Why OpenDDD.NET?
 
-## Supported Versions
+OpenDDD.NET is for developers who want to focus on the **domain model** — aggregate roots, domain services, and domain events — without dealing with infrastructure setup.
 
-- ASP.NET Core 8
-- ASP.NET Core 9
+- **Batteries included.**
+- **Minimal setup.** 
+- **Minimal boilerplate.**
 
-## Getting Started
+---
 
-To get started with OpenDDD.NET, follow these simple steps:
+## 🚀 Quick Start
 
-1. **Install the NuGet package**: Use the NuGet package manager or the .NET CLI to add the OpenDDD.NET package to your project.
+### Install via NuGet
 
-   ```bash
-   dotnet add package OpenDDD.NET --prerelease
-   ```
+```bash
+dotnet add package OpenDDD.NET --prerelease
+```
 
-2. **Create a new project**: Create a new project in your editor or IDE of choice or use the command below.
+---
 
-   ```bash
-   dotnet new webapi -n Bookstore
-   ```
+### Minimal setup in `Program.cs`
 
-3. **Set up OpenDDD.NET**: Register OpenDDD services and middleware in your `Program.cs` file.
+```csharp
+var builder = WebApplication.CreateBuilder(args);
 
-   ```csharp
-   using OpenDDD.API.Extensions;
+// Add OpenDDD services and configure 
+builder.Services.AddOpenDDD(builder.Configuration);
 
-   var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
 
-   // Add OpenDDD services
-   builder.Services.AddOpenDDD(builder.Configuration, options =>  
-   {  
-       options.UseInMemoryDatabase()    
-              .UseInMemoryMessaging()
-              .SetEventTopics(  
-                 "Bookstore.Domain.{EventName}",  
-                 "Bookstore.Interchange.{EventName}"  
-              )
-              .SetEventListenerGroup("Default")
-              .EnableAutoRegistration();
-   });
+// Add OpenDDD middleware
+app.UseOpenDDD();
 
-   var app = builder.Build();
+app.Run();
+```
 
-   // Use OpenDDD Middleware
-   app.UseOpenDDD();
+---
 
-   app.Run();
-   ```
+### Configure in `appsettings.json`
 
-4. **Start building your application**: Utilize the power of OpenDDD.NET to build scalable and maintainable applications.
+```json
+{
+  "OpenDDD": {
+    "PersistenceProvider": "OpenDdd",
+    "DatabaseProvider": "Postgres",
+    "Postgres": {
+      "ConnectionString": "Host=localhost;Port=5432;Database=bookstore;Username=postgres;Password=password"  
+    },
+    "MessagingProvider": "RabbitMq",
+    "RabbitMq": {
+      "HostName": "localhost",
+      "Port": 5672,
+      "Username": "guest",
+      "Password": "guest",
+      "VirtualHost": "/"
+    },
+    "Events": {
+      "DomainEventTopic": "Bookstore.Domain.{EventName}",
+      "IntegrationEventTopic": "Bookstore.Interchange.{EventName}",
+      "ListenerGroup": "Default"
+    }
+  }
+}
+```
 
-For detailed guides and examples, refer to the documentation.
-
+---
 
 ## Documentation
 
-The official [OpenDDD.NET Documentation](https://docs.openddd.net/) provides getting-started guide, examples, and configuration references to help you get started and make the most of the framework.  
+[https://docs.openddd.net](https://docs.openddd.net)
+
+---
 
 ## Sample Project
 
-The `Bookstore` sample project demonstrates how to use OpenDDD.NET in a real-world scenario, including domain modeling, repositories, actions, and framework configuration. 
+Check out the [Bookstore Sample](https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore) for a complete application example.
 
-Explore the project in the repository: [Bookstore Sample Project](https://github.com/runemalm/OpenDDD.NET/tree/master/samples/Bookstore).
-
-## Release History
-
-**3.0.0-beta.2 (2025-03-13)**
-
-- **Integration Test Coverage**: Added full integration tests for repositories and messaging providers.
-- **Reliability Improvements**: Fixed issues discovered through test coverage.
-
-**3.0.0-beta.1 (2025-02-17)**
-
-- **Beta Release**: OpenDDD.NET has moved from alpha to `beta`, indicating improved stability.
-- **Performance Improvements**: Optimized framework components for better efficiency.
-- **Fix Issues**: Fixed various issues.
-
-**3.0.0-alpha.4 (2025-02-15)**
-
-- **Persistence Providers**: Add the `OpenDDD` persistence provider.
-- **Database Providers**: Add the `InMemory` and `Postgres` database providers for the new `OpenDdd` persistence provider.
-- **Messaging Providers**: Add the `Kafka` and `RabbitMQ` messaging providers.
-- **Seeders**: Add support for seeders to seed aggregates on application start.
-- **Project Template**: Add a project template nuget for quick scaffolding of a new project.
-- **Documentation**: Refactor the documentation to reflect new changes and improve onboarding experience.
-- **Namespace**: Change the name of the namespace `Main` -> `API`.
-- **Fix issues**: Fix issues with the `Azure Service Bus` provider & the `Ef Core` base repository.
-
-**3.0.0-alpha.3 (2025-01-30)**
-
-- **Domain Events**: Added support for domain events to enable communication between domain objects while maintaining encapsulation.
-- **Integration Events**: Added support for integration events to facilitate communication between bounded contexts.
-- **Event Listeners**: Added support for event listeners to handle domain and integration events with actions.
-- **Transactional Outbox**: Added reliable event publishing by storing events in an outbox before processing and publishing to the message bus, ensuring consistency with database transactions.
-- **Messaging Providers**: Added pluggable support for messaging backends, including in-memory and Azure Service Bus.
-- **Infrastructure Services**: Added `IInfrastructureService` interface for managing infrastructure services, with automatic registration.
-- **Repository Refactoring**: Refactored repository pattern by introducing `EfCoreRepository<TAggregate, TId>` as the default for the EfCore persistence provider, improving consistency and customization.
-- **Configuration Refactoring**: Restructured OpenDDD.NET configuration system into hierarchical options classes, improving clarity and maintainability.
-
-For a complete list of releases and their changelogs, please visit the [Releases](https://github.com/runemalm/OpenDDD.NET/releases) page.
+---
 
 ## Contributing
 
-We welcome contributions from the community. To contribute to OpenDDD.NET, please follow these steps:
+Open to contributions from developers who care about DDD, clean architecture, and developer experience.
 
-1. Fork the repository on GitHub.
-2. Clone your forked repository to your local machine.
-3. Create a new branch from the `master` branch for your changes.
-4. Make your modifications and ensure they adhere to our coding conventions.
-5. Write appropriate tests for your changes, ensuring they pass.
-6. Commit your changes with a descriptive and meaningful commit message.
-7. Push your branch to your forked repository on GitHub.
-8. Open a pull request (PR) against the `develop` branch of the main repository.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
-Please make sure to review our [Contributing Guidelines](https://github.com/runemalm/OpenDDD.NET/blob/master/CONTRIBUTING.md) before submitting a pull request.
+---
 
 ## License
 
 OpenDDD.NET is licensed under the [GPLv3 License](https://www.gnu.org/licenses/gpl-3.0.html). Feel free to use it in your own projects.
-
-## Acknowledgements
-
-OpenDDD.NET is inspired by the principles and ideas of Domain-Driven Design (DDD) and the fantastic work done by the DDD community. We would like to thank all the contributors and supporters who have helped make this project possible.
-
-## Get in Touch
-
-If you have any questions, suggestions, or feedback, please don't hesitate to reach out to us.
-
-Let's build better software together with OpenDDD.NET!
