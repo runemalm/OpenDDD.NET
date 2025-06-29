@@ -5,26 +5,45 @@
 OpenDDD.NET
 ===========
 
-OpenDDD.NET is an open-source framework for domain-driven design (DDD) development using C# and ASP.NET Core. It provides a set of powerful tools and abstractions to help developers build scalable, maintainable, and testable applications following the principles of DDD.
+**OpenDDD.NET** is an opinionated framework for building Domain-Driven Design (DDD) applications on ASP.NET Core.
+
+It lets you focus on modeling your aggregates, domain services, and domain events — while the framework handles persistence, messaging, and transactional consistency.
+
+> **Focus on your domain model. Forget the plumbing.**
+
+---
 
 Purpose
 -------
 
-The purpose of OpenDDD.NET is to simplify the adoption of DDD principles by offering ready-to-use building blocks, enabling developers to focus on business logic rather than infrastructure concerns.
+OpenDDD.NET exists to help developers adopt DDD in real-world .NET applications without spending time wiring infrastructure.
+
+It provides all the essential building blocks — aggregates, repositories, domain services, event handling, persistence, and messaging — with drop-in setup, automatic registration, and a convention-over-configuration approach.
+
+---
 
 Key Features
 ------------
 
-- **Aggregates**: Define domain aggregates with clear boundaries and encapsulate domain logic within them.
-- **Entities and Value Objects**: Create entities and value objects to represent domain concepts and ensure strong type safety.
-- **Repositories**: Abstract away data access and enable persistence of domain objects.
-- **Domain Events**: Facilitate communication between domain objects while maintaining loose coupling.
-- **Integration Events**: Enable communication between bounded contexts in distributed systems.
-- **Event Listeners**: Manage event listeners to handle domain and integration events for scalable, event-driven architectures.
-- **Domain Services**: Encapsulate domain-specific operations that do not naturally belong to an entity or value object.
-- **Application Services**: Use Action classes to coordinate the execution of domain logic in response to commands.
-- **Infrastructure Services**: Provide implementations for technical concerns such as logging, email, or external integrations.
-- **Transactional Outbox**: Ensure event consistency by persisting and publishing events as part of database transactions.
+- **Aggregate Roots, Entities, Value Objects** — Built-in base classes for modeling your domain.
+- **Domain Services** — For domain logic that doesn’t naturally fit inside an aggregate.
+- **Domain Events & Integration Events** — Publish events inside and outside the boundary of your service.
+- **Repository Abstractions** — Works with PostgreSQL, SQL Server, SQLite, EF Core, and InMemory.
+- **Messaging Abstraction** — Supports RabbitMQ, Azure Service Bus, Kafka, and InMemory.
+- **Transactional Outbox** — Guarantees reliable and atomic event publishing.
+- **Automatic Registration** — The framework automatically registers repositories, domain services, actions, event listeners, and infrastructure services based on conventions.
+- **Drop-in Setup** — Configure once in `Program.cs` and `appsettings.json`, and you're ready to go.
+- **Opinionated but Flexible** — Use convention-over-configuration or break out and compose manually.
+
+---
+
+Source Code
+-----------
+
+The source code is available on GitHub:  
+`https://github.com/runemalm/OpenDDD.NET <https://github.com/runemalm/OpenDDD.NET>`_
+
+---
 
 .. userguide-docs:
 .. toctree::
