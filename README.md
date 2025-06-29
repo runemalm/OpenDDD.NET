@@ -90,6 +90,17 @@ app.Run();
 }
 ```
 
+### Tip
+
+For a quick local setup without external dependencies, you can use the built-in **InMemory** providers for both database and messaging:
+
+```json
+{
+  "DatabaseProvider": "InMemory",
+  "MessagingProvider": "InMemory",
+}
+```
+
 ---
 
 ## Documentation
